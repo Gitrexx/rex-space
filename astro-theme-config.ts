@@ -87,53 +87,127 @@ const config = {
   },
 
   social: {
-    website: 'https://hanityx.github.io/astro-tone/', // e.g. 'https://your-site.com'
-    email: '', // e.g. 'hello@your-site.com'
-    linkedin: '', // e.g. 'https://www.linkedin.com/in/yourhandle'
-    github: 'https://github.com/hanityx/astro-tone', // e.g. 'https://github.com/yourhandle'
+    website: '', // e.g. 'https://your-site.com'
+    email: 'zhayunduo@hotmail.com',
+    linkedin: 'https://www.linkedin.com/in/yunduo_zhang',
+    github: 'https://github.com/Gitrexx', // add when you have a public profile to link
   },
 
   about: {
     /** Profile image URL. Leave empty to use the text-only About layout. */
-    profileImage: '',
-    name: 'Alex Morgan',
-    role: 'Writes about useful small tools and the notes behind them.',
-    location: 'Anywhere',
-    focus: 'Writing, small tools, and notes worth returning to.',
-    lead: 'Alex writes about small product decisions, interface craft, and the notes that make work easier to return to.',
-    headline: ['Made to', 'last.'],
-    statementLabel: 'Work',
-    statementTitle: 'Notes on making useful things.',
+    profileImage: './public/profile.png',
+    name: 'Zhang Yunduo',
+    role: 'Machine Learning Engineer',
+    location: 'Singapore',
+    focus: 'AI/ML from prototype to production',
+    tags: [
+      'MLOps',
+      'Prototype → Production',
+      'RAG & Semantic Search',
+      'Agentic AI',
+      'Recommender Systems',
+      'LLM Fine-tuning',
+      'Microservices & Kubernetes',
+      'Big-data pipelines (PySpark, Kafka, SparkSQL)',
+      'Cloud-native · AWS · GCP · OpenShift',
+      'Financial services / banking domain',
+      'KYC / compliance / regulated ML',
+      'AWS Solutions Architect',
+      'GCP Professional ML Engineer',
+    ],
+    headline: ['ML Practitioner'],
+
+    statementLabel: 'Summary',
+    statementTitle: 'Owning the full delivery lifecycle.',
     statement:
-      'This page is intentionally spare: a short bio, a few links, and enough context for readers who want to know who is writing.',
-    careerLabel: 'Career',
-    career: [
+      'Machine Learning Engineer with 8+ years of experience embedding with business and data teams to take AI/ML solutions from prototype to production. Proven track record partnering directly with stakeholders across multiple business units — translating ambiguous requirements into deployed, production-grade systems, including large-scale recommender systems, semantic search / RAG, agentic AI applications, and model fine-tuning, as well as scalable microservices and full-stack web applications. Owns the full delivery lifecycle: discovery, build, integration with legacy data and infrastructure, roll-out, and production hardening. Strong background in cloud-native architectures (AWS, OpenShift), distributed data pipelines, and end-to-end ML lifecycle management. Certified AWS Solutions Architect and GCP Professional ML Engineer.',
+    experienceLabel: 'Experience',
+    experience: [
       {
-        period: 'Current',
-        title: 'Independent practice',
-        description:
-          'Designing calm interfaces, writing field notes, and helping teams clarify product surfaces.',
+        period: 'May 2022 — Present',
+        title: 'Machine Learning Engineer (MLOps)',
+        company: 'DBS Bank, Singapore',
+        highlights: [
+          'Data Understanding Assistant — embedded with the data engineering org to ship a full-stack lineage-tracing platform (React + FastAPI) with an embedded chatbot, grounded via a custom FastMCP server unifying the department KB (Dify) and metadata DB.',
+          'KYC Name Screening — moved name-screening models from prototype to scalable API microservices serving daily RM onboarding; cut GenAI latency 90% and infra cost 60%, and stood up OpenTelemetry / ELK / Prometheus / Grafana observability (−40% detection time, −35% MTTR).',
+          'Smart Search — led an enterprise semantic-search platform (RAG + function calling) serving 1M+ requests monthly, with a blue-green ingestion pipeline and an LLM-agnostic agent framework.',
+          'Recommender System — operationalised 300+ consumer-banking models serving 1M+ users in SG and HK on MLflow; cut PySpark job runtime from 30+ hours to 5 via Airflow orchestration.',
+          'Built an OCR pipeline saving 50K+ SGD monthly in labour, and migrated ML workloads from on-premise to AWS SageMaker.',
+        ],
       },
       {
-        period: 'Selected',
-        title: 'Product systems',
-        description:
-          'Worked across design systems, editorial tooling, and early-stage product foundations.',
+        period: 'Dec 2021 — May 2022',
+        title: 'Software Engineer',
+        company: 'SP Group, Singapore',
+        highlights: [
+          'Built and optimised an end-to-end disaster-recovery data pipeline (EMC SOAP ingestion, SQL/Python processing) with real-time Power BI dashboards informing 10K+ SGD of daily decisions.',
+          'Developed a locally hosted AI search app (SVM, Sentence-BERT) that halved root-cause analysis time for maintenance teams.',
+        ],
       },
       {
-        period: 'Elsewhere',
-        title: 'Writing and reference',
-        description:
-          'Keeping a public archive of notes, examples, and references worth returning to.',
+        period: 'Jun 2017 — Jun 2021',
+        title: 'Senior Data Analyst',
+        company: 'United Microelectronics Corporation',
+        highlights: [
+          'Applied clustering, time-series analysis, and anomaly detection to machine data for predictive maintenance, cutting average machine downtime by 8%.',
+          'Maintained lithography equipment (ASML AT/XT/NXT, Nikon steppers) from sensor data and delivered maintenance insights to management.',
+          'Trained and mentored 10+ newly hired equipment engineers.',
+        ],
       },
     ],
-    interests: [
-      'Interface systems that stay quiet until needed',
-      'Writing as a way to keep product judgment visible',
-      'Tools and habits that make long work easier to resume',
+
+    educationLabel: 'Education',
+    education: [
+      {
+        period: '2021 — 2022',
+        title: 'M.Tech, Artificial Intelligence Systems',
+        school: 'National University of Singapore',
+        note: 'Course recommender system; stock-movement sentiment analysis on StockTweets (RoBERTa fine-tuning, open-source model/dataset contribution).',
+      },
+      {
+        period: '2013 — 2017',
+        title: 'B.Eng, Electrical & Electronic Engineering',
+        school: 'Nanyang Technological University',
+        note: 'Auto-focus camera prototype (Arduino, IoT); voice-controlled robot with speaker localisation (Raspberry Pi, speech recognition). SM2 full scholarship.',
+      },
     ],
-    interestsLabel: 'Interests',
-    interestsHeading: 'What the work keeps returning to',
+
+    skillsLabel: 'Skills',
+    skillsHeading: 'What I build with.',
+    skills: [
+      {
+        group: 'ML / AI',
+        items: 'RAG, agentic AI, recommender systems, semantic search, model fine-tuning, MLflow, ONNX',
+      },
+      {
+        group: 'Backend',
+        items: 'Python, FastAPI, microservices, async, Kafka, MCP / FastMCP',
+      },
+      {
+        group: 'Data',
+        items: 'PySpark, Airflow, SparkSQL, Elasticsearch, distributed pipelines',
+      },
+      {
+        group: 'Platform',
+        items: 'AWS, OpenShift / Kubernetes, containerisation, OpenTelemetry, ELK, Prometheus, Grafana, Jenkins',
+      },
+      {
+        group: 'Frontend',
+        items: 'React, full-stack web applications',
+      },
+    ],
+
+    awardsLabel: 'Recognition',
+    awardsHeading: 'Certifications and awards.',
+    awards: [
+      'Google Cloud — Professional Machine Learning Engineer',
+      'AWS — Certified Solutions Architect, Associate',
+      'DBS Department Machine Learning Engineer of the Year, 2023',
+      'SM2 full scholarship for undergraduate study at NTU',
+    ],
+
+    languagesLabel: 'Languages',
+    languages: 'English (professional) · Chinese (native)',
   },
 };
 

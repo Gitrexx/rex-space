@@ -3,43 +3,22 @@ import '../styles/pages/about.css';
 import config from '../../astro-theme-config';
 import BaseLayout from '../layouts/BaseLayout.astro';
 
-const profileImageUrl = config.about.profileImage.trim();
+const { about, social, site } = config;
+
+const profileImageUrl = about.profileImage.trim();
 const hasProfileImage = profileImageUrl.length > 0;
-const profileName = config.about.name || config.site.author;
-const profileRole = config.about.role;
-const profileLocation = config.about.location;
-const profileFocus = config.about.focus;
-const profileLead = config.about.lead;
-const [headlineFirst, headlineSecond] = config.about.headline;
-const statementLabel = config.about.statementLabel;
-const statementTitle = config.about.statementTitle;
-const statement = config.about.statement;
-const careerLabel = config.about.careerLabel;
-const careerItems = config.about.career;
-const focusItems = config.about.interests;
-const interestsLabel = config.about.interestsLabel;
-const interestsHeading = config.about.interestsHeading;
+const profileName = about.name || site.author;
+const [headlineFirst, headlineSecond] = about.headline;
+
 const profileLinks = [
-  {
-    label: 'GitHub',
-    href: config.social.github,
-  },
-  {
-    label: 'Website',
-    href: config.social.website,
-  },
-  {
-    label: 'LinkedIn',
-    href: config.social.linkedin,
-  },
-  {
-    label: 'Email',
-    href: config.social.email ? `mailto:${config.social.email}` : '',
-  },
+  { label: 'GitHub', href: social.github },
+  { label: 'LinkedIn', href: social.linkedin },
+  { label: 'Website', href: social.website },
+  { label: 'Email', href: social.email ? `mailto:${social.email}` : '' },
 ].filter((link) => link.href);
 ---
 
-<BaseLayout title="About" description={profileLead}>
+<BaseLayout title="About" description={`${about.role} · ${about.focus}`}>
   <main id="main-content" class="about-main">
     <section class="about-hero" aria-labelledby="about-title">
       <div class="about-intro">
@@ -47,9 +26,9 @@ const profileLinks = [
           {headlineFirst}<br />
           {headlineSecond}
         </h1>
-        <p class="about-lead">
-          {profileLead}
-        </p>
+        <ul class="about-tags" aria-label="Focus areas and expertise">
+          {about.tags.map((tag) => <li>{tag}</li>)}
+        </ul>
       </div>
 
       <aside
@@ -72,16 +51,16 @@ const profileLinks = [
         }
         <div class="profile-summary">
           <p class="profile-name">{profileName}</p>
-          <p class="profile-role">{profileRole}</p>
+          <p class="profile-role">{about.role}</p>
         </div>
         <dl class="profile-meta">
           <div>
             <dt>Location</dt>
-            <dd>{profileLocation}</dd>
+            <dd>{about.location}</dd>
           </div>
           <div>
             <dt>Focus</dt>
-            <dd>{profileFocus}</dd>
+            <dd>{about.focus}</dd>
           </div>
           {
             profileLinks.length > 0 && (
@@ -106,25 +85,30 @@ const profileLinks = [
     </section>
 
     <section class="about-section about-statement" aria-labelledby="about-statement">
-      <p class="section-label">{statementLabel}</p>
+      <p class="section-label">{about.statementLabel}</p>
       <div>
         <h2 id="about-statement" class="section-heading">
-          {statementTitle}
+          {about.statementTitle}
         </h2>
-        <p>{statement}</p>
+        <p>{about.statement}</p>
       </div>
     </section>
 
-    <section class="about-section" aria-label={careerLabel}>
-      <p class="section-label">{careerLabel}</p>
+    <section class="about-section" aria-label={about.experienceLabel}>
+      <p class="section-label">{about.experienceLabel}</p>
       <div class="career-list">
         {
-          careerItems.map((item) => (
+          about.experience.map((item) => (
             <article class="career-item">
               <time>{item.period}</time>
               <div>
                 <h3>{item.title}</h3>
-                <p>{item.description}</p>
+                <p class="career-company">{item.company}</p>
+                <ul class="career-highlights">
+                  {item.highlights.map((highlight) => (
+                    <li>{highlight}</li>
+                  ))}
+                </ul>
               </div>
             </article>
           ))
@@ -132,13 +116,55 @@ const profileLinks = [
       </div>
     </section>
 
-    <section class="about-section" aria-labelledby="about-focus">
-      <p class="section-label">{interestsLabel}</p>
+    <section class="about-section" aria-label={about.educationLabel}>
+      <p class="section-label">{about.educationLabel}</p>
+      <div class="career-list">
+        {
+          about.education.map((item) => (
+            <article class="career-item">
+              <time>{item.period}</time>
+              <div>
+                <h3>{item.title}</h3>
+                <p class="career-company">{item.school}</p>
+                {item.note && <p>{item.note}</p>}
+              </div>
+            </article>
+          ))
+        }
+      </div>
+    </section>
+
+    <section class="about-section" aria-labelledby="about-skills">
+      <p class="section-label">{about.skillsLabel}</p>
       <div>
-        <h2 id="about-focus" class="section-heading">{interestsHeading}</h2>
+        <h2 id="about-skills" class="section-heading">{about.skillsHeading}</h2>
+        <dl class="skills-list">
+          {
+            about.skills.map((skill) => (
+              <div>
+                <dt>{skill.group}</dt>
+                <dd>{skill.items}</dd>
+              </div>
+            ))
+          }
+        </dl>
+      </div>
+    </section>
+
+    <section class="about-section" aria-labelledby="about-awards">
+      <p class="section-label">{about.awardsLabel}</p>
+      <div>
+        <h2 id="about-awards" class="section-heading">{about.awardsHeading}</h2>
         <ul class="focus-list">
-          {focusItems.map((item) => <li>{item}</li>)}
+          {about.awards.map((award) => <li>{award}</li>)}
         </ul>
+      </div>
+    </section>
+
+    <section class="about-section" aria-label={about.languagesLabel}>
+      <p class="section-label">{about.languagesLabel}</p>
+      <div class="about-languages">
+        <p>{about.languages}</p>
       </div>
     </section>
   </main>
