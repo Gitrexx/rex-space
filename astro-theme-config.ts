@@ -19,17 +19,21 @@ const config = {
     lang: 'en',
     locale: 'en_US',
     dateLocale: 'en-US',
-    title: 'Tone',
-    logoLabel: 'Tone',
+    title: 'Rex Space',
+    logoLabel: 'Home',
     description: 'A minimal Astro theme for posts and notes.',
-    author: 'Alex Morgan',
+    author: 'Rex',
     /** Optional absolute or root-relative image URL for homepage/search/about social previews. */
     defaultOgImage: '/og.png',
   },
 
   // The logo already links to `/`. Add items here if you want visible header links.
   // Example: [{ label: 'Posts', href: '/posts' }, { label: 'About', href: '/about' }]
-  nav: [] as NavItem[],
+  nav: [
+    { label: 'Posts', href: '/posts' },
+    { label: 'About', href: '/about' },
+    { label: 'Search', href: '/search' },
+  ] as NavItem[],
 
   // Footer links stay visible by default so readers have a stable way to move around.
   footerNav: [
