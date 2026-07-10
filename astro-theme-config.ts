@@ -22,7 +22,7 @@ const config = {
     title: 'Rex Space',
     logoLabel: 'Home',
     description: 'A minimal Astro theme for posts and notes.',
-    author: 'Rex',
+    author: 'Rex Zhang',
     /** Optional absolute or root-relative image URL for homepage/search/about social previews. */
     defaultOgImage: '/og.png',
   },
@@ -88,8 +88,8 @@ const config = {
 
   social: {
     website: '', // e.g. 'https://your-site.com'
-    email: 'zhayunduo@hotmail.com',
-    linkedin: 'https://www.linkedin.com/in/yunduo_zhang',
+    email: 'zhayunduor@hotmail.com',
+    linkedin: 'https://www.linkedin.com/in/yunduo-zhang-92974799/',
     github: 'https://github.com/Gitrexx', // add when you have a public profile to link
   },
 
