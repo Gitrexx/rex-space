@@ -8,7 +8,15 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 import { DATE_LOCALE, SITE_TITLE, SITE_DESCRIPTION } from '../consts';
 import { getUiText } from '../ui';
 import { withBase } from '../utils/paths';
+import { quotes } from '../data/quotes';
 const tr = getUiText();
+
+const heroTitle = "Hi, Rex here~"
+// Render the build-day's quote server-side so no-JS visitors still see one; the
+// inline script below re-picks for the viewer's own local day to keep it fresh.
+const heroQuoteIndex =
+  ((Math.floor(Date.now() / 86_400_000) % quotes.length) + quotes.length) % quotes.length;
+const heroQuote = quotes[heroQuoteIndex];
 
 const posts = (await getCollection('posts'))
   .filter((p) => !p.data.draft)
@@ -64,15 +72,36 @@ const featuredPlaceholderStyle = featuredPlaceholder
   <main id="main-content" class="home-main">
     <section class="hero">
       <h1 class="hero-title">
-        <span class="hero-title-line">{tr.heroTitle}</span>
-        {
-          tr.heroTitleLine2 && (
-            <span class="hero-title-line hero-title-line--accent">{tr.heroTitleLine2}</span>
-          )
-        }
+        <span class="hero-title-line">{heroTitle}</span>
       </h1>
 
-      <p class="hero-desc">{SITE_DESCRIPTION}</p>
+      <figure class="hero-quote" id="hero-quote">
+        <blockquote class="hero-quote-text">{`“${heroQuote.text}”`}</blockquote>
+        <figcaption class="hero-quote-cite" hidden={!heroQuote.author}>
+          {heroQuote.author ? `— ${heroQuote.author}` : ''}
+        </figcaption>
+      </figure>
+
+      <script is:inline define:vars={{ quotes }}>
+        (function () {
+          const figure = document.getElementById('hero-quote');
+          if (!figure || !Array.isArray(quotes) || quotes.length === 0) return;
+          const textEl = figure.querySelector('.hero-quote-text');
+          const citeEl = figure.querySelector('.hero-quote-cite');
+          const now = new Date();
+          const dayNumber = Math.floor((now.getTime() - now.getTimezoneOffset() * 60000) / 86400000);
+          const q = quotes[((dayNumber % quotes.length) + quotes.length) % quotes.length];
+          if (textEl) textEl.textContent = '“' + q.text + '”';
+          if (citeEl) {
+            if (q.author) {
+              citeEl.textContent = '— ' + q.author;
+              citeEl.hidden = false;
+            } else {
+              citeEl.hidden = true;
+            }
+          }
+        })();
+      </script>
 
       <div class="hero-divider" aria-hidden="true"></div>
 

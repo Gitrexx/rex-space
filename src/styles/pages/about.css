@@ -321,7 +321,7 @@
   line-height: var(--leading-relaxed);
 }
 
-.about-languages p {
+.about-languages-line {
   max-width: 42rem;
   margin: 0;
   color: var(--label-secondary);

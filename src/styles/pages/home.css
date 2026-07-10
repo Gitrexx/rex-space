@@ -49,6 +49,30 @@
   word-break: keep-all;
 }
 
+.hero-quote {
+  display: grid;
+  gap: var(--space-2);
+  margin: 0;
+  max-width: min(34rem, 100%);
+}
+
+.hero-quote-text {
+  margin: 0;
+  font-size: var(--text-title-3);
+  font-weight: 450;
+  font-style: italic;
+  line-height: var(--leading-snug);
+  color: var(--label-secondary);
+  text-wrap: balance;
+}
+
+.hero-quote-cite {
+  font-size: var(--text-footnote);
+  font-weight: var(--weight-medium);
+  letter-spacing: var(--tracking-tight);
+  color: var(--label-tertiary);
+}
+
 .hero-divider {
   height: 1px;
   width: var(--hero-measure);
