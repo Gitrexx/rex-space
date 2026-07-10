@@ -62,6 +62,7 @@ src/
   ui.ts                 Shared UI strings (button labels, hero copy, empty states)
   config/               expressive-code.ts (code-block theme)
   content/posts/        The posts — Markdown/MDX; filename = URL slug
+  data/                 quotes.ts — rotating quotes for the home hero
   pages/                Routes (see below)
   layouts/              BaseLayout.astro, PostLayout.astro
   components/           Header, Footer, PostFeed, SearchPalette, FeaturedPostGrid, etc.
@@ -83,14 +84,14 @@ happen here before touching components:
 - `content.categoryOrder` — the ordered category list that drives the `/posts` filter row.
 - `comments` — giscus config, `mode: 'off'` by default.
 - `social` — GitHub / website / LinkedIn / email (feed the About page links).
-- `about` — the **entire CV**: bio, role, location, focus, career timeline, interests.
+- `about` — the **entire CV**: name, role, location, focus, hero `tags`, summary, plus `experience` / `education` / `skills` / `awards` / `languages` arrays.
 
 `src/consts.ts` re-exports the site meta; `src/ui.ts` holds visible UI strings. Copy lives
 in config / `ui.ts`, visual primitives live in `src/styles/tokens.css` — keep that split.
 
-**Current placeholders to replace before publishing:** `site.url` is still
-`https://example.com`; `social` and the whole `about` block still hold the template's
-sample data (name "Alex Morgan"). These are Rex's to fill in.
+The `social` and `about` blocks now hold Rex's real details — the About page renders his
+full CV. **Still placeholder, to replace before publishing:** `site.url`
+(`https://example.com`), `site.description` (dummy text), and `site.logoLabel`.
 
 ## Content model
 
@@ -110,16 +111,19 @@ Every post is validated against the schema in `src/content.config.ts`:
 | `focusEffect`   | `'scroll-dark'`        | Optional scroll-dark reading effect                           |
 | `draft`         | boolean (default false)| Excludes the post from build, RSS, and search                 |
 
-How the home page (`src/pages/index.astro`) consumes these: one **featured** card
-(`homeFeatured`, else newest), two **hero** links (`homeHeroOrder`), and a **3-card grid**
-(`homeOrder`). Any unpinned slots fill by `pubDate`, newest first.
+How the home page (`src/pages/index.astro`) consumes these: two **selected-post** links in
+the hero (`homeHeroOrder`), one **featured** card (`homeFeatured`, else newest), and a
+**3-card grid** (`homeOrder`). Any unpinned slots fill by `pubDate`, newest first. The hero
+also shows a fixed `heroTitle` (a const in `index.astro`) and a **daily rotating quote** from
+`src/data/quotes.ts` — the index is derived from the local date, and a no-flash inline script
+re-picks it per viewer. Edit that file to change the quotes.
 
 ## Routes (`src/pages/`)
 
-- `index.astro` — home (hero + featured + grid, assembled from posts).
+- `index.astro` — home: hero (title + daily rotating quote + selected-post links), one featured card, and a 3-card grid, all from posts.
 - `posts/index.astro` — `/posts`: category filter row + inline list search.
 - `posts/[...slug].astro` — individual post via `PostLayout` (reading time, related posts, TOC rail, optional scroll-dark).
-- `about.astro` — `/about`: the CV surface, rendered from `config.about`.
+- `about.astro` — `/about`: the full CV (summary, experience, education, skills, recognition, languages), rendered from `config.about` and styled in `src/styles/pages/about.css`.
 - `search.astro` — `/search`: full-text search (Pagefind). Also `Cmd`/`Ctrl` + `K` command palette everywhere.
 - `404.astro`, `rss.xml.js`, `robots.txt.js`.
 
@@ -130,6 +134,12 @@ spacing scale, and the type scale. Components read those variables rather than r
 Page/layout/component CSS lives under `src/styles/{pages,layouts,components}`. The code-block
 palette (`code.css`, `src/config/expressive-code.ts`) is deliberately kept out of the token
 system. Full guidance is in `.claude/rules/styling-design.md`.
+
+## What's been customized from the template
+
+- **Home hero** (`src/pages/index.astro`, `styles/pages/home.css`) — the template's tagline + description were replaced with a fixed title and a daily rotating quote; the quote list lives in `src/data/quotes.ts`.
+- **About / CV** (`src/pages/about.astro`, `styles/pages/about.css`) — extended beyond the template's generic `career` / `interests` slots to render experience, education, skills, recognition, and languages from `config.about`.
+- **Footer** (`src/components/Footer.astro`) — copyright reads `© {year} {site.author}. Based on astro-tone. MIT Licensed.`
 
 ## Conventions & gotchas
 

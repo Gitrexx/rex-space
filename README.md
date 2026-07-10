@@ -13,7 +13,7 @@ Four kinds of content, all served from one small, fast static site:
 - **Projects** — each with an intro, the details, a link out to the work, and interactive demos where they help.
 - **Learning materials** — notes and references worth keeping and sharing, static or interactive.
 
-Today the blog, projects, and learning notes are all authored as **posts** (Markdown / MDX) and grouped by **category**; the CV lives on the config-driven About page. See [`CLAUDE.md`](CLAUDE.md) for how the pieces fit together and where to extend.
+Today the blog, projects, and learning notes are all authored as **posts** (Markdown / MDX) and grouped by **category**; the CV lives on the config-driven About page. The home page opens with a short greeting and a **quote that rotates daily**, drawn from a curated list in `src/data/quotes.ts`. See [`.claude/CLAUDE.md`](.claude/CLAUDE.md) for how the pieces fit together and where to extend.
 
 
 ## Credits
