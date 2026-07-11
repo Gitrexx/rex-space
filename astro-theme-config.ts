@@ -3,6 +3,15 @@ type NavItem = {
   href: string;
 };
 
+type LearningItem = {
+  slug: string;
+  title: string;
+  description: string;
+  url: string;
+  /** Optional group heading on /learning (e.g. 'Finance'). */
+  tag?: string;
+};
+
 /**
  * astro-theme-config.ts
  *
@@ -31,6 +40,7 @@ const config = {
   // Example: [{ label: 'Posts', href: '/posts' }, { label: 'About', href: '/about' }]
   nav: [
     { label: 'Posts', href: '/posts' },
+    { label: 'Learning', href: '/learning' },
     { label: 'About', href: '/about' },
     { label: 'Search', href: '/search' },
   ] as NavItem[],
@@ -38,6 +48,7 @@ const config = {
   // Footer links stay visible by default so readers have a stable way to move around.
   footerNav: [
     { label: 'Posts', href: '/posts' },
+    { label: 'Learning', href: '/learning' },
     { label: 'About', href: '/about' },
     { label: 'Search', href: '/search' },
   ] as NavItem[],
@@ -208,6 +219,35 @@ const config = {
 
     languagesLabel: 'Languages',
     languages: 'English (professional) · Chinese (native)',
+  },
+
+  /**
+   * The `/learning` page — a searchable card directory. Each item is a small
+   * standalone site I keep elsewhere (usually a GitHub Pages repo) and embed as
+   * an iframe on its own detail page at `/learning/<slug>`. Add a new object to
+   * `items` to surface another topic — it appears as a card, grouped by `tag`.
+   *
+   * Per item:
+   *   slug        stable id → the URL path segment `/learning/<slug>` (kebab-case)
+   *   title       shown on the card and above the frame
+   *   description one short line under the title (also searched)
+   *   tag         optional group heading on /learning (e.g. 'Finance'); also searched
+   *   url         the embedded site (must allow framing — GitHub Pages does)
+   */
+  learning: {
+    eyebrow: 'Learning',
+    title: 'What I am learning',
+    intro:
+      'Living notebooks I keep as small standalone sites and embed here. Open a topic to read it embedded on its own page, or launch it in its own tab.',
+    items: [
+      {
+        slug: 'investment',
+        title: 'Daily Learning — Investment',
+        description: '100+ Topics daily notes on investment, from theory to practice',
+        tag: 'Finance',
+        url: 'https://gitrexx.github.io/daily-learning-investment/',
+      },
+    ] as LearningItem[],
   },
 };
 

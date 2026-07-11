@@ -1,0 +1,80 @@
+---
+import '../../styles/pages/learning-item.css';
+import config from '../../../astro-theme-config';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { withBase } from '../../utils/paths';
+
+export function getStaticPaths() {
+  const items = config.learning.items ?? [];
+  return items.map((item) => ({
+    params: { slug: item.slug },
+    props: { item },
+  }));
+}
+
+const { item } = Astro.props;
+---
+
+<BaseLayout title={item.title} description={item.description}>
+  <main id="main-content" class="learning-item-main" data-learning-item>
+    <a class="learning-back" href={withBase('/learning/')}>
+      <span aria-hidden="true">←</span>
+      <span>{config.learning.eyebrow}</span>
+    </a>
+
+    <header class="learning-item-head">
+      <div class="learning-item-info">
+        {item.tag && <p class="learning-item-tag eyebrow-accent">{item.tag}</p>}
+        <h1 class="learning-item-title">{item.title}</h1>
+        <p class="learning-item-desc">{item.description}</p>
+      </div>
+      <div class="learning-item-actions">
+        <button
+          type="button"
+          class="learning-action"
+          data-reload
+          aria-label={`Reload ${item.title}`}
+        >
+          <span aria-hidden="true">↻</span>
+          <span>Reload</span>
+        </button>
+        <a class="learning-action" href={item.url} target="_blank" rel="noopener noreferrer">
+          <span>Open</span>
+          <span aria-hidden="true">↗</span>
+        </a>
+      </div>
+    </header>
+
+    <div class="learning-frame">
+      <iframe
+        title={item.title}
+        src={item.url}
+        loading="lazy"
+        referrerpolicy="no-referrer"
+        allow="fullscreen"></iframe>
+    </div>
+  </main>
+</BaseLayout>
+
+<script>
+  function mountLearningItem() {
+    const root = document.querySelector<HTMLElement>('[data-learning-item]');
+    if (!root) return;
+
+    const iframe = root.querySelector<HTMLIFrameElement>('iframe');
+    const reload = root.querySelector<HTMLButtonElement>('[data-reload]');
+    if (iframe && reload) {
+      reload.addEventListener('click', () => {
+        // Reassigning src reliably reloads the frame, even to the same URL.
+        const current = iframe.src;
+        iframe.src = current;
+      });
+    }
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', mountLearningItem, { once: true });
+  } else {
+    mountLearningItem();
+  }
+</script>

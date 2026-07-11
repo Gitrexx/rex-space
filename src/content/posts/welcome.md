@@ -1,6 +1,6 @@
 ---
 title: 'Welcome to Rex Space'
-description: 'A quick tour of my personal site — CV, blog, projects, and learning notes, all on one small, fast static site.'
+description: 'A quick tour of my personal site — CV, blog, projects, and learning notes, all on one site'
 pubDate: '2026-07-11'
 category: 'Getting Started'
 homeFeatured: true

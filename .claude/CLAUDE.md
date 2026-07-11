@@ -14,14 +14,14 @@ search. Rex is turning it into a personal site with four kinds of content:
 1. **CV** — the config-driven **About** page.
 2. **Blog** — tech write-ups, thoughts, and sci-fi stories.
 3. **Projects** — intro + details + external link + optional interactive demos.
-4. **Learning materials** — notes and references, static or interactive.
+4. **Learning materials** — the config-driven **Learning** page: a searchable card directory of external study sites, each embedded as an iframe on its own detail page.
 
-**Key architectural fact:** there is a **single content collection, `posts`**. So the
-blog, projects, and learning notes are all currently modeled as posts distinguished by
-`category` — there is no separate `/projects` route or `projects` collection yet. The CV
-is not a post at all; it is rendered from the `about` block in `astro-theme-config.ts`.
-If a task needs a genuinely distinct section (its own route, schema, or index), that has
-to be **built** — it does not exist today.
+**Key architectural fact:** there is a **single content collection, `posts`**. The blog
+lives there; **Projects** do not exist yet (no `/projects` route or `projects` collection).
+Two sections are **not posts at all** — they render from `astro-theme-config.ts`: the CV
+from the `about` block, and **Learning** from the `learning` block (see Routes below). If a
+task needs another genuinely distinct section (its own route, schema, or index), that has
+to be **built** — pattern-match on how `about` / `learning` are wired.
 
 ## Stack
 
@@ -80,11 +80,12 @@ This is the single source of truth for site-wide settings, and most customizatio
 happen here before touching components:
 
 - `site` — url, base, title, `logoLabel`, description, author, default OG image, locale.
-- `nav` / `footerNav` — header and footer links (currently Posts / About / Search).
+- `nav` / `footerNav` — header and footer links (currently Posts / Learning / About / Search).
 - `content.categoryOrder` — the ordered category list that drives the `/posts` filter row.
 - `comments` — giscus config, `mode: 'off'` by default.
 - `social` — GitHub / website / LinkedIn / email (feed the About page links).
 - `about` — the **entire CV**: name, role, location, focus, hero `tags`, summary, plus `experience` / `education` / `skills` / `awards` / `languages` arrays.
+- `learning` — the **Learning page**: `eyebrow` / `title` / `intro` copy plus an `items` array (`slug`, `title`, `description`, `url`, optional `tag`). Each item is an external site embedded as an iframe; cards are grouped by `tag`. Add an item to add a topic — no component edits needed.
 
 `src/consts.ts` re-exports the site meta; `src/ui.ts` holds visible UI strings. Copy lives
 in config / `ui.ts`, visual primitives live in `src/styles/tokens.css` — keep that split.
@@ -124,6 +125,8 @@ re-picks it per viewer. Edit that file to change the quotes.
 - `posts/index.astro` — `/posts`: category filter row + inline list search.
 - `posts/[...slug].astro` — individual post via `PostLayout` (reading time, related posts, TOC rail, optional scroll-dark).
 - `about.astro` — `/about`: the full CV (summary, experience, education, skills, recognition, languages), rendered from `config.about` and styled in `src/styles/pages/about.css`.
+- `learning.astro` — `/learning`: a searchable card directory of study sites from `config.learning.items`, grouped by `tag`. Client-side filter over the cards (title/description/tag); styled in `src/styles/pages/learning.css`.
+- `learning/[slug].astro` — `/learning/<slug>`: one topic embedded as a full-height iframe with a back link, "Reload", and "Open ↗"; `getStaticPaths` from `config.learning.items`, styled in `src/styles/pages/learning-item.css`.
 - `search.astro` — `/search`: full-text search (Pagefind). Also `Cmd`/`Ctrl` + `K` command palette everywhere.
 - `404.astro`, `rss.xml.js`, `robots.txt.js`.
 
@@ -139,6 +142,7 @@ system. Full guidance is in `.claude/rules/styling-design.md`.
 
 - **Home hero** (`src/pages/index.astro`, `styles/pages/home.css`) — the template's tagline + description were replaced with a fixed title and a daily rotating quote; the quote list lives in `src/data/quotes.ts`.
 - **About / CV** (`src/pages/about.astro`, `styles/pages/about.css`) — extended beyond the template's generic `career` / `interests` slots to render experience, education, skills, recognition, and languages from `config.about`.
+- **Learning** (`src/pages/learning.astro` + `learning/[slug].astro`, `styles/pages/learning.css` + `learning-item.css`) — new config-driven section: a searchable, tag-grouped card directory whose cards open per-topic detail pages that embed an external site as an iframe. Driven entirely by `config.learning`; both pages carry small page-scoped scripts (card filtering; iframe reload).
 - **Footer** (`src/components/Footer.astro`) — copyright reads `© {year} {site.author}. Based on astro-tone. MIT Licensed.`
 
 ## Conventions & gotchas
