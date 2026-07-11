@@ -95,7 +95,7 @@ const config = {
 
   about: {
     /** Profile image URL. Leave empty to use the text-only About layout. */
-    profileImage: './public/profile.png',
+    profileImage: '/profile.png',
     name: 'Zhang Yunduo',
     role: 'Machine Learning Engineer',
     location: 'Singapore',
