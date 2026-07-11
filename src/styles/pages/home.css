@@ -195,6 +195,18 @@
   transform: translateY(-2px);
 }
 
+.featured-section .featured-card--textonly {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.featured-card--textonly .featured-title {
+  max-width: 24ch;
+}
+
+.featured-card--textonly .featured-desc {
+  max-width: 52ch;
+}
+
 .featured-text {
   display: flex;
   flex-direction: column;
