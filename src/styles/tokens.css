@@ -161,9 +161,9 @@
   /* ------------------------------------------------------------
      7. LAYOUT
      ------------------------------------------------------------ */
-  --max-width-content: 784px;
-  --max-width-wide: 880px;
-  --nav-height: 52px;
+  --max-width-content: 940px;
+  --max-width-wide: 1056px;
+  --nav-height: 78px;
 }
 
 /* Dark Mode — media query OR data-theme attribute (JS toggle) */
