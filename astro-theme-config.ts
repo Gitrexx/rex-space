@@ -329,6 +329,21 @@ const config = {
         stack: ['GKE Autopilot', 'Kustomize', 'GitHub Actions', 'MLflow', 'kubectl'],
         post: '/posts/kubernetes-on-gcp-autopilot/',
       },
+      {
+        slug: 'service-switch',
+        title: 'Service Switch',
+        description:
+          'A local browser dashboard that drives my own gcloud and kubectl to toggle GKE services on and off — scale-to-zero turned into a button.',
+        tags: ['Kubernetes', 'Cloud', 'Tooling'],
+        url: 'https://github.com/Gitrexx/service-switch',
+        urlLabel: 'GitHub',
+        details: [
+          'The companion to my k8s-on-gcp cluster: a small local Flask app that lists the Deployments on my GKE Autopilot cluster and toggles each one on or off from a browser instead of the GCP console or ad-hoc kubectl commands.',
+          'Under the hood it borrows the gcloud and kubectl CLIs I already have authenticated — no service-account keys of its own. "Off" scales a Deployment to zero replicas, which on Autopilot means it stops costing anything, so the switch doubles as a cost control. It can also port-forward a service to localhost for testing.',
+        ],
+        stack: ['Python', 'Flask', 'kubectl', 'gcloud', 'Docker'],
+        post: '/posts/service-switch/',
+      },
     ] as ProjectItem[],
   },
 };
