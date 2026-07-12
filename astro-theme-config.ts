@@ -344,6 +344,21 @@ const config = {
         stack: ['Python', 'Flask', 'kubectl', 'gcloud', 'Docker'],
         post: '/posts/service-switch/',
       },
+      {
+        slug: 'k8s-mock-exam',
+        title: 'Kubernetes Mock Exam (CKAD / CKA)',
+        description:
+          'A self-hosted CKAD/CKA exam simulator: LLM-generated scenarios, auto-graded against a real local kind cluster, solved in a browser terminal.',
+        tags: ['Kubernetes', 'Tooling', 'Learning'],
+        url: 'https://github.com/Gitrexx/k8s-mock-exam',
+        urlLabel: 'GitHub',
+        details: [
+          'A local, hands-on mock-exam portal for the CKAD and CKA certifications, built because realistic free practice is scarce. An LLM generates the task scenarios; each one is seeded into an isolated namespace and auto-graded by a verify script against real cluster state — so only the actual end state counts, not a hallucinated answer.',
+          'A browser UI embeds a real zsh terminal (xterm.js + node-pty over WebSocket) wired to a local kind cluster, with a 2-hour timer, flag-for-review, and an end-of-exam report. Currently ships 22 CKAD scenarios across all five domains; the CKA set is a work in progress.',
+        ],
+        stack: ['React', 'Node.js', 'kind', 'kubectl', 'xterm.js'],
+        post: '/posts/k8s-mock-exam/',
+      },
     ] as ProjectItem[],
   },
 };
