@@ -24,7 +24,9 @@ const { item } = Astro.props;
 
     <header class="learning-item-head">
       <div class="learning-item-info">
-        {item.tag && <p class="learning-item-tag eyebrow-accent">{item.tag}</p>}
+        {item.tags && item.tags.length > 0 && (
+          <p class="learning-item-tag eyebrow-accent">{item.tags.join(' · ')}</p>
+        )}
         <h1 class="learning-item-title">{item.title}</h1>
         <p class="learning-item-desc">{item.description}</p>
       </div>

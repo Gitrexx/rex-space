@@ -31,14 +31,20 @@
 }
 
 /* ------------------------------------------------------------
-   Search — filters the cards below in place.
+   Controls — text search + tag filter, both narrow the cards below.
    ------------------------------------------------------------ */
+.projects-controls {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  margin-top: var(--space-10);
+}
+
 .projects-search {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: var(--space-3) var(--space-4);
-  margin-top: var(--space-10);
 }
 
 .projects-search-field {
@@ -102,43 +108,52 @@
   font-variant-numeric: tabular-nums;
 }
 
+/* Tag filter chips. */
+.projects-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.projects-filter {
+  padding: var(--space-1) var(--space-3);
+  font-family: var(--font-sans);
+  font-size: var(--text-footnote);
+  font-weight: var(--weight-medium);
+  color: var(--label-secondary);
+  background: var(--fill-tertiary);
+  border: 1px solid transparent;
+  border-radius: var(--radius-full);
+  cursor: pointer;
+  transition:
+    color var(--duration-fast) var(--ease-out),
+    background-color var(--duration-fast) var(--ease-out),
+    border-color var(--duration-fast) var(--ease-out);
+}
+
+.projects-filter:hover {
+  color: var(--label-primary);
+}
+
+.projects-filter:focus-visible {
+  outline: none;
+  border-color: color-mix(in srgb, var(--color-blue) 55%, transparent);
+}
+
+.projects-filter[aria-pressed='true'] {
+  color: var(--color-blue);
+  background: color-mix(in srgb, var(--color-blue) 12%, transparent);
+  border-color: color-mix(in srgb, var(--color-blue) 45%, transparent);
+}
+
 /* ------------------------------------------------------------
-   Grouped card directory.
+   Card directory.
    ------------------------------------------------------------ */
-.projects-groups {
-  margin-top: var(--space-10);
-}
-
-.projects-group {
-  padding-top: var(--space-8);
-  margin-top: var(--space-8);
-  border-top: 1px solid var(--separator);
-}
-
-.projects-group:first-child {
-  padding-top: 0;
-  margin-top: 0;
-  border-top: 0;
-}
-
-.projects-group[hidden] {
-  display: none;
-}
-
-.projects-group-title {
-  margin: 0 0 var(--space-5);
-  color: var(--label-tertiary);
-  font-size: var(--text-caption-1);
-  font-weight: var(--weight-accent-label);
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-}
-
 .projects-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(min(100%, 17rem), 1fr));
   gap: var(--space-4);
-  margin: 0;
+  margin: var(--space-10) 0 0;
   padding: 0;
   list-style: none;
 }
@@ -187,6 +202,22 @@
 
 .project-card:hover .project-card-title {
   color: var(--color-blue);
+}
+
+.project-card-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+}
+
+.project-card-tag {
+  padding: 2px var(--space-2);
+  color: var(--label-tertiary);
+  font-size: var(--text-caption-2);
+  font-weight: var(--weight-medium);
+  line-height: 1.5;
+  background: var(--fill-tertiary);
+  border-radius: var(--radius-sm);
 }
 
 .project-card-desc {

@@ -8,16 +8,16 @@ type LearningItem = {
   title: string;
   description: string;
   url: string;
-  /** Optional group heading on /learning (e.g. 'Finance'). */
-  tag?: string;
+  /** Optional topic tags — shown as chips on the card and driving the tag filter. */
+  tags?: string[];
 };
 
 type ProjectItem = {
   slug: string;
   title: string;
   description: string;
-  /** Optional group heading on /projects (e.g. 'Machine Learning'). */
-  tag?: string;
+  /** Optional topic tags — shown as chips on the card and driving the tag filter. */
+  tags?: string[];
   /** Primary external link (repo, live site, or paper). */
   url?: string;
   /** Label for the primary link button (defaults to 'Open'). */
@@ -245,13 +245,14 @@ const config = {
    * The `/learning` page — a searchable card directory. Each item is a small
    * standalone site I keep elsewhere (usually a GitHub Pages repo) and embed as
    * an iframe on its own detail page at `/learning/<slug>`. Add a new object to
-   * `items` to surface another topic — it appears as a card, grouped by `tag`.
+   * `items` to surface another topic — cards are listed alphabetically by title
+   * and can be narrowed with the tag filter.
    *
    * Per item:
    *   slug        stable id → the URL path segment `/learning/<slug>` (kebab-case)
    *   title       shown on the card and above the frame
    *   description one short line under the title (also searched)
-   *   tag         optional group heading on /learning (e.g. 'Finance'); also searched
+   *   tags        optional topic tags — chips on the card + the tag filter (also searched)
    *   url         the embedded site (must allow framing — GitHub Pages does)
    */
   learning: {
@@ -264,7 +265,7 @@ const config = {
         slug: 'investment',
         title: 'Daily Learning — Investment',
         description: '100+ Topics daily notes on investment, from theory to practice',
-        tag: 'Finance',
+        tags: ['Finance'],
         url: 'https://gitrexx.github.io/daily-learning-investment/',
       },
     ] as LearningItem[],
@@ -275,13 +276,14 @@ const config = {
    * Each item is a project card; clicking it opens a detail page at
    * `/projects/<slug>` with the intro, details, tech stack, external links, and
    * an optional embedded demo. Add a new object to `items` to surface another
-   * project — it appears as a card, grouped by `tag`.
+   * project — cards are listed alphabetically by title and can be narrowed with
+   * the tag filter.
    *
    * Per item:
    *   slug        stable id → the URL path segment `/projects/<slug>` (kebab-case)
    *   title       shown on the card and above the detail page
    *   description one short line under the title (also searched)
-   *   tag         optional group heading on /projects (e.g. 'Machine Learning'); also searched
+   *   tags        optional topic tags — chips on the card + the tag filter (also searched)
    *   url         optional primary external link (repo, live site, or paper)
    *   urlLabel    optional label for the primary link button (defaults to 'Open')
    *   details     optional detail paragraphs shown on the detail page
@@ -299,7 +301,7 @@ const config = {
         title: 'StockTwits Sentiment Analysis',
         description:
           'Fine-tuned RoBERTa for stock-movement sentiment on StockTwits, released as an open-source model and dataset.',
-        tag: 'Machine Learning',
+        tags: ["Machine Learing", 'Model Fine-tuning'],
         url: 'https://github.com/Gitrexx',
         urlLabel: 'GitHub',
         details: [
