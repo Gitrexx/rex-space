@@ -314,6 +314,21 @@ const config = {
         stack: ['PyTorch', 'RoBERTa', 'NLP', "Fine-tuning", "Stocktwits"],
         post: '/posts/finetuning-roberta-stocktwits/',
       },
+      {
+        slug: 'k8s-on-gcp',
+        title: 'Kubernetes on GCP (Autopilot)',
+        description:
+          'A scale-to-zero GKE Autopilot cluster I spin up to practice Kubernetes, then tear down — GitOps-lite deploys with Kustomize and GitHub Actions.',
+        tags: ['Kubernetes', 'Cloud', 'GitOps'],
+        url: 'https://github.com/Gitrexx/k8s-on-gcp',
+        urlLabel: 'GitHub',
+        details: [
+          'A personal GKE Autopilot cluster used as an on-demand Kubernetes practice environment: spin it up for an interview or ad-hoc experiment, deploy real workloads, then tear it down so an idle cluster costs effectively nothing.',
+          'Manifests live in git and deploy GitOps-lite — Kustomize base/overlay structure, one namespace per app, and path-triggered GitHub Actions workflows so changing one app only redeploys that app. MLflow is the first workload.',
+        ],
+        stack: ['GKE Autopilot', 'Kustomize', 'GitHub Actions', 'MLflow', 'kubectl'],
+        post: '/posts/kubernetes-on-gcp-autopilot/',
+      },
     ] as ProjectItem[],
   },
 };
