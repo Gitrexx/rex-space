@@ -30,8 +30,14 @@ const stack = item.stack ?? [];
         <p class="project-desc">{item.description}</p>
       </div>
       {
-        (item.url || item.demo) && (
+        (item.url || item.demo || item.post) && (
           <div class="project-actions">
+            {item.post && (
+              <a class="project-action" href={withBase(item.post)}>
+                <span>Read the write-up</span>
+                <span aria-hidden="true">→</span>
+              </a>
+            )}
             {item.demo && (
               <button
                 type="button"

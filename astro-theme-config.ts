@@ -28,6 +28,8 @@ type ProjectItem = {
   stack?: string[];
   /** Optional embeddable demo URL — rendered as an iframe like /learning. */
   demo?: string;
+  /** Optional internal path to a related blog post — rendered as a 'Read the write-up' link. */
+  post?: string;
 };
 
 /**
@@ -289,6 +291,7 @@ const config = {
    *   details     optional detail paragraphs shown on the detail page
    *   stack       optional tech / tools, rendered as chips
    *   demo        optional embeddable demo URL, rendered as an iframe (must allow framing)
+   *   post        optional internal path to a related blog post (e.g. '/posts/<slug>/')
    */
   projects: {
     eyebrow: 'Projects',
@@ -301,14 +304,15 @@ const config = {
         title: 'StockTwits Sentiment Analysis',
         description:
           'Fine-tuned RoBERTa for stock-movement sentiment on StockTwits, released as an open-source model and dataset.',
-        tags: ["Machine Learing", 'Model Fine-tuning'],
-        url: 'https://github.com/Gitrexx',
+        tags: ["Machine Learning", 'Model Fine-tuning'],
+        url: 'https://github.com/Gitrexx/PLPPM_Sentiment_Analysis_via_Stocktwits',
         urlLabel: 'GitHub',
         details: [
           'Fine-tuned a RoBERTa model to classify stock-movement sentiment from StockTwits messages, mapping noisy retail-investor chatter into directional signals.',
           'Released the trained model and the labelled dataset as open-source contributions so the work is reproducible and reusable.',
         ],
-        stack: ['Python', 'PyTorch', 'RoBERTa', 'Hugging Face', 'NLP'],
+        stack: ['PyTorch', 'RoBERTa', 'NLP', "Fine-tuning", "Stocktwits"],
+        post: '/posts/finetuning-roberta-stocktwits/',
       },
     ] as ProjectItem[],
   },
