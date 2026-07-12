@@ -17,13 +17,13 @@ It's a static site built with [Astro](https://astro.build) on top of the [Tone](
 Four kinds of content, all in one small, fast place:
 
 - **CV** — a short bio, career timeline, focus, and links, on the [About](/about) page.
-- **Blog posts** — tech write-ups, thoughts, and the occasional sci-fi story.
-- **Projects** — each could have an intro, the details, a link out to the work, and interactive demos where they help.
-- **Learning materials** — notes and references worth keeping and sharing.
+- **Blog posts** — tech write-ups, thoughts, and the occasional sci-fi story, on the [Posts](/posts) page.
+- **Projects** — each with an intro, the details, a link out to the work, and interactive demos where they help, on the [Projects](/projects) page.
+- **Learning materials** — notes and references worth keeping and sharing, on the [Learning](/learning) page.
 
 ## Look around
 
-Browse everything on the [Posts](/posts) page, or press <kbd>⌘</kbd> + <kbd>K</kbd> to search from anywhere. Thanks for stopping by.
+Follow any link above, or press <kbd>⌘</kbd> + <kbd>K</kbd> to search from anywhere. Thanks for stopping by.
 
 ## Credits
 

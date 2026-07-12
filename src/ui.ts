@@ -4,7 +4,7 @@ const ui = {
   updated: 'Updated',
   relatedPosts: 'Related',
   allPosts: 'All Posts →',
-  postsEyebrow: 'Archive',
+  postsEyebrow: 'Posts',
   postsTitle: 'All Posts',
   heroTitle: 'Keep notes.',
   heroTitleLine2: '',

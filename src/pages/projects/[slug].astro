@@ -1,0 +1,121 @@
+---
+import '../../styles/pages/project-item.css';
+import config from '../../../astro-theme-config';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { withBase } from '../../utils/paths';
+
+export function getStaticPaths() {
+  const items = config.projects.items ?? [];
+  return items.map((item) => ({
+    params: { slug: item.slug },
+    props: { item },
+  }));
+}
+
+const { item } = Astro.props;
+const details = item.details ?? [];
+const stack = item.stack ?? [];
+---
+
+<BaseLayout title={item.title} description={item.description}>
+  <main id="main-content" class="project-main" data-project-item>
+    <a class="project-back" href={withBase('/projects/')}>
+      <span aria-hidden="true">←</span>
+      <span>{config.projects.eyebrow}</span>
+    </a>
+
+    <header class="project-head">
+      <div class="project-info">
+        {item.tag && <p class="project-tag eyebrow-accent">{item.tag}</p>}
+        <h1 class="project-title">{item.title}</h1>
+        <p class="project-desc">{item.description}</p>
+      </div>
+      {
+        (item.url || item.demo) && (
+          <div class="project-actions">
+            {item.demo && (
+              <button
+                type="button"
+                class="project-action"
+                data-reload
+                aria-label={`Reload ${item.title} demo`}
+              >
+                <span aria-hidden="true">↻</span>
+                <span>Reload</span>
+              </button>
+            )}
+            {item.url && (
+              <a class="project-action" href={item.url} target="_blank" rel="noopener noreferrer">
+                <span>{item.urlLabel ?? 'Open'}</span>
+                <span aria-hidden="true">↗</span>
+              </a>
+            )}
+          </div>
+        )
+      }
+    </header>
+
+    {
+      item.demo && (
+        <div class="project-frame">
+          <iframe
+            title={`${item.title} demo`}
+            src={item.demo}
+            loading="lazy"
+            referrerpolicy="no-referrer"
+            allow="fullscreen"
+          />
+        </div>
+      )
+    }
+
+    {
+      (details.length > 0 || stack.length > 0) && (
+        <div class="project-body">
+          {details.length > 0 && (
+            <section class="project-section">
+              <h2 class="project-section-title">About</h2>
+              {details.map((paragraph) => (
+                <p class="project-detail">{paragraph}</p>
+              ))}
+            </section>
+          )}
+
+          {stack.length > 0 && (
+            <section class="project-section">
+              <h2 class="project-section-title">Built with</h2>
+              <ul class="project-stack">
+                {stack.map((tool) => (
+                  <li class="project-stack-item">{tool}</li>
+                ))}
+              </ul>
+            </section>
+          )}
+        </div>
+      )
+    }
+  </main>
+</BaseLayout>
+
+<script>
+  function mountProjectItem() {
+    const root = document.querySelector<HTMLElement>('[data-project-item]');
+    if (!root) return;
+
+    const iframe = root.querySelector<HTMLIFrameElement>('iframe');
+    const reload = root.querySelector<HTMLButtonElement>('[data-reload]');
+    if (iframe && reload) {
+      reload.addEventListener('click', () => {
+        // Reassigning src reliably reloads the frame, even to the same URL.
+        const current = iframe.src;
+        iframe.src = current;
+      });
+    }
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', mountProjectItem, { once: true });
+  } else {
+    mountProjectItem();
+  }
+</script>

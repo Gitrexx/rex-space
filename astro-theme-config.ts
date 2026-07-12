@@ -12,6 +12,24 @@ type LearningItem = {
   tag?: string;
 };
 
+type ProjectItem = {
+  slug: string;
+  title: string;
+  description: string;
+  /** Optional group heading on /projects (e.g. 'Machine Learning'). */
+  tag?: string;
+  /** Primary external link (repo, live site, or paper). */
+  url?: string;
+  /** Label for the primary link button (defaults to 'Open'). */
+  urlLabel?: string;
+  /** Longer detail paragraphs shown on the project's own page. */
+  details?: string[];
+  /** Tech / tools used, shown as chips on the detail page. */
+  stack?: string[];
+  /** Optional embeddable demo URL — rendered as an iframe like /learning. */
+  demo?: string;
+};
+
 /**
  * astro-theme-config.ts
  *
@@ -40,6 +58,7 @@ const config = {
   // Example: [{ label: 'Posts', href: '/posts' }, { label: 'About', href: '/about' }]
   nav: [
     { label: 'Posts', href: '/posts' },
+    { label: 'Projects', href: '/projects' },
     { label: 'Learning', href: '/learning' },
     { label: 'About', href: '/about' },
     { label: 'Search', href: '/search' },
@@ -48,6 +67,7 @@ const config = {
   // Footer links stay visible by default so readers have a stable way to move around.
   footerNav: [
     { label: 'Posts', href: '/posts' },
+    { label: 'Projects', href: '/projects' },
     { label: 'Learning', href: '/learning' },
     { label: 'About', href: '/about' },
     { label: 'Search', href: '/search' },
@@ -248,6 +268,47 @@ const config = {
         url: 'https://gitrexx.github.io/daily-learning-investment/',
       },
     ] as LearningItem[],
+  },
+
+  /**
+   * The `/projects` page — a searchable card directory, mirroring `/learning`.
+   * Each item is a project card; clicking it opens a detail page at
+   * `/projects/<slug>` with the intro, details, tech stack, external links, and
+   * an optional embedded demo. Add a new object to `items` to surface another
+   * project — it appears as a card, grouped by `tag`.
+   *
+   * Per item:
+   *   slug        stable id → the URL path segment `/projects/<slug>` (kebab-case)
+   *   title       shown on the card and above the detail page
+   *   description one short line under the title (also searched)
+   *   tag         optional group heading on /projects (e.g. 'Machine Learning'); also searched
+   *   url         optional primary external link (repo, live site, or paper)
+   *   urlLabel    optional label for the primary link button (defaults to 'Open')
+   *   details     optional detail paragraphs shown on the detail page
+   *   stack       optional tech / tools, rendered as chips
+   *   demo        optional embeddable demo URL, rendered as an iframe (must allow framing)
+   */
+  projects: {
+    eyebrow: 'Projects',
+    title: 'Things I have built',
+    intro:
+      'Selected projects, from machine-learning systems to smaller experiments. Open one to read the details and follow the links.',
+    items: [
+      {
+        slug: 'stocktwits-sentiment',
+        title: 'StockTwits Sentiment Analysis',
+        description:
+          'Fine-tuned RoBERTa for stock-movement sentiment on StockTwits, released as an open-source model and dataset.',
+        tag: 'Machine Learning',
+        url: 'https://github.com/Gitrexx',
+        urlLabel: 'GitHub',
+        details: [
+          'Fine-tuned a RoBERTa model to classify stock-movement sentiment from StockTwits messages, mapping noisy retail-investor chatter into directional signals.',
+          'Released the trained model and the labelled dataset as open-source contributions so the work is reproducible and reusable.',
+        ],
+        stack: ['Python', 'PyTorch', 'RoBERTa', 'Hugging Face', 'NLP'],
+      },
+    ] as ProjectItem[],
   },
 };
 

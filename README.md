@@ -13,7 +13,7 @@ Four kinds of content, all served from one small, fast static site:
 - **Projects** — each with an intro, the details, a link out to the work, and interactive demos where they help.
 - **Learning materials** — a searchable directory on the **Learning** page: standalone study sites I keep elsewhere, each embedded on its own page.
 
-Today the blog (and, for now, projects) is authored as **posts** (Markdown / MDX) and grouped by **category**. Two sections are config-driven instead of posts: the CV on the About page, and the Learning directory (both edited in `astro-theme-config.ts`). The home page opens with a short greeting and a **quote that rotates daily**, drawn from a curated list in `src/data/quotes.ts`. See [`.claude/CLAUDE.md`](.claude/CLAUDE.md) for how the pieces fit together and where to extend.
+The blog is authored as **posts** (Markdown / MDX) and grouped by **category**. Three sections are config-driven instead of posts: the CV on the About page, the Projects directory, and the Learning directory (all edited in `astro-theme-config.ts`). The home page opens with a short greeting and a **quote that rotates daily**, drawn from a curated list in `src/data/quotes.ts`. See [`.claude/CLAUDE.md`](.claude/CLAUDE.md) for how the pieces fit together and where to extend.
 
 
 ## Credits

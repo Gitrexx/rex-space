@@ -1,0 +1,155 @@
+---
+import '../styles/pages/projects.css';
+import config from '../../astro-theme-config';
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { withBase } from '../utils/paths';
+
+const { projects } = config;
+const items = projects.items ?? [];
+const hasItems = items.length > 0;
+
+// Group cards by tag, preserving the order each tag first appears in config.
+const FALLBACK_GROUP = 'Other';
+const groupName = (tag?: string) => tag?.trim() || FALLBACK_GROUP;
+const groupOrder: string[] = [];
+for (const item of items) {
+  const name = groupName(item.tag);
+  if (!groupOrder.includes(name)) groupOrder.push(name);
+}
+const groups = groupOrder.map((name) => ({
+  name,
+  items: items.filter((item) => groupName(item.tag) === name),
+}));
+---
+
+<BaseLayout title={projects.title} description={projects.intro}>
+  <main id="main-content" class="projects-main" data-projects>
+    <header class="projects-hero">
+      <p class="projects-eyebrow eyebrow-accent">{projects.eyebrow}</p>
+      <h1 class="projects-title">{projects.title}</h1>
+      <p class="projects-intro">{projects.intro}</p>
+    </header>
+
+    {
+      hasItems ? (
+        <>
+          <div class="projects-search">
+            <label class="projects-search-field">
+              <span class="sr-only">Search projects</span>
+              <span class="projects-search-icon" aria-hidden="true">
+                <svg
+                  width="18"
+                  height="18"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  focusable="false"
+                >
+                  <circle cx="11" cy="11" r="7" />
+                  <path d="m16 16 4 4" />
+                </svg>
+              </span>
+              <input
+                type="search"
+                class="projects-search-input"
+                data-projects-search
+                placeholder="Search projects…"
+                autocomplete="off"
+                spellcheck="false"
+                aria-controls="projects-groups"
+              />
+            </label>
+            <p class="projects-search-status" data-projects-status role="status" aria-live="polite" />
+          </div>
+
+          <div class="projects-groups" id="projects-groups" data-projects-groups>
+            {groups.map((group) => (
+              <section class="projects-group" data-group aria-label={group.name}>
+                <h2 class="projects-group-title">{group.name}</h2>
+                <ul class="projects-grid">
+                  {group.items.map((item) => (
+                    <li
+                      class="project-card-item"
+                      data-card
+                      data-search={`${item.title} ${item.description} ${item.tag ?? ''}`.toLowerCase()}
+                    >
+                      <a class="project-card" href={withBase(`/projects/${item.slug}/`)}>
+                        <span class="project-card-title">{item.title}</span>
+                        <span class="project-card-desc">{item.description}</span>
+                        <span class="project-card-cta">
+                          <span>View</span>
+                          <span class="project-card-arrow" aria-hidden="true">
+                            →
+                          </span>
+                        </span>
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            ))}
+            <p class="projects-empty" data-projects-empty hidden>
+              No projects match your search.
+            </p>
+          </div>
+        </>
+      ) : (
+        <p class="projects-empty-static">No projects yet — check back soon.</p>
+      )
+    }
+  </main>
+</BaseLayout>
+
+<script>
+  function mountProjectsSearch() {
+    const root = document.querySelector<HTMLElement>('[data-projects]');
+    if (!root) return;
+
+    const input = root.querySelector<HTMLInputElement>('[data-projects-search]');
+    if (!input) return;
+
+    const cards = Array.from(root.querySelectorAll<HTMLElement>('[data-card]'));
+    const groups = Array.from(root.querySelectorAll<HTMLElement>('[data-group]'));
+    const status = root.querySelector<HTMLElement>('[data-projects-status]');
+    const empty = root.querySelector<HTMLElement>('[data-projects-empty]');
+
+    function apply() {
+      const query = input!.value.trim().toLowerCase();
+      let visible = 0;
+
+      for (const card of cards) {
+        const match = query === '' || (card.dataset.search ?? '').includes(query);
+        card.hidden = !match;
+        if (match) visible += 1;
+      }
+
+      for (const group of groups) {
+        group.hidden = group.querySelector('[data-card]:not([hidden])') === null;
+      }
+
+      if (empty) empty.hidden = visible !== 0;
+      if (status) {
+        status.textContent = query === '' ? '' : `${visible} ${visible === 1 ? 'project' : 'projects'}`;
+      }
+    }
+
+    input.addEventListener('input', apply);
+    input.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape') {
+        input.value = '';
+        apply();
+      }
+    });
+
+    apply();
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', mountProjectsSearch, { once: true });
+  } else {
+    mountProjectsSearch();
+  }
+</script>
