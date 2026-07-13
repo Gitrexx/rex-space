@@ -3,7 +3,7 @@ title: 'Building My Own CKAD Mock Exam with a Real kind Cluster'
 description: 'Prepping for CKAD/CKA with a self-hosted exam simulator: an LLM writes the scenarios, a real kind cluster grades them, and a browser terminal makes it feel like the real thing.'
 pubDate: '2026-06-15'
 category: 'Systems'
-heroImage: '../../assets/k8s-mock-exam.png'
+heroImage: '../../assets/k8s-mock-exam.webp'
 ---
 
 I'm going to attempt the **CKAD** (Certified Kubernetes Application Developer) and **CKA** (Certified Kubernetes Administrator) exams. Both are refreshingly hands-on: no multiple choice, just a live cluster and a list of tasks you have to actually *do* with `kubectl` against a two-hour clock. The trouble is practice — realistic, exam-shaped practice is either paid or scarce. So I built my own: [k8s-mock-exam](https://github.com/Gitrexx/k8s-mock-exam), a local exam simulator with a real cluster underneath.

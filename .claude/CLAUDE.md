@@ -125,11 +125,15 @@ re-picks it per viewer. Edit that file to change the quotes.
 
 When creating a post, don't ship it text-only:
 
-- **Always generate a hero image.** Use the `generate-image` skill (OpenAI `gpt-image-1`)
-  to make a cover from the post's content, save it to `src/assets/<slug>.png`, and wire it
-  in with `heroImage: '../../assets/<slug>.png'`. Match the site's look — dark background,
-  soft bloom, minimal, no text labels — and vary the palette/motif to fit the post. The
-  existing post covers (`k8s-mock-exam`, `service-switch`, etc.) are the reference for tone.
+- **Always generate a hero image.** Use the `generate-image` skill to make a cover from the
+  post's content. Pass **`--provider gpt`** and save as **WebP** to `src/assets/<slug>.webp`
+  (`-o src/assets/<slug>.webp` — OpenAI's `gpt-image-1` encodes WebP directly, ~10–50×
+  smaller than PNG with no visible loss). The skill now defaults to Gemini, which returns
+  large PNGs and can't be converted locally, so **covers must use `--provider gpt`** to stay
+  small. Wire it in with `heroImage: '../../assets/<slug>.webp'`. Match the site's look —
+  dark background, soft bloom, minimal, no text labels — and vary the palette/motif to fit
+  the post. The existing post covers (`k8s-mock-exam`, `service-switch`, etc.) are the
+  reference for tone.
 - **Optionally add an inline SVG** where the content genuinely benefits from a diagram
   (architecture, a flow, a before/after). This is opt-in — only when it earns its place, not
   decoration. Inline SVG can go straight in the Markdown/MDX body; keep it theme-aware
