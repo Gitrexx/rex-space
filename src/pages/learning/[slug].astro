@@ -58,6 +58,16 @@ const embedHtml = resolveEmbed(item.embed);
       <div class="learning-item-actions">
         <button
           type="button"
+          class="learning-action learning-action-accent"
+          data-expand
+          aria-haspopup="dialog"
+          aria-label={`Expand ${item.title}`}
+        >
+          <span aria-hidden="true">⤢</span>
+          <span>Expand</span>
+        </button>
+        <button
+          type="button"
           class="learning-action"
           data-reload
           aria-label={`Reload ${item.title}`}
@@ -89,6 +99,53 @@ const embedHtml = resolveEmbed(item.embed);
         )
       }
     </div>
+
+    <dialog class="learning-expand" data-expand-dialog aria-label={`${item.title} — expanded view`}>
+      <div class="learning-expand-sheet">
+        <span class="learning-expand-grip" aria-hidden="true"></span>
+        <header class="learning-expand-bar">
+          <p class="learning-expand-title">{item.title}</p>
+          <div class="learning-expand-actions">
+            <button
+              type="button"
+              class="learning-action"
+              data-expand-reload
+              aria-label={`Reload ${item.title}`}
+            >
+              <span aria-hidden="true">↻</span>
+              <span>Reload</span>
+            </button>
+            {item.url && (
+              <a class="learning-action" href={item.url} target="_blank" rel="noopener noreferrer">
+                <span>Open</span>
+                <span aria-hidden="true">↗</span>
+              </a>
+            )}
+            <button
+              type="button"
+              class="learning-expand-close"
+              data-expand-close
+              aria-label="Close expanded view"
+            >
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+                <path
+                  d="M1 1l12 12M13 1L1 13"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"></path>
+              </svg>
+            </button>
+          </div>
+        </header>
+        <div class="learning-expand-frame">
+          <iframe
+            title={`${item.title} (expanded)`}
+            loading="lazy"
+            referrerpolicy="no-referrer"
+            allow="fullscreen"></iframe>
+        </div>
+      </div>
+    </dialog>
   </main>
 </BaseLayout>
 
@@ -97,20 +154,69 @@ const embedHtml = resolveEmbed(item.embed);
     const root = document.querySelector<HTMLElement>('[data-learning-item]');
     if (!root) return;
 
-    const iframe = root.querySelector<HTMLIFrameElement>('iframe');
+    // Reload a frame in place — handles both `srcdoc` (local embed) and `src` (url).
+    const reloadFrame = (frame: HTMLIFrameElement | null) => {
+      if (!frame) return;
+      if (frame.hasAttribute('srcdoc')) {
+        // Re-setting srcdoc to the same value reliably reloads a local embed.
+        const current = frame.getAttribute('srcdoc') ?? '';
+        frame.removeAttribute('srcdoc');
+        frame.setAttribute('srcdoc', current);
+      } else if (frame.src) {
+        // Reassigning src reliably reloads the frame, even to the same URL.
+        frame.src = frame.src;
+      }
+    };
+
+    const iframe = root.querySelector<HTMLIFrameElement>('.learning-frame iframe');
     const reload = root.querySelector<HTMLButtonElement>('[data-reload]');
-    if (iframe && reload) {
-      reload.addEventListener('click', () => {
-        if (iframe.hasAttribute('srcdoc')) {
-          // Re-setting srcdoc to the same value reliably reloads a local embed.
-          const current = iframe.getAttribute('srcdoc') ?? '';
-          iframe.removeAttribute('srcdoc');
-          iframe.setAttribute('srcdoc', current);
-        } else {
-          // Reassigning src reliably reloads the frame, even to the same URL.
-          const current = iframe.src;
-          iframe.src = current;
+    reload?.addEventListener('click', () => reloadFrame(iframe));
+
+    // Expand: open the embed in a bottom-sheet dialog — no route change, no new
+    // tab. Works for both a local `srcdoc` embed and an external `url`. The dialog
+    // frame is mirrored from the inline frame on first open, so a local embed is
+    // not duplicated in the page and a url is only fetched once expanded.
+    const dialog = root.querySelector<HTMLDialogElement>('[data-expand-dialog]');
+    const expandBtn = root.querySelector<HTMLButtonElement>('[data-expand]');
+    if (dialog && expandBtn && iframe) {
+      const expandFrame = dialog.querySelector<HTMLIFrameElement>('iframe');
+      const closeBtn = dialog.querySelector<HTMLButtonElement>('[data-expand-close]');
+      const expandReload = dialog.querySelector<HTMLButtonElement>('[data-expand-reload]');
+      let previousFocus: Element | null = null;
+
+      const open = () => {
+        previousFocus = document.activeElement;
+        // Mirror the inline frame's source into the dialog frame, once.
+        if (expandFrame && !expandFrame.hasAttribute('srcdoc') && !expandFrame.src) {
+          const srcdoc = iframe.getAttribute('srcdoc');
+          if (srcdoc !== null) {
+            expandFrame.setAttribute('srcdoc', srcdoc);
+          } else if (iframe.src) {
+            expandFrame.src = iframe.src;
+          }
         }
+        dialog.showModal();
+        document.body.style.overflow = 'hidden';
+        closeBtn?.focus({ preventScroll: true });
+      };
+
+      const close = () => {
+        if (dialog.open) dialog.close();
+      };
+
+      expandBtn.addEventListener('click', open);
+      closeBtn?.addEventListener('click', close);
+      expandReload?.addEventListener('click', () => reloadFrame(expandFrame));
+
+      // Click on the backdrop area outside the sheet closes the dialog.
+      dialog.addEventListener('click', (event) => {
+        if (event.target === dialog) close();
+      });
+
+      dialog.addEventListener('close', () => {
+        document.body.style.overflow = '';
+        if (previousFocus instanceof HTMLElement) previousFocus.focus({ preventScroll: true });
+        previousFocus = null;
       });
     }
   }

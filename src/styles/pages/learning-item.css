@@ -92,6 +92,17 @@
   outline-offset: 2px;
 }
 
+/* The Expand action is the primary way to read rich embeds — give it a tint. */
+.learning-action-accent {
+  color: var(--color-blue);
+  background: var(--fill-secondary);
+}
+
+.learning-action-accent:hover {
+  color: var(--color-blue);
+  background: var(--fill-primary);
+}
+
 .learning-frame {
   position: relative;
   overflow: hidden;
@@ -109,6 +120,156 @@
   border: 0;
 }
 
+/* Expand: a bottom-sheet dialog holding a full-height embed. */
+.learning-expand {
+  width: 100vw;
+  max-width: 100vw;
+  height: 100dvh;
+  max-height: 100dvh;
+  margin: 0;
+  padding: 0;
+  background: transparent;
+  border: none;
+  overflow: hidden;
+}
+
+.learning-expand[open] {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+.learning-expand::backdrop {
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+
+.learning-expand[open]::backdrop {
+  animation: expand-fade var(--duration-normal) var(--ease-out) both;
+}
+
+.learning-expand-sheet {
+  display: flex;
+  flex-direction: column;
+  width: min(1400px, 100vw);
+  height: 94dvh;
+  background: var(--bg-primary);
+  border: 1px solid var(--separator);
+  border-bottom: none;
+  border-radius: var(--radius-2xl) var(--radius-2xl) 0 0;
+  box-shadow: var(--shadow-xl);
+  overflow: hidden;
+}
+
+.learning-expand[open] .learning-expand-sheet {
+  animation: expand-up 360ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.learning-expand-grip {
+  flex-shrink: 0;
+  width: 40px;
+  height: 4px;
+  margin: var(--space-3) auto var(--space-1);
+  background: var(--separator);
+  border-radius: var(--radius-full);
+}
+
+.learning-expand-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  flex-shrink: 0;
+  padding: var(--space-2) var(--space-4) var(--space-3);
+  border-bottom: 1px solid var(--separator);
+}
+
+.learning-expand-title {
+  min-width: 0;
+  margin: 0;
+  overflow: hidden;
+  color: var(--label-primary);
+  font-size: var(--text-headline);
+  font-weight: 600;
+  letter-spacing: var(--tracking-tight);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.learning-expand-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-shrink: 0;
+}
+
+.learning-expand-close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  color: var(--label-secondary);
+  background: var(--fill-tertiary);
+  border: none;
+  border-radius: var(--radius-full);
+  cursor: pointer;
+  transition:
+    color var(--duration-fast) var(--ease-out),
+    background-color var(--duration-fast) var(--ease-out);
+}
+
+.learning-expand-close:hover {
+  color: var(--label-primary);
+  background: var(--fill-secondary);
+}
+
+.learning-expand-close:focus-visible {
+  outline: 2px solid var(--color-blue);
+  outline-offset: 2px;
+}
+
+.learning-expand-frame {
+  flex: 1;
+  min-height: 0;
+  background: var(--bg-secondary);
+}
+
+.learning-expand-frame iframe {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border: 0;
+}
+
+@keyframes expand-fade {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes expand-up {
+  from {
+    transform: translateY(100%);
+  }
+
+  to {
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .learning-expand[open] .learning-expand-sheet,
+  .learning-expand[open]::backdrop {
+    animation: none;
+  }
+}
+
 @media (max-width: 48rem) {
   .learning-item-main {
     padding: var(--space-12) var(--space-6) var(--space-16);
@@ -116,6 +277,11 @@
 
   .learning-frame {
     height: min(72vh, 720px);
+  }
+
+  .learning-expand-sheet {
+    height: 96dvh;
+    border-radius: var(--radius-xl) var(--radius-xl) 0 0;
   }
 }
 
@@ -132,5 +298,14 @@
   .learning-frame {
     height: 70vh;
     border-radius: var(--radius-sm);
+  }
+
+  .learning-expand-bar {
+    gap: var(--space-2);
+    padding: var(--space-2) var(--space-3) var(--space-3);
+  }
+
+  .learning-expand-actions {
+    gap: var(--space-1);
   }
 }
