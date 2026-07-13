@@ -3,6 +3,9 @@ import { Image, getImage } from 'astro:assets';
 import type { CollectionEntry } from 'astro:content';
 import FormattedDate from './FormattedDate.astro';
 import { withBase } from '../utils/paths';
+import { getUiText } from '../ui';
+
+const tr = getUiText();
 
 type PostEntry = CollectionEntry<'posts'>;
 
@@ -42,7 +45,11 @@ const imagePlaceholderStyle = (src: string | undefined) =>
     posts.map((post, index) => (
       <a
         href={withBase(`${basePath}/${postSlug(post.id)}/`)}
-        class:list={['featured-post-card', `featured-post-card--slot-${index + 1}`]}
+        class:list={[
+          'featured-post-card',
+          `featured-post-card--slot-${index + 1}`,
+          { 'featured-post-card--textonly': !post.data.heroImage },
+        ]}
       >
         <div
           class="featured-post-card-media"
@@ -72,11 +79,27 @@ const imagePlaceholderStyle = (src: string | undefined) =>
           </div>
         </div>
         <div class="featured-post-card-body">
+          {!post.data.heroImage && (
+            <div class="featured-post-card-eyebrow">
+              {post.data.category && (
+                <span class="featured-post-card-topic">{post.data.category}</span>
+              )}
+              <span class="featured-post-card-eyebrow-date">
+                <FormattedDate date={post.data.pubDate} />
+              </span>
+            </div>
+          )}
           <p class="featured-post-card-date">
             <FormattedDate date={post.data.pubDate} />
           </p>
           <h3 class="featured-post-card-title">{post.data.title}</h3>
           {post.data.description && <p class="featured-post-card-desc">{post.data.description}</p>}
+          {!post.data.heroImage && (
+            <span class="featured-post-card-readmore" aria-hidden="true">
+              {tr.postFeed.read}
+              <span class="featured-post-card-readmore-arrow">→</span>
+            </span>
+          )}
         </div>
       </a>
     ))
@@ -238,12 +261,6 @@ const imagePlaceholderStyle = (src: string | undefined) =>
   transform: scale(1.12);
 }
 
-.featured-post-card-placeholder {
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(135deg, var(--fill-secondary) 0%, var(--fill-tertiary) 100%);
-}
-
 .featured-post-card-veil {
   position: absolute;
   inset: 0;
@@ -377,6 +394,114 @@ const imagePlaceholderStyle = (src: string | undefined) =>
 .featured-post-card:hover .featured-post-card-desc {
   opacity: 1;
   transform: translateY(0);
+}
+
+/* No hero image: no photo panel — render an editorial text card on a soft
+   bordered surface, with a category eyebrow and a bottom "Read" affordance. */
+.featured-post-card.featured-post-card--textonly {
+  justify-content: flex-start;
+  background: var(--bg-secondary);
+  border: 1px solid var(--separator);
+  transition:
+    border-color var(--duration-normal) var(--ease-out),
+    box-shadow var(--duration-normal) var(--ease-out),
+    transform var(--duration-normal) var(--ease-spring);
+}
+
+.featured-post-card.featured-post-card--textonly:hover {
+  border-color: color-mix(in srgb, var(--color-blue) 55%, var(--separator));
+  box-shadow: 0 10px 30px -12px color-mix(in srgb, var(--color-blue) 30%, transparent);
+}
+
+.featured-post-card--textonly .featured-post-card-media {
+  display: none;
+}
+
+.featured-post-card--textonly .featured-post-card-body {
+  position: static;
+  inset: auto;
+  flex: 1;
+  gap: var(--space-3);
+  padding: var(--space-5);
+  text-shadow: none;
+}
+
+/* The base date line is replaced by the eyebrow row on text cards. */
+.featured-post-card--textonly .featured-post-card-date {
+  display: none;
+}
+
+.featured-post-card-eyebrow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  font-size: 0.68rem;
+  font-weight: var(--weight-accent-label);
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--label-tertiary);
+}
+
+.featured-post-card-topic {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--color-blue);
+}
+
+.featured-post-card-topic::before {
+  content: '';
+  width: 16px;
+  height: 2px;
+  border-radius: 1px;
+  background: currentColor;
+}
+
+.featured-post-card-eyebrow-date {
+  margin-left: auto;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  font-variant-numeric: tabular-nums;
+}
+
+.featured-post-card.featured-post-card--textonly .featured-post-card-title {
+  color: var(--label-primary);
+}
+
+.featured-post-card--textonly:hover .featured-post-card-title {
+  color: var(--color-blue);
+}
+
+.featured-post-card.featured-post-card--textonly .featured-post-card-desc {
+  color: var(--label-secondary);
+}
+
+.featured-post-card--textonly.featured-post-card--slot-1 .featured-post-card-desc {
+  display: -webkit-box;
+  max-width: 40ch;
+  opacity: 1;
+  transform: none;
+  -webkit-line-clamp: 4;
+}
+
+.featured-post-card-readmore {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-top: auto;
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--separator);
+  color: var(--color-blue);
+  font-size: var(--text-footnote);
+  font-weight: var(--weight-accent-label);
+}
+
+.featured-post-card-readmore-arrow {
+  transition: transform var(--duration-normal) var(--ease-spring);
+}
+
+.featured-post-card--textonly:hover .featured-post-card-readmore-arrow {
+  transform: translateX(4px);
 }
 
 @media (max-width: 900px) {
