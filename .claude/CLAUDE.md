@@ -121,6 +121,23 @@ also shows a fixed `heroTitle` (a const in `index.astro`) and a **daily rotating
 `src/data/quotes.ts` — the index is derived from the local date, and a no-flash inline script
 re-picks it per viewer. Edit that file to change the quotes.
 
+### Editing an existing post
+
+When changing a post that is already published, pick the treatment by the size of the change:
+
+- **Small / one-off fix** (typo, broken link, a clarified sentence): just set or bump the
+  `updatedDate` frontmatter field to the edit date. The theme renders an "Updated" note from
+  it — that is the whole record. Nothing else to add.
+- **Living post** (a piece you expect to revise or extend repeatedly — a running guide, an
+  evolving write-up): keep `updatedDate` current **and** maintain an in-body changelog — a
+  `## Changelog` section at the end of the body with dated bullets (newest first, e.g.
+  `- 2026-07-13 — added the X section`) so readers can see what changed over time.
+
+In both cases, **leave `pubDate` alone** — it is the canonical sort key for the home page,
+`/posts`, and RSS. Bumping it on an edit yanks an old post back to the top, which reads as
+dishonest; `updatedDate` is the field for "this was touched later." Git history is the
+complete diff-level record underneath both approaches.
+
 ## Routes (`src/pages/`)
 
 - `index.astro` — home: hero (title + daily rotating quote + selected-post links), one featured card, and a 3-card grid, all from posts.
