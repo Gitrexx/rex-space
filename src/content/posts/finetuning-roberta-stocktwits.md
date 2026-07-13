@@ -3,6 +3,7 @@ title: 'Fine-tuning RoBERTa on 3.2M StockTwits Comments'
 description: 'Turning millions of self-labeled StockTwits messages into an open-source RoBERTa sentiment model — and asking whether retail chatter predicts price.'
 pubDate: '2022-04-02'
 category: 'Research'
+heroImage: '../../assets/finetuning-roberta-stocktwits.png'
 ---
 
 Retail investors never stop talking. On [StockTwits](https://stocktwits.com) — a social feed built around stock tickers — thousands of short messages land every hour, each one a small bet on where a name is headed. This post is about turning that noise into a signal: a [RoBERTa sentiment model](https://huggingface.co/zhayunduo/roberta-base-stocktwits-finetuned) fine-tuned on 3.2 million StockTwits comments, released open-source, and pointed at one question — does the crowd's mood say anything about price?

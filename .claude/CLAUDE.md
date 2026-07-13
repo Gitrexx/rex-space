@@ -121,6 +121,20 @@ also shows a fixed `heroTitle` (a const in `index.astro`) and a **daily rotating
 `src/data/quotes.ts` — the index is derived from the local date, and a no-flash inline script
 re-picks it per viewer. Edit that file to change the quotes.
 
+### Writing a new post
+
+When creating a post, don't ship it text-only:
+
+- **Always generate a hero image.** Use the `generate-image` skill (OpenAI `gpt-image-1`)
+  to make a cover from the post's content, save it to `src/assets/<slug>.png`, and wire it
+  in with `heroImage: '../../assets/<slug>.png'`. Match the site's look — dark background,
+  soft bloom, minimal, no text labels — and vary the palette/motif to fit the post. The
+  existing post covers (`k8s-mock-exam`, `service-switch`, etc.) are the reference for tone.
+- **Optionally add an inline SVG** where the content genuinely benefits from a diagram
+  (architecture, a flow, a before/after). This is opt-in — only when it earns its place, not
+  decoration. Inline SVG can go straight in the Markdown/MDX body; keep it theme-aware
+  (stroke/fill via `currentColor` or token-driven values so it reads in light and dark).
+
 ### Editing an existing post
 
 When changing a post that is already published, pick the treatment by the size of the change:

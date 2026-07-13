@@ -3,6 +3,7 @@ title: 'Service Switch: A One-Click Power Button for My GKE Cluster'
 description: 'A small local Flask dashboard that drives my own gcloud and kubectl to toggle GKE services on and off — scale-to-zero turned into a button, the companion to my k8s-on-gcp cluster.'
 pubDate: '2023-11-13'
 category: 'Systems'
+heroImage: '../../assets/service-switch.png'
 ---
 
 This is the companion to my [k8s-on-gcp](/posts/kubernetes-on-gcp-autopilot/) cluster. That project gave me a cheap, on-demand GKE Autopilot cluster and a GitOps-lite way to deploy things to it. This one gives me the missing piece: a **power button**.

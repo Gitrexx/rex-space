@@ -3,6 +3,7 @@ title: 'A Scale-to-Zero Kubernetes Playground on GKE Autopilot'
 description: 'Notes on a personal GKE Autopilot cluster I spin up to practice Kubernetes, then tear down — no standing bill, GitOps-lite deploys with Kustomize and GitHub Actions.'
 pubDate: '2023-09-02'
 category: 'Systems'
+heroImage: '../../assets/kubernetes-on-gcp-autopilot.png'
 ---
 
 I wanted a real Kubernetes cluster to practice on — not minikube on my laptop, but the actual thing on a public cloud, with cloud networking, load balancers, and the friction that comes with them. The catch is the usual one: a cluster you leave running quietly bills you while you sleep. So the goal became a cluster I can **conjure on demand and delete when I'm done**, paying nothing in between.
