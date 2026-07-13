@@ -12,7 +12,32 @@ export function getStaticPaths() {
   }));
 }
 
+// Eagerly load every self-contained HTML file in `src/embeds/` as a raw string
+// at build time, keyed by resolved path. An item's `embed` filename is matched
+// against these and injected into the frame via `srcdoc` (isolated document).
+const embedModules = import.meta.glob('../../embeds/*.html', {
+  query: '?raw',
+  import: 'default',
+  eager: true,
+}) as Record<string, string>;
+
+function resolveEmbed(name?: string): string | undefined {
+  if (!name) return undefined;
+  const match = Object.entries(embedModules).find(([path]) => path.endsWith(`/${name}`));
+  if (!match) {
+    throw new Error(
+      `learning item embed "${name}" not found in src/embeds/. Available: ${Object.keys(
+        embedModules,
+      )
+        .map((p) => p.split('/').pop())
+        .join(', ')}`,
+    );
+  }
+  return match[1];
+}
+
 const { item } = Astro.props;
+const embedHtml = resolveEmbed(item.embed);
 ---
 
 <BaseLayout title={item.title} description={item.description}>
@@ -40,20 +65,29 @@ const { item } = Astro.props;
           <span aria-hidden="true">↻</span>
           <span>Reload</span>
         </button>
-        <a class="learning-action" href={item.url} target="_blank" rel="noopener noreferrer">
-          <span>Open</span>
-          <span aria-hidden="true">↗</span>
-        </a>
+        {item.url && (
+          <a class="learning-action" href={item.url} target="_blank" rel="noopener noreferrer">
+            <span>Open</span>
+            <span aria-hidden="true">↗</span>
+          </a>
+        )}
       </div>
     </header>
 
     <div class="learning-frame">
-      <iframe
-        title={item.title}
-        src={item.url}
-        loading="lazy"
-        referrerpolicy="no-referrer"
-        allow="fullscreen"></iframe>
+      {
+        embedHtml ? (
+          <iframe title={item.title} srcdoc={embedHtml} loading="lazy" allow="fullscreen" />
+        ) : (
+          <iframe
+            title={item.title}
+            src={item.url}
+            loading="lazy"
+            referrerpolicy="no-referrer"
+            allow="fullscreen"
+          />
+        )
+      }
     </div>
   </main>
 </BaseLayout>
@@ -67,9 +101,16 @@ const { item } = Astro.props;
     const reload = root.querySelector<HTMLButtonElement>('[data-reload]');
     if (iframe && reload) {
       reload.addEventListener('click', () => {
-        // Reassigning src reliably reloads the frame, even to the same URL.
-        const current = iframe.src;
-        iframe.src = current;
+        if (iframe.hasAttribute('srcdoc')) {
+          // Re-setting srcdoc to the same value reliably reloads a local embed.
+          const current = iframe.getAttribute('srcdoc') ?? '';
+          iframe.removeAttribute('srcdoc');
+          iframe.setAttribute('srcdoc', current);
+        } else {
+          // Reassigning src reliably reloads the frame, even to the same URL.
+          const current = iframe.src;
+          iframe.src = current;
+        }
       });
     }
   }

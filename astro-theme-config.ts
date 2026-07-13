@@ -7,7 +7,15 @@ type LearningItem = {
   slug: string;
   title: string;
   description: string;
-  url: string;
+  /** External site to embed as an iframe. Optional when `embed` is set. */
+  url?: string;
+  /**
+   * Filename of a self-contained HTML file in `src/embeds/`, rendered inside
+   * the isolated frame via `srcdoc` instead of an external `url`. Takes
+   * precedence over `url` for the embed; `url` (if also set) still powers the
+   * "Open ↗" action.
+   */
+  embed?: string;
   /** Optional topic tags — shown as chips on the card and driving the tag filter. */
   tags?: string[];
 };
@@ -256,6 +264,8 @@ const config = {
    *   description one short line under the title (also searched)
    *   tags        optional topic tags — chips on the card + the tag filter (also searched)
    *   url         the embedded site (must allow framing — GitHub Pages does)
+   *   embed       filename of a self-contained HTML file in `src/embeds/`,
+   *               rendered in the isolated frame instead of `url`
    */
   learning: {
     eyebrow: 'Learning',
@@ -269,6 +279,20 @@ const config = {
         description: '100+ Topics daily notes on investment, from theory to practice',
         tags: ['Finance'],
         url: 'https://gitrexx.github.io/daily-learning-investment/',
+      },
+      {
+        slug: 'rag-fable-5',
+        title: 'RAG Interview Prep - Fable',
+        description: 'All about RAG techniques and roadmap, with interactive learning content, by Fable 5',
+        tags: ['RAG', 'Interview'],
+        embed: 'rag_interview_prep_fable.html',
+      },
+      {
+        slug: 'rag-opus-4-7',
+        title: 'RAG Interview Prep - Opus',
+        description: 'All about RAG techniques and roadmap, with interactive learning content, by Opus 4.7',
+        tags: ['RAG', 'Interview'],
+        embed: 'rag_interview_prep_opus.html',
       },
     ] as LearningItem[],
   },

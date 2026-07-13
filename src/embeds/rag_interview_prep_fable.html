@@ -1,0 +1,2030 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RAG Interview Field Manual</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#F4F6F9; --surface:#FFFFFF; --ink:#141C28; --ink2:#44546A; --ink3:#7A8AA0;
+  --line:#DCE3EC; --line2:#EAEFF5;
+  --pri:#2F4BDD; --pri-deep:#2238B8; --tint:#EDF0FE; --tint2:#F6F8FF;
+  --good:#0B8F6B; --good-bg:#E7F6F0; --bad:#E5543F; --bad-bg:#FDEEEB;
+  --warn:#B45309; --warn-bg:#FCF3E5;
+  --codebg:#101826; --codetx:#D8E2F0;
+  --disp:'Space Grotesk',sans-serif; --body:'Inter',-apple-system,sans-serif; --mono:'IBM Plex Mono',ui-monospace,monospace;
+  --rad:12px; --rad-s:8px;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{font-family:var(--body);background:var(--paper);color:var(--ink);font-size:15.5px;line-height:1.62;-webkit-font-smoothing:antialiased}
+::selection{background:var(--pri);color:#fff}
+
+/* ---------- topbar ---------- */
+.topbar{position:sticky;top:0;z-index:50;background:rgba(244,246,249,.92);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+.tb-in{max-width:1100px;margin:0 auto;padding:10px 20px;display:flex;align-items:center;gap:18px;flex-wrap:wrap}
+.brand{display:flex;flex-direction:column;line-height:1.15;margin-right:auto}
+.brand .eyebrow{font-family:var(--mono);font-size:10.5px;letter-spacing:.14em;color:var(--pri);text-transform:uppercase}
+.brand .name{font-family:var(--disp);font-weight:700;font-size:17px;letter-spacing:-.01em}
+.tabs{display:flex;gap:4px;background:var(--surface);border:1px solid var(--line);border-radius:99px;padding:4px}
+.tabbtn{border:0;background:transparent;font-family:var(--body);font-weight:600;font-size:13.5px;color:var(--ink2);padding:7px 15px;border-radius:99px;cursor:pointer;transition:background .15s,color .15s;white-space:nowrap}
+.tabbtn:hover{color:var(--ink)}
+.tabbtn.active{background:var(--ink);color:#fff}
+.counters{display:flex;gap:8px}
+.counter{font-family:var(--mono);font-size:11px;color:var(--ink2);background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:5px 9px}
+.counter b{color:var(--pri);font-weight:600}
+
+/* ---------- shells ---------- */
+.tab{display:none}
+.tab.active{display:block;animation:rise .25s ease}
+@keyframes rise{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.wrap{max-width:1100px;margin:0 auto;padding:30px 20px 90px}
+
+/* ---------- learn hero + rail ---------- */
+.hero{padding:18px 0 10px}
+.hero h1{font-family:var(--disp);font-size:clamp(26px,4vw,38px);font-weight:700;letter-spacing:-.02em;line-height:1.12}
+.hero h1 em{font-style:normal;color:var(--pri)}
+.hero p.sub{color:var(--ink2);max-width:760px;margin-top:10px;font-size:15px}
+.rail{display:flex;flex-wrap:wrap;gap:8px;margin:26px 0 8px;align-items:center}
+.st{display:flex;align-items:center;gap:8px}
+.st button{font-family:var(--mono);font-size:12px;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:8px;padding:8px 11px;cursor:pointer;display:flex;gap:8px;align-items:center;transition:border-color .15s,transform .15s, box-shadow .15s}
+.st button:hover{border-color:var(--pri);transform:translateY(-1px);box-shadow:0 3px 10px rgba(47,75,221,.12)}
+.st .num{color:var(--pri);font-weight:600}
+.st:not(:last-child)::after{content:"→";color:var(--ink3);font-family:var(--mono);font-size:12px}
+.rail-note{font-family:var(--mono);font-size:11px;color:var(--ink3);margin-bottom:6px}
+
+/* ---------- modules ---------- */
+.module{background:var(--surface);border:1px solid var(--line);border-radius:var(--rad);padding:30px 32px;margin-top:26px;scroll-margin-top:86px}
+.mod-eyebrow{font-family:var(--mono);font-size:11px;letter-spacing:.13em;text-transform:uppercase;color:var(--pri);display:flex;align-items:center;gap:10px}
+.mod-eyebrow::after{content:"";height:1px;flex:1;background:var(--line2)}
+.module h2{font-family:var(--disp);font-size:25px;font-weight:700;letter-spacing:-.015em;margin:8px 0 4px}
+.mod-why{color:var(--ink2);font-size:14px;margin-bottom:14px}
+.module h3{font-family:var(--disp);font-size:17.5px;font-weight:600;margin:24px 0 8px;letter-spacing:-.01em}
+.module p{margin:9px 0;max-width:78ch}
+.module ul,.module ol{margin:9px 0 9px 22px;max-width:76ch}
+.module li{margin:5px 0}
+.module li::marker{color:var(--pri)}
+code{font-family:var(--mono);font-size:.86em;background:var(--tint2);border:1px solid var(--line2);border-radius:5px;padding:1px 5px;color:var(--pri-deep)}
+pre.code{background:var(--codebg);color:var(--codetx);font-family:var(--mono);font-size:12.8px;line-height:1.65;border-radius:10px;padding:16px 18px;overflow-x:auto;margin:12px 0}
+pre.code code{background:none;border:0;color:inherit;padding:0;font-size:inherit}
+
+/* collapsible subsections */
+details.sub{border:1px solid var(--line);border-radius:10px;margin:12px 0;background:var(--surface);overflow:hidden}
+details.sub>summary{list-style:none;cursor:pointer;padding:13px 18px;font-weight:600;font-size:14.5px;display:flex;align-items:center;gap:10px;transition:background .15s}
+details.sub>summary::-webkit-details-marker{display:none}
+details.sub>summary::before{content:"+";font-family:var(--mono);color:var(--pri);font-weight:600;width:14px}
+details.sub[open]>summary::before{content:"–"}
+details.sub>summary:hover{background:var(--tint2)}
+details.sub[open]>summary{border-bottom:1px solid var(--line2);background:var(--tint2)}
+details.sub .inner{padding:6px 18px 16px}
+.sumtag{font-family:var(--mono);font-size:10.5px;color:var(--ink3);margin-left:auto;font-weight:400}
+
+/* tables */
+.tblwrap{overflow-x:auto;margin:12px 0}
+table.tbl{border-collapse:collapse;width:100%;font-size:13.5px;min-width:560px}
+table.tbl th{font-family:var(--mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink2);text-align:left;padding:8px 12px;border-bottom:2px solid var(--ink);font-weight:600}
+table.tbl td{padding:9px 12px;border-bottom:1px solid var(--line2);vertical-align:top}
+table.tbl td:first-child{font-weight:600;white-space:nowrap}
+table.tbl tr:hover td{background:var(--tint2)}
+
+/* callout boxes */
+.lens{border:1px solid var(--line);border-left:3px solid var(--pri);background:var(--tint2);border-radius:0 10px 10px 0;padding:14px 18px;margin:16px 0}
+.lens .lt{font-family:var(--mono);font-size:10.5px;letter-spacing:.13em;text-transform:uppercase;color:var(--pri);margin-bottom:6px;font-weight:600}
+.lens p{font-size:14px;margin:6px 0}
+.anchor{border:1px solid var(--line);border-left:3px solid var(--good);background:var(--good-bg);border-radius:0 10px 10px 0;padding:14px 18px;margin:16px 0}
+.anchor .lt{font-family:var(--mono);font-size:10.5px;letter-spacing:.13em;text-transform:uppercase;color:var(--good);margin-bottom:6px;font-weight:600}
+.anchor p{font-size:14px;margin:6px 0}
+.pit{border:1px solid var(--line);border-left:3px solid var(--bad);background:var(--bad-bg);border-radius:0 10px 10px 0;padding:14px 18px;margin:16px 0}
+.pit .lt{font-family:var(--mono);font-size:10.5px;letter-spacing:.13em;text-transform:uppercase;color:var(--bad);margin-bottom:6px;font-weight:600}
+.pit p,.pit ul{font-size:14px}
+.say{font-style:italic;color:var(--ink);background:#fff;border:1px dashed var(--line);border-radius:8px;padding:10px 14px;margin:8px 0;font-size:13.8px}
+.say::before{content:"Say it like this: ";font-style:normal;font-family:var(--mono);font-size:10.5px;color:var(--pri);text-transform:uppercase;letter-spacing:.1em;display:block;margin-bottom:3px}
+
+/* pipeline diagram */
+.pipe{display:flex;flex-direction:column;gap:10px;margin:14px 0}
+.pipelane{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.planelabel{font-family:var(--mono);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink3);min-width:88px}
+.pnode{font-family:var(--mono);font-size:11.5px;background:var(--tint);border:1px solid #C9D3F8;color:var(--pri-deep);border-radius:7px;padding:6px 10px;white-space:nowrap}
+.pnode.alt{background:var(--surface);border-color:var(--line);color:var(--ink2)}
+.parrow{color:var(--ink3);font-family:var(--mono);font-size:11px}
+
+/* generic chips */
+.chip{display:inline-block;font-family:var(--mono);font-size:10.5px;border:1px solid var(--line);border-radius:99px;padding:3px 10px;color:var(--ink2);background:var(--surface)}
+.chip.pri{border-color:#C9D3F8;background:var(--tint);color:var(--pri-deep)}
+.chip.good{border-color:#BCE3D4;background:var(--good-bg);color:var(--good)}
+.chip.bad{border-color:#F4C8C0;background:var(--bad-bg);color:var(--bad)}
+
+/* buttons */
+.btn{font-family:var(--body);font-weight:600;font-size:14px;border-radius:9px;padding:10px 18px;cursor:pointer;border:1px solid var(--ink);background:var(--ink);color:#fff;transition:transform .12s, box-shadow .12s}
+.btn:hover{transform:translateY(-1px);box-shadow:0 4px 12px rgba(20,28,40,.18)}
+.btn:disabled{opacity:.45;cursor:not-allowed;transform:none;box-shadow:none}
+.btn.ghost{background:var(--surface);color:var(--ink);border-color:var(--line)}
+.btn.ghost:hover{border-color:var(--ink)}
+.btn.pri{background:var(--pri);border-color:var(--pri)}
+
+/* ---------- quiz ---------- */
+.qshell{max-width:780px;margin:0 auto}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--rad);padding:30px 32px}
+.panel h2{font-family:var(--disp);font-size:24px;font-weight:700;letter-spacing:-.015em}
+.panel .pd{color:var(--ink2);font-size:14px;margin:8px 0 16px}
+.topicgrid{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0 20px}
+.tchip{font-family:var(--mono);font-size:12px;border:1px solid var(--line);background:var(--surface);border-radius:99px;padding:7px 14px;cursor:pointer;color:var(--ink2);transition:all .12s}
+.tchip.on{background:var(--ink);border-color:var(--ink);color:#fff}
+.qprog{display:flex;align-items:center;gap:14px;margin-bottom:18px}
+.qbar{flex:1;height:5px;background:var(--line2);border-radius:99px;overflow:hidden}
+.qbar i{display:block;height:100%;background:var(--pri);border-radius:99px;transition:width .25s}
+.qmeta{font-family:var(--mono);font-size:11.5px;color:var(--ink2)}
+.qtopic{font-family:var(--mono);font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--pri);margin-bottom:8px}
+.qtext{font-size:17px;font-weight:600;line-height:1.5;margin-bottom:16px}
+.opt{display:flex;gap:12px;align-items:flex-start;width:100%;text-align:left;border:1px solid var(--line);background:var(--surface);border-radius:10px;padding:13px 15px;margin:8px 0;cursor:pointer;font-family:var(--body);font-size:14.5px;line-height:1.5;color:var(--ink);transition:border-color .12s, background .12s}
+.opt .key{font-family:var(--mono);font-size:11.5px;color:var(--ink3);border:1px solid var(--line);border-radius:6px;min-width:24px;height:24px;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px}
+.opt:hover{border-color:var(--pri)}
+.opt.sel{border-color:var(--pri);background:var(--tint2);box-shadow:0 0 0 1px var(--pri)}
+.opt.correct{border-color:var(--good);background:var(--good-bg);box-shadow:0 0 0 1px var(--good)}
+.opt.correct .key{background:var(--good);border-color:var(--good);color:#fff}
+.opt.wrong{border-color:var(--bad);background:var(--bad-bg);box-shadow:0 0 0 1px var(--bad)}
+.opt.wrong .key{background:var(--bad);border-color:var(--bad);color:#fff}
+.opt.dim{opacity:.55}
+.opt:disabled{cursor:default}
+.exp{border:1px solid var(--line);border-left:3px solid var(--pri);background:var(--tint2);border-radius:0 10px 10px 0;padding:13px 16px;margin:14px 0;font-size:14px;display:none}
+.exp.show{display:block}
+.exp .verdict{font-family:var(--mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;font-weight:600;margin-bottom:5px}
+.qactions{display:flex;gap:10px;margin-top:16px;justify-content:flex-end}
+.scorehero{display:flex;gap:12px;flex-wrap:wrap;margin:18px 0}
+.scorechip{font-family:var(--mono);border:1px solid var(--line);border-radius:10px;padding:12px 16px;background:var(--tint2)}
+.scorechip .k{font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink2);display:block}
+.scorechip .v{font-size:22px;font-weight:600;color:var(--pri)}
+.tbrk{margin:14px 0}
+.tbrow{display:grid;grid-template-columns:170px 1fr 64px;gap:12px;align-items:center;margin:7px 0;font-size:13px}
+.tbrow .nm{font-family:var(--mono);font-size:11.5px;color:var(--ink2)}
+.tbbar{height:7px;background:var(--line2);border-radius:99px;overflow:hidden}
+.tbbar i{display:block;height:100%;border-radius:99px;background:var(--pri)}
+.tbrow .sc{font-family:var(--mono);font-size:11.5px;text-align:right;color:var(--ink2)}
+.missed{margin-top:16px}
+.missitem{border:1px solid var(--line);border-radius:9px;padding:11px 14px;margin:8px 0;font-size:13.5px}
+.missitem .mq{font-weight:600}
+.missitem .ma{color:var(--good);margin-top:3px;font-size:13px}
+
+/* ---------- code lab ---------- */
+.fwgroup{margin-top:26px}
+.fwgroup>h2{font-family:var(--disp);font-size:21px;font-weight:700;letter-spacing:-.015em;display:flex;align-items:center;gap:10px}
+.ex{background:var(--surface);border:1px solid var(--line);border-radius:var(--rad);margin:14px 0;overflow:hidden}
+.exhead{display:flex;align-items:center;gap:12px;padding:15px 20px;cursor:pointer;transition:background .12s}
+.exhead:hover{background:var(--tint2)}
+.exhead .kind{font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;border-radius:5px;padding:3px 8px;font-weight:600;flex-shrink:0}
+.kind.fill{background:var(--tint);color:var(--pri-deep)}
+.kind.predict{background:var(--warn-bg);color:var(--warn)}
+.kind.bug{background:var(--bad-bg);color:var(--bad)}
+.exhead .xt{font-weight:600;font-size:14.5px}
+.exhead .done{margin-left:auto;font-family:var(--mono);font-size:11px;color:var(--good);display:none}
+.ex.solved .exhead .done{display:block}
+.exbody{display:none;border-top:1px solid var(--line2);padding:18px 20px 22px}
+.ex.open .exbody{display:block}
+.scen{font-size:14px;color:var(--ink2);margin-bottom:12px;max-width:78ch}
+.codebox{background:var(--codebg);border-radius:10px;padding:14px 0;margin:10px 0;overflow-x:auto}
+.cl{display:flex;font-family:var(--mono);font-size:12.6px;line-height:1.7;color:var(--codetx);white-space:pre}
+.cl .lno{width:44px;text-align:right;padding-right:14px;color:#4E5E78;flex-shrink:0;user-select:none}
+.cl .lc{padding-right:18px}
+.cl.clickable{cursor:pointer}
+.cl.clickable:hover{background:#1A2436}
+.cl.hit{background:rgba(11,143,107,.22);box-shadow:inset 3px 0 0 var(--good)}
+.cl.miss{background:rgba(229,84,63,.18);box-shadow:inset 3px 0 0 var(--bad)}
+select.blank{font-family:var(--mono);font-size:12.2px;background:#1C2942;color:#9FB7E8;border:1px dashed #5570B8;border-radius:6px;padding:2px 6px;cursor:pointer;margin:0 2px}
+select.blank.ok{border:1px solid var(--good);color:#7BE0C0;background:rgba(11,143,107,.18)}
+select.blank.no{border:1px solid var(--bad);color:#F4A294;background:rgba(229,84,63,.16)}
+.labexp{display:none;margin-top:12px}
+.labexp.show{display:block}
+.takeaway{border:1px solid var(--line);border-left:3px solid var(--good);background:var(--good-bg);border-radius:0 10px 10px 0;padding:12px 16px;margin:12px 0;font-size:13.8px}
+.takeaway .lt{font-family:var(--mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--good);font-weight:600;margin-bottom:4px}
+.labactions{display:flex;gap:10px;margin-top:12px;align-items:center}
+.labmsg{font-family:var(--mono);font-size:12px}
+.labmsg.ok{color:var(--good)}.labmsg.no{color:var(--bad)}
+
+/* ---------- system design ---------- */
+.scn{background:var(--surface)}
+.scncard{background:var(--surface);border:1px solid var(--line);border-radius:var(--rad);padding:26px 30px;margin-top:22px}
+.scncard h2{font-family:var(--disp);font-size:20px;font-weight:700;letter-spacing:-.01em;margin:4px 0 6px}
+.scnprompt{border:1px solid var(--line);background:var(--tint2);border-radius:10px;padding:14px 18px;font-size:14.5px;margin:10px 0 14px}
+.scnprompt b{font-family:var(--mono);font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--pri);display:block;margin-bottom:5px}
+.rubric li{margin:6px 0;font-size:14px}
+.redflag li{margin:6px 0;font-size:14px}
+
+footer{max-width:1100px;margin:0 auto;padding:0 20px 50px;color:var(--ink3);font-family:var(--mono);font-size:11px}
+
+@media (max-width:760px){
+  .tb-in{padding:10px 14px;gap:10px}
+  .counters{display:none}
+  .tabs{order:3;width:100%;overflow-x:auto}
+  .module{padding:22px 18px}
+  .panel{padding:22px 18px}
+  .tbrow{grid-template-columns:110px 1fr 52px}
+  .wrap{padding:22px 14px 70px}
+}
+@media (prefers-reduced-motion:reduce){
+  *{animation:none!important;transition:none!important}
+  html{scroll-behavior:auto}
+}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="tb-in">
+    <div class="brand">
+      <span class="eyebrow">retrieval · rank · generate · evaluate</span>
+      <span class="name">RAG Interview Field Manual</span>
+    </div>
+    <nav class="tabs" role="tablist">
+      <button class="tabbtn active" data-tab="learn">Learn</button>
+      <button class="tabbtn" data-tab="quiz">Quiz</button>
+      <button class="tabbtn" data-tab="lab">Code Lab</button>
+      <button class="tabbtn" data-tab="design">System Design</button>
+    </nav>
+    <div class="counters">
+      <span class="counter">quiz best <b id="cQuiz">—</b></span>
+      <span class="counter">lab <b id="cLab">0/12</b></span>
+    </div>
+  </div>
+</div>
+
+<!-- ================= LEARN ================= -->
+<section class="tab active" id="tab-learn">
+<div class="wrap">
+
+<div class="hero">
+  <h1>Everything between <em>top-k</em> and the offer letter.</h1>
+  <p class="sub">Nine modules covering the 2026 RAG landscape — built for an engineer who already ships hybrid retrieval on Elasticsearch and needs to talk fluently about everything else: chunking, query transformation, rerankers, GraphRAG, agentic loops, LangChain and LlamaIndex internals, and evaluation. Every module ends with how to say it in the room.</p>
+  <div class="rail-note">// the pipeline is the syllabus — click a station</div>
+  <div class="rail" id="rail"></div>
+</div>
+
+<!-- ============ MODULE 0 ============ -->
+<div class="module" id="m0">
+  <div class="mod-eyebrow">module 00 / orientation</div>
+  <h2>The 2026 RAG landscape</h2>
+  <p class="mod-why">Why interviewers ask: they want to know if you see RAG as a search-engineering problem or as "stuff chunks into a prompt."</p>
+
+  <h3>What "naive RAG" means — and why the term exists</h3>
+  <p>The 2023 recipe: split documents into fixed ~512-token chunks → embed each chunk → store in a vector DB → at query time, embed the query, take top-k by cosine similarity, paste into the prompt, generate. It works in demos and degrades in production. Industry post-mortems from 2025 put the share of enterprise RAG projects that critically struggle or fail in year one at roughly 70–80% — and the dominant root cause is almost never the LLM. It's the retriever feeding it irrelevant, incomplete, or badly-ranked context.</p>
+  <p>The framing that signals seniority: <strong>RAG is information engineering, not prompt engineering.</strong> The generator is bounded by what retrieval gives it. Most of the techniques in this manual exist to attack one of three gaps:</p>
+  <ul>
+    <li><strong>Representation gap</strong> — a single chunk vector can't capture everything a chunk is "about"; meaning gets averaged away (chunking, contextual enrichment, multi-vector, late interaction).</li>
+    <li><strong>Query–document gap</strong> — questions don't look like answers; vocabulary and form mismatch (query transformation, HyDE, hybrid sparse+dense).</li>
+    <li><strong>Reasoning gap</strong> — some answers live in <em>relationships across</em> chunks, not inside any one of them (GraphRAG, multi-hop, agentic loops).</li>
+  </ul>
+
+  <h3>The modern pipeline — two lanes</h3>
+  <div class="pipe">
+    <div class="pipelane">
+      <span class="planelabel">offline / index</span>
+      <span class="pnode">parse</span><span class="parrow">→</span>
+      <span class="pnode">chunk</span><span class="parrow">→</span>
+      <span class="pnode">enrich (context, metadata)</span><span class="parrow">→</span>
+      <span class="pnode">embed (dense + sparse)</span><span class="parrow">→</span>
+      <span class="pnode">index (HNSW + inverted)</span>
+    </div>
+    <div class="pipelane">
+      <span class="planelabel">online / query</span>
+      <span class="pnode alt">transform query</span><span class="parrow">→</span>
+      <span class="pnode alt">hybrid retrieve</span><span class="parrow">→</span>
+      <span class="pnode alt">fuse (RRF)</span><span class="parrow">→</span>
+      <span class="pnode alt">rerank</span><span class="parrow">→</span>
+      <span class="pnode alt">assemble context</span><span class="parrow">→</span>
+      <span class="pnode alt">generate + cite</span><span class="parrow">→</span>
+      <span class="pnode alt">evaluate</span>
+    </div>
+  </div>
+  <p>Each stage is a module below. Two design principles run through all of them:</p>
+  <ul>
+    <li><strong>Recall first, precision second.</strong> First-stage retrieval is tuned for recall (cast a wide, cheap net — top 50–150 candidates); a second stage (reranker) buys precision. You cannot rerank what you never retrieved.</li>
+    <li><strong>Decouple the retrieval unit from the generation unit.</strong> What you match on (a sentence, a proposition, a contextualized chunk) doesn't have to be what you hand to the LLM (the parent section, the whole doc).</li>
+  </ul>
+
+  <h3>The 2026 production floor</h3>
+  <p>The community-consensus minimum for a serious deployment: <strong>hybrid retrieval (dense embeddings + BM25) fused with Reciprocal Rank Fusion, followed by a cross-encoder reranker, wrapped in an evaluation harness with separate retrieval and generation metrics.</strong> Pure single-vector top-k is now treated as a prototype, because single-vector similarity has a hard representational ceiling — it finds what is <em>similar</em> to the query, not necessarily what is <em>relevant</em> to answering it.</p>
+
+  <div class="anchor">
+    <div class="lt">your project, reframed</div>
+    <p>You already run dense + BM25 fused with RRF on Elasticsearch. That <em>is</em> the 2026 floor — most teams arrived there in 2025 after their pure-vector v1 failed. And document-level embedding over short, self-contained documents is not "skipping chunking"; it's the degenerate-but-correct case where the document already fits the optimal retrieval unit. Present both as deliberate decisions, then pivot: "here's what I'd change the moment the corpus stops looking like that."</p>
+  </div>
+
+  <div class="lens">
+    <div class="lt">interview lens — "walk me through your RAG system"</div>
+    <p>Structure: corpus properties → retrieval-unit decision → retrieval architecture → what you measured → what you'd do next. Lead with corpus properties; it shows the design followed the data.</p>
+    <p class="say">My corpus was short, self-contained web documents, so the document itself was the right retrieval unit — chunking would have fragmented already-atomic content. I ran hybrid retrieval, BM25 plus dense embeddings fused with RRF, because the two channels fail differently: BM25 nails exact terms and IDs, dense handles paraphrase. RRF let me fuse them without score normalization. If the corpus grew long-form documents tomorrow, the first changes would be a chunking layer with parent-document retrieval and a cross-encoder reranker — and I'd justify each with recall@k and nDCG on a golden set, not vibes.</p>
+  </div>
+</div>
+
+<!-- ============ MODULE 1 ============ -->
+<div class="module" id="m1">
+  <div class="mod-eyebrow">module 01 / ingestion</div>
+  <h2>Chunking</h2>
+  <p class="mod-why">Why interviewers ask: chunking is where most retrieval quality is silently won or lost, and it has no universal answer — perfect for probing judgment.</p>
+
+  <h3>Why chunk at all</h3>
+  <p>Three independent pressures force the decision:</p>
+  <ul>
+    <li><strong>Embedding capacity.</strong> A single vector over a long document averages many topics into mush — "embedding dilution." Retrieval precision drops because the vector is about everything and therefore nothing.</li>
+    <li><strong>Retrieval precision.</strong> The LLM needs the <em>answer-bearing span</em>, not 40 pages around it. Smaller units localize relevance.</li>
+    <li><strong>Context budget.</strong> Even with long-context models, tokens cost money and latency, and relevance signal degrades as context fills with noise.</li>
+  </ul>
+  <p>The core tension: <strong>small chunks retrieve precisely but lose surrounding meaning; large chunks preserve meaning but retrieve fuzzily and waste budget.</strong> Every strategy below is a different resolution of that tension.</p>
+
+  <details class="sub">
+    <summary>The strategy ladder — fixed → recursive → structure-aware → semantic <span class="sumtag">mechanics + when</span></summary>
+    <div class="inner">
+      <div class="tblwrap"><table class="tbl">
+        <tr><th>Strategy</th><th>Mechanism</th><th>Cost</th><th>Use when</th></tr>
+        <tr><td>Fixed-size</td><td>Cut every N tokens, with overlap (commonly 10–20%) so a sentence cut at a boundary survives in the next chunk.</td><td>Free</td><td>Baselines; uniform unstructured text. Mid-sentence cuts are the known failure.</td></tr>
+        <tr><td>Recursive</td><td>Try a separator hierarchy in order — paragraph (\n\n) → line (\n) → sentence → word — recursing into pieces still over the size limit. LangChain's RecursiveCharacterTextSplitter; the de-facto default.</td><td>Free</td><td>Default for prose. Respects natural boundaries when they exist.</td></tr>
+        <tr><td>Structure-aware</td><td>Split on document structure: Markdown/HTML headers (keep the heading path as metadata or prefix), code by AST (function/class units), PDFs by layout blocks. Never split a table mid-row — extract tables as units.</td><td>Parser effort</td><td>Docs with real structure: manuals, wikis, codebases, contracts. Usually the single biggest cheap win.</td></tr>
+        <tr><td>Semantic</td><td>Embed sentences; split where cosine distance between adjacent sentences (or a sliding window) spikes past a threshold — boundaries follow topic shifts, not character counts.</td><td>Embedding pass over corpus</td><td>Long flowing prose without headings. Evidence is mixed — evaluate against recursive before paying for it; it often ties.</td></tr>
+      </table></div>
+      <p>Chunk size has no universal best value: 200–800 tokens covers most production systems, tuned per corpus on a golden set. The honest interview answer is always "I'd sweep size × overlap and pick by recall@k and downstream answer quality, because optimal size depends on how the corpus packs information."</p>
+    </div>
+  </details>
+
+  <details class="sub">
+    <summary>Decoupling tricks — small-to-big, parent-document, sentence-window <span class="sumtag">retrieve small, generate big</span></summary>
+    <div class="inner">
+      <p>These exploit the recall/precision asymmetry directly: <strong>match on a small precise unit, but return a larger unit to the LLM.</strong></p>
+      <ul>
+        <li><strong>Parent-document retrieval:</strong> index child chunks (say 200 tokens) that each point to a parent (say 1,000 tokens or the full doc). Search hits children; the parent is what enters the prompt. LangChain ParentDocumentRetriever; LlamaIndex auto-merging retriever (merges children back into the parent when enough siblings match).</li>
+        <li><strong>Sentence-window:</strong> embed single sentences; at synthesis time swap each hit for the sentence ± a window of its neighbors (LlamaIndex SentenceWindowNodeParser + MetadataReplacementPostProcessor).</li>
+        <li><strong>Proposition indexing:</strong> have an LLM rewrite text into atomic, self-contained factual statements and index those — maximal precision, real preprocessing cost.</li>
+      </ul>
+      <p>This family is the standard cure when you observe "retrieval finds the right place but the chunk alone isn't enough to answer."</p>
+    </div>
+  </details>
+
+  <details class="sub">
+    <summary>Context-preserving embeddings — Contextual Retrieval vs Late Chunking <span class="sumtag">the 2024–25 upgrades</span></summary>
+    <div class="inner">
+      <p>Both attack the same disease: a chunk ripped out of its document loses referents. "Its more than 3.85 million inhabitants…" embeds poorly when "Berlin" lives two paragraphs up. "The company's revenue grew 3%" is unretrievable when the company and quarter are named elsewhere.</p>
+      <p><strong>Contextual Retrieval (Anthropic, 2024).</strong> At index time, an LLM sees the whole document plus each chunk and writes 50–100 tokens situating that chunk ("This chunk is from ACME's Q2-2023 SEC filing; previous-quarter revenue was $314M…"). The context is prepended <em>before</em> embedding — and before BM25 indexing too (contextual BM25). Anthropic reported a ~49% reduction in top-20 retrieval failure rate, ~67% combined with reranking. Cost is one LLM pass per chunk at index time, made tolerable by prompt caching (the document is cached; only the chunk varies).</p>
+      <p><strong>Late Chunking (Jina, 2024).</strong> Reorders the pipeline instead of adding text: run the <em>entire document</em> through a long-context embedding model first, so every token's embedding is conditioned on full-document context; <em>then</em> apply chunk boundaries and mean-pool each span into its chunk vector. The pronoun's token embedding already "knows" it refers to Berlin. No LLM calls, no extra stored text — but it requires a long-context embedder and the gains are real but smaller.</p>
+      <div class="tblwrap"><table class="tbl">
+        <tr><th></th><th>Contextual retrieval</th><th>Late chunking</th></tr>
+        <tr><td>Mechanism</td><td>LLM-written context prepended to chunk text</td><td>Embed whole doc → chunk after the transformer, pool token vectors</td></tr>
+        <tr><td>Index-time cost</td><td>High (LLM call per chunk; mitigated by prompt caching)</td><td>Low (one long-context embedding pass)</td></tr>
+        <tr><td>Helps BM25 too?</td><td>Yes — the added text carries keywords</td><td>No — it's purely an embedding-side fix</td></tr>
+        <tr><td>Quality (reported)</td><td>Stronger relevance/coherence gains</td><td>Consistent but smaller (~3–4% relative nDCG over naive in the paper)</td></tr>
+        <tr><td>Reach for it when</td><td>Quality-critical corpora; you can pay index-time compute</td><td>Cost-sensitive, large corpora; you control the embedding stack</td></tr>
+      </table></div>
+    </div>
+  </details>
+
+  <div class="pit">
+    <div class="lt">pitfalls that come up in interviews</div>
+    <ul>
+      <li>Splitting tables or code blocks mid-structure — parse them out as atomic units instead.</li>
+      <li>Losing heading context — prepend the header path ("Returns Policy &gt; International") to each chunk.</li>
+      <li>Overlap duplication — overlapping chunks both retrieved waste context; dedupe near-identical spans at assembly.</li>
+      <li>One global chunk size across heterogeneous corpora — chunk per document type.</li>
+    </ul>
+  </div>
+
+  <div class="lens">
+    <div class="lt">interview lens — "how would you chunk X?"</div>
+    <p>Pattern: inspect structure first → choose a unit aligned with answer-bearing spans → decouple retrieval unit from generation unit → name the experiment that decides it.</p>
+    <p class="say">Before picking a number I'd look at the documents: do they have structure I can respect — headers, sections, tables? I'd chunk along structure, carry the heading path into each chunk, and keep tables atomic. If chunks lose context when isolated, I'd add contextual enrichment — Anthropic-style LLM context if quality justifies index-time cost, late chunking if I need it cheap. And I'd decide chunk size empirically: sweep size and overlap, score recall@k against a golden set. My own project sat at the boundary case — documents short enough to be their own chunks — which is why document-level embedding was the right call there.</p>
+  </div>
+</div>
+
+<!-- ============ MODULE 2 ============ -->
+<div class="module" id="m2">
+  <div class="mod-eyebrow">module 02 / query side</div>
+  <h2>Query transformation</h2>
+  <p class="mod-why">Why interviewers ask: it tests whether you understand that the query, not just the index, is a design surface — and whether you know what each trick costs.</p>
+
+  <h3>The problem: questions don't look like answers</h3>
+  <p>Embedding retrieval matches the query vector against chunk vectors. But user queries are short, underspecified, conversational, and phrased as questions, while the corpus is long, declarative, and domain-toned. Every technique below reshapes the query to close that gap — and every one of them adds an LLM call, so the meta-skill is knowing <em>when</em> each is worth its latency.</p>
+
+  <details class="sub">
+    <summary>Rewriting &amp; conversational condensation <span class="sumtag">the unglamorous workhorse</span></summary>
+    <div class="inner">
+      <p>In multi-turn chat, "what about the second one?" retrieves nothing. The standard first step of conversational RAG: an LLM condenses chat history + the new turn into a <strong>standalone query</strong> ("what is the refund window for the Pro plan?") before retrieval. Also covers spelling/jargon normalization and stripping filler. Cheap, near-universal in chat products, and the thing most candidates forget to mention when asked to design a support bot.</p>
+    </div>
+  </details>
+
+  <details class="sub">
+    <summary>Multi-query &amp; RAG-Fusion <span class="sumtag">cast several nets, fuse with RRF</span></summary>
+    <div class="inner">
+      <p><strong>Multi-query expansion:</strong> an LLM writes 3–5 paraphrases/perspectives of the query; each is retrieved independently; results are unioned. Counters embedding sensitivity to phrasing — one query's blind spot is another's hit. (LangChain MultiQueryRetriever.)</p>
+      <p><strong>RAG-Fusion</strong> = multi-query + <strong>Reciprocal Rank Fusion</strong> across the result lists. Each document scores Σ 1/(k + rank<sub>i</sub>) over the lists it appears in (k≈60). Documents that rank well across <em>multiple</em> phrasings float up — a consensus effect. You already use RRF to fuse BM25 + dense; RAG-Fusion is the same operator applied across query variants. One operator, two jobs — a satisfying thing to point out in an interview.</p>
+      <p>Cost: N× retrieval fan-out + one LLM call. Worth it for ambiguous or multi-faceted queries; wasted on crisp lookups — which is an argument for routing (below).</p>
+    </div>
+  </details>
+
+  <details class="sub">
+    <summary>HyDE — Hypothetical Document Embeddings <span class="sumtag">search with a fake answer</span></summary>
+    <div class="inner">
+      <p><strong>Mechanism:</strong> ask an LLM to write a <em>hypothetical answer</em> to the query (it may be wrong in facts — doesn't matter), embed that hypothetical document, and search with <em>its</em> vector instead of the query's.</p>
+      <p><strong>Why it works:</strong> a fake answer is shaped like a real answer — declarative, domain vocabulary, right length. Answer-to-answer similarity is geometrically easier than question-to-answer similarity. You're moving the search point from "question space" into "document space."</p>
+      <p><strong>When it shines:</strong> zero-shot domains with no fine-tuned retriever; short vague queries against verbose technical corpora.</p>
+      <p><strong>When it hurts:</strong> the LLM hallucinates a hypothetical about the <em>wrong topic</em> (entity confusion drags retrieval off-course); precise lookups (IDs, error codes) where BM25 already wins; latency-sensitive paths — it's a full generation before retrieval even starts.</p>
+    </div>
+  </details>
+
+  <details class="sub">
+    <summary>Step-back &amp; decomposition <span class="sumtag">abstract up, or split apart</span></summary>
+    <div class="inner">
+      <p><strong>Step-back prompting:</strong> derive a more general question first ("What were Einstein's positions 1905–1915?" ← "what physics principles govern this setup?"), retrieve for <em>both</em> the step-back and original query, answer from the union. Helps when the corpus discusses principles but the user asks instances.</p>
+      <p><strong>Decomposition:</strong> split a multi-hop or comparative question into sub-questions answered independently (possibly sequentially, where sub-answer 1 feeds sub-question 2), then synthesize. "Compare LangChain's and LlamaIndex's approach to streaming" → two retrievals, one synthesis. This is the static ancestor of agentic RAG — same idea, fixed control flow. (LlamaIndex SubQuestionQueryEngine.)</p>
+    </div>
+  </details>
+
+  <details class="sub">
+    <summary>Routing &amp; self-query <span class="sumtag">spend transforms only where needed</span></summary>
+    <div class="inner">
+      <p><strong>Routing:</strong> a cheap classifier (often a small LLM with structured output) picks the path per query: which index (product docs vs tickets vs SQL), which strategy (direct lookup vs multi-query vs decomposition), or whether to retrieve at all (chitchat doesn't need the vector DB). Routing is what keeps the average-case latency flat while the worst case gets the full arsenal.</p>
+      <p><strong>Self-query / metadata extraction:</strong> the LLM parses the natural-language query into a semantic part + structured filters ("reviews of Dune <em>after 2023 with rating &gt; 4</em>" → filter year&gt;2023, rating&gt;4). The filter runs as a real predicate in the vector store, not as embedding soup. Essential whenever metadata exists.</p>
+    </div>
+  </details>
+
+  <div class="lens">
+    <div class="lt">interview lens</div>
+    <p>Always tie a transform to a diagnosed failure: don't deploy HyDE "because it's cool" — deploy it because eval showed paraphrase-mismatch failures. And mention the router: transforms cost latency, so classify first, transform selectively.</p>
+    <p class="say">I'd treat query transformation as a menu the router orders from, not a fixed pipeline. Conversational condensation is always on in chat. If failure analysis shows vocabulary mismatch, multi-query plus RRF is my first move because I already trust RRF as a fusion operator. HyDE I'd reserve for zero-shot domains, and I'd A/B it — it can drag retrieval off-topic when the hypothetical hallucinates the wrong entity. Each transform is one more LLM call, so the question is always: which queries earn it?</p>
+  </div>
+</div>
+
+<!-- ============ MODULE 3 ============ -->
+<div class="module" id="m3">
+  <div class="mod-eyebrow">module 03 / index side</div>
+  <h2>Indexing &amp; retrieval</h2>
+  <p class="mod-why">Why interviewers ask: this is the systems-engineering core — recall/latency/memory trade-offs you can only discuss if you know what the data structures actually do.</p>
+
+  <h3>Dense retrieval: embeddings + ANN indexes</h3>
+  <p>Exact nearest-neighbor search is O(N) per query; approximate nearest neighbor (ANN) indexes trade a sliver of recall for orders-of-magnitude speed. The two families you must be able to contrast:</p>
+  <details class="sub">
+    <summary>HNSW — the default <span class="sumtag">graph-based, RAM-hungry, fast</span></summary>
+    <div class="inner">
+      <p>Hierarchical Navigable Small World: a multi-layer proximity graph. Sparse top layers let search "teleport" across the space; each descent refines locally via greedy best-first walk. The knobs, and what they actually trade:</p>
+      <ul>
+        <li><code>M</code> — edges per node. Higher M → denser graph → better recall, more RAM, slower builds.</li>
+        <li><code>efConstruction</code> — candidate-list width at <em>build</em> time. Higher → better graph quality, slower indexing. Pay once.</li>
+        <li><code>efSearch</code> — candidate-list width at <em>query</em> time. The live recall↔latency dial; tune it per SLA without rebuilding.</li>
+      </ul>
+      <p>Costs: the whole graph (and usually vectors) lives in RAM; deletes are awkward (tombstones, periodic rebuilds). Elasticsearch's dense_vector kNN — your stack — is HNSW underneath, so you can claim hands-on adjacency.</p>
+    </div>
+  </details>
+  <details class="sub">
+    <summary>IVF and PQ — cluster + compress <span class="sumtag">when RAM is the constraint</span></summary>
+    <div class="inner">
+      <p><strong>IVF</strong> (inverted file): k-means the vectors into nlist cells; at query time probe only the <code>nprobe</code> nearest cells. Recall is capped by whether the true neighbor's cell got probed — raising nprobe buys recall with latency.</p>
+      <p><strong>PQ</strong> (product quantization): split each vector into m sub-vectors, replace each with the ID of its nearest centroid from a small codebook → vectors compress from KBs to tens of bytes. Distances are approximated from codebook lookups; accuracy drops accordingly. IVF-PQ = both: probe a few cells, scan compressed codes, optionally re-rank survivors with full-precision vectors.</p>
+      <p>The clean contrast for interviews: <strong>HNSW spends memory to buy speed and recall; IVF-PQ spends recall to buy memory.</strong> Billion-scale or disk-resident corpora (DiskANN-style) push you toward the IVF/compression family; ≤ a few million vectors with latency SLAs → HNSW; ≤ ~100k with strict exactness needs → honest brute force is often fine.</p>
+    </div>
+  </details>
+  <details class="sub">
+    <summary>Embedding model choices in 2026 <span class="sumtag">what to know by name</span></summary>
+    <div class="inner">
+      <p>Don't memorize leaderboards; know the decision axes: multilingual need, context length, multimodality, hosting constraints, and dimension cost. Names worth recognizing: <strong>Qwen3-Embedding</strong> (open-weight, tops multilingual MTEB), <strong>BGE-M3</strong> (open-source workhorse; emits dense + sparse + multi-vector from one model), <strong>Voyage</strong> and <strong>Cohere Embed v4</strong> (commercial retrieval-tuned; v4 does long-context + multimodal), OpenAI text-embedding-3, Gemini Embedding. Two production levers interviewers like:</p>
+      <ul>
+        <li><strong>Matryoshka (MRL) embeddings</strong> — trained so prefixes of the vector are usable; truncate 3072→512 dims for big storage cuts with minor recall loss; coarse-search truncated, re-rank full.</li>
+        <li><strong>Quantization</strong> — int8 or binary vector storage (binary + Hamming distance for first pass, rescore with floats). Cheap to mention, very production-real.</li>
+        <li><strong>MTEB caution</strong> — public-benchmark overfitting is real; always validate on <em>your</em> retrieval task before swapping models. Also: changing embedding models means re-embedding the entire corpus — plan migrations.</li>
+      </ul>
+    </div>
+  </details>
+
+  <h3>Sparse retrieval: BM25 and learned sparse</h3>
+  <details class="sub">
+    <summary>BM25 — why it refuses to die <span class="sumtag">exact match, zero training</span></summary>
+    <div class="inner">
+      <p>Term-frequency × inverse-document-frequency with two fixes that make it robust: TF <strong>saturation</strong> (the 10th occurrence of a term adds less than the 2nd, controlled by k1) and <strong>length normalization</strong> (long documents don't win by volume, controlled by b). Its enduring superpowers: exact identifiers, error codes, product SKUs, rare jargon, names — precisely where embeddings blur. Zero training, interpretable, fast on an inverted index.</p>
+    </div>
+  </details>
+  <details class="sub">
+    <summary>SPLADE — neural retrieval in an inverted index <span class="sumtag">learned sparse expansion</span></summary>
+    <div class="inner">
+      <p>A BERT-family model maps text onto a ~30k-term vocabulary vector: most weights zero (sparsity regularization), nonzero weights are <em>learned term importances</em> — and crucially the model performs <strong>expansion</strong>, activating related terms that never appear in the text ("laptop" lights up "notebook," "computer"). You get semantic matching <em>inside</em> ordinary inverted-index infrastructure (Elasticsearch ELSER is this idea). Trade-offs: inference cost to encode, fatter postings lists than BM25, but solves vocabulary mismatch without dense infrastructure. Strong third channel in hybrid setups.</p>
+    </div>
+  </details>
+
+  <h3>Hybrid retrieval &amp; fusion — your home turf, one level deeper</h3>
+  <details class="sub">
+    <summary>Score fusion vs rank fusion (RRF) <span class="sumtag">why RRF won by default</span></summary>
+    <div class="inner">
+      <p>BM25 scores are unbounded; cosine sits in [-1,1] — adding them raw is meaningless. <strong>Score fusion</strong> (convex combination α·dense + (1−α)·sparse) needs per-channel normalization (min-max or z-score per result list), and α becomes a tunable that drifts across query types. <strong>RRF</strong> sidesteps scales entirely: score(d) = Σ 1/(k + rank<sub>i</sub>(d)). Properties worth saying out loud:</p>
+      <ul>
+        <li><strong>Scale-free</strong> — only ranks matter, so heterogeneous channels (BM25, dense, SPLADE) fuse with no calibration.</li>
+        <li><strong>k dampens tail influence</strong> — with k=60, the gap between rank 1 and 2 is small; k controls how top-heavy fusion is. Small k → trust heads; large k → diffuse consensus.</li>
+        <li><strong>Limitation</strong> — rank-only fusion discards score magnitude: a 0.95-confident dense hit and a 0.51 one fuse identically if ranked the same. Weighted RRF (per-channel multipliers) is the common patch; a reranker downstream is the better one.</li>
+      </ul>
+    </div>
+  </details>
+  <details class="sub">
+    <summary>ColBERT &amp; late interaction <span class="sumtag">multi-vector precision</span></summary>
+    <div class="inner">
+      <p>Instead of one vector per chunk, keep one per <em>token</em>. At query time, each query token finds its best-matching document token (<strong>MaxSim</strong>) and the sums are aggregated. Fine-grained term-level matching with bi-encoder-style precomputation — quality approaching cross-encoders at retrieval-friendly latency. The price: storage blows up (hundreds of vectors per chunk; mitigated by compression/pooling in ColBERTv2/PLAID). The same late-interaction idea powers <strong>ColPali</strong> for document <em>images</em> (module 05). Position it as the middle point on the precision↔cost line: single-vector &lt; late interaction &lt; cross-encoder.</p>
+    </div>
+  </details>
+  <details class="sub">
+    <summary>Metadata filtering <span class="sumtag">pre-filter vs post-filter</span></summary>
+    <div class="inner">
+      <p><strong>Post-filtering</strong> (retrieve top-k, then filter) can return fewer than k — or zero — when the filter is selective. <strong>Pre-filtering</strong> applies the predicate during ANN traversal; correct, but highly selective filters degrade HNSW graph connectivity (the walk keeps hitting filtered-out nodes). Production engines build filter-aware indexes (e.g., partitioning by tenant). Mentioning this distinction signals you've operated, not just demoed. ACL enforcement (module 08's enterprise scenario) is exactly a pre-filter problem: <em>retrieval-time</em> permission filtering, never post-hoc.</p>
+    </div>
+  </details>
+
+  <div class="lens">
+    <div class="lt">interview lens</div>
+    <p class="say">I think of first-stage retrieval as a recall machine with three channels — BM25 for exact terms, dense for paraphrase, optionally learned-sparse like SPLADE for expansion — fused with RRF because it's scale-free. On the index side it's a memory/recall/latency triangle: HNSW when RAM allows and latency matters, IVF-PQ when scale forces compression, brute force below ~100k vectors. efSearch is the dial I tune live against the latency SLA. Precision is not first-stage's job — that's the reranker's.</p>
+  </div>
+</div>
+
+<!-- ============ MODULE 4 ============ -->
+<div class="module" id="m4">
+  <div class="mod-eyebrow">module 04 / precision stage</div>
+  <h2>Reranking &amp; context engineering</h2>
+  <p class="mod-why">Why interviewers ask: the rerank stage is the highest-leverage, lowest-risk upgrade to most pipelines — knowing exactly why shows you understand model architecture, not just APIs.</p>
+
+  <h3>Bi-encoder vs cross-encoder — the architectural reason rerankers win</h3>
+  <p>A <strong>bi-encoder</strong> (your embedding model) encodes query and document <em>separately</em>; relevance is a dot product of two independently-formed vectors. Fast — documents embed offline — but the model never sees query and document <em>together</em>, so it can't resolve fine interactions ("does <em>this</em> 'apple' mean the company <em>given this</em> query?").</p>
+  <p>A <strong>cross-encoder</strong> feeds the concatenated (query, document) pair through the transformer; every query token attends to every document token; output is a single calibrated relevance score. Far more accurate — and O(candidates) full forward passes per query, so it can't be the first stage over millions of docs.</p>
+  <p>Hence the canonical <strong>two-stage funnel:</strong> cheap high-recall first stage retrieves 50–150 candidates → cross-encoder rescores them → top 5–10 enter the prompt. Reranking also quietly solves your RRF limitation: heterogeneous channels fused by rank get re-scored on one calibrated scale.</p>
+
+  <details class="sub">
+    <summary>The reranker menu in 2026 <span class="sumtag">cross-encoders, LLM rerankers</span></summary>
+    <div class="inner">
+      <ul>
+        <li><strong>Cross-encoder services/models:</strong> Cohere Rerank 3.5 (API, multilingual), BGE-reranker-v2-m3 (open-source default), Qwen3-Reranker, Jina Reranker, mxbai-rerank. Latency: tens of ms for dozens of candidates on GPU.</li>
+        <li><strong>LLM-as-reranker:</strong> prompt an LLM to score candidates (pointwise) or to order a list (listwise, RankGPT-style with sliding windows over the candidate list). Highest quality and most expensive; pragmatic at low QPS or for offline label generation to train a cheap cross-encoder.</li>
+        <li><strong>Late-interaction rerank:</strong> ColBERT-style MaxSim as a middle stage when full cross-encoding is too slow.</li>
+      </ul>
+      <p>Knobs that matter: how many candidates in (recall ceiling), how many out (context budget), score threshold to <em>drop everything</em> when nothing is relevant — feeding confident garbage to the LLM is how hallucinations get authoritative.</p>
+    </div>
+  </details>
+
+  <details class="sub">
+    <summary>Context assembly — lost in the middle, compression, budgeting <span class="sumtag">what happens after rerank</span></summary>
+    <div class="inner">
+      <ul>
+        <li><strong>Lost in the middle</strong> (Liu et al.): LLM attention is U-shaped over long contexts — information buried mid-context is used worst. Mitigations: pass fewer, better chunks; place the strongest evidence first and last; don't max the window just because you can.</li>
+        <li><strong>Contextual compression:</strong> shrink retrieved text before the prompt — extractive (keep only relevant sentences; embedding-filter or LLM extractor) or abstractive/token-level (LLMLingua-style). Trades a small compute cost for a cleaner, cheaper prompt.</li>
+        <li><strong>Dedup &amp; diversity:</strong> overlapping chunks and near-duplicates waste budget; MMR (maximal marginal relevance) balances relevance against redundancy when selecting the final set.</li>
+        <li><strong>Structured assembly:</strong> delimit sources, attach IDs/titles for citation, order deliberately. The prompt is an engineered artifact, not a paste buffer.</li>
+      </ul>
+    </div>
+  </details>
+
+  <div class="lens">
+    <div class="lt">interview lens</div>
+    <p class="say">My mental model is a funnel: stage one is a recall machine, stage two is a precision machine. The cross-encoder earns its latency because it's the first component that actually reads the query and document together — full cross-attention — which is architecturally why it beats any similarity of independently-computed vectors. I'd retrieve 100, rerank to 5–8, set a relevance floor so the system can say 'nothing relevant found' instead of generating from noise, and I'd watch nDCG before/after to prove the stage pays rent.</p>
+  </div>
+</div>
+
+<!-- ============ MODULE 5 ============ -->
+<div class="module" id="m5">
+  <div class="mod-eyebrow">module 05 / architectures</div>
+  <h2>Advanced RAG architectures</h2>
+  <p class="mod-why">Why interviewers ask: anyone can recite the pipeline; the differentiator is knowing which architecture matches which failure mode — and what each one costs.</p>
+  <p>Organize them by the question they answer. <strong>Self-RAG / CRAG:</strong> "what if retrieval is wrong or unnecessary?" <strong>RAPTOR / GraphRAG family:</strong> "what if the answer spans many chunks?" <strong>Agentic RAG:</strong> "what if one fixed pipeline can't fit every query?" <strong>Multimodal:</strong> "what if the knowledge isn't text?"</p>
+
+  <details class="sub">
+    <summary>Self-RAG — the model critiques its own retrieval <span class="sumtag">reflection tokens</span></summary>
+    <div class="inner">
+      <p>A <em>fine-tuned</em> LM emits special <strong>reflection tokens</strong> during generation: <code>Retrieve</code> (do I need retrieval for this segment, or can I answer parametrically?), <code>ISREL</code> (is this passage relevant?), <code>ISSUP</code> (is my generated segment supported by the passage?), <code>ISUSE</code> (is the output useful?). Generation proceeds segment-by-segment, scoring candidate continuations by these self-critiques — adaptive retrieval plus built-in groundedness checking.</p>
+      <p>Honest assessment for interviews: the trained-token version is research-grade (you must fine-tune the generator), but the <em>pattern</em> — decide-to-retrieve, grade relevance, verify support — is widely reproduced with prompted judges in production systems. Cite it as the conceptual origin of "reflective RAG."</p>
+    </div>
+  </details>
+
+  <details class="sub">
+    <summary>CRAG — Corrective RAG <span class="sumtag">grade, refine, or go to the web</span></summary>
+    <div class="inner">
+      <p>Plug-and-play, no generator fine-tuning. A lightweight <strong>retrieval evaluator</strong> (small fine-tuned model or prompted LLM) grades retrieved docs and triggers one of three actions:</p>
+      <ul>
+        <li><strong>Correct</strong> → confidence high: refine the evidence via <em>decompose-then-recompose</em> — split docs into strips, score each, keep only relevant strips (intra-document noise filtering).</li>
+        <li><strong>Incorrect</strong> → all docs look wrong: discard them and fall back to <strong>web search</strong> (with query rewriting) for fresh evidence.</li>
+        <li><strong>Ambiguous</strong> → mix both: refined strips + web results.</li>
+      </ul>
+      <p>This is the canonical "freshness + robustness" answer: stale index, breaking-news query, knowledge gaps. It's also the textbook LangGraph tutorial graph — grade node, conditional edge, rewrite node — which makes it perfect Code Lab material (you'll wire it there).</p>
+    </div>
+  </details>
+
+  <details class="sub">
+    <summary>RAPTOR — recursive summary tree <span class="sumtag">retrieval at multiple abstraction levels</span></summary>
+    <div class="inner">
+      <p>Build time: embed leaf chunks → cluster them (soft clustering, GMM) → LLM-summarize each cluster → embed the summaries → cluster <em>those</em> → repeat, yielding a tree whose upper nodes are progressively more abstract summaries. Query time: retrieve across <em>all</em> levels ("collapsed tree"), so detail questions hit leaves and thematic questions ("what are the main arguments of this book?") hit high-level summaries.</p>
+      <p>It attacks the failure where naive RAG fetches three random fragments of a 300-page document and pretends that's "the themes." Costs: heavy index-time LLM summarization; updates require re-clustering branches. Mention it for long single documents (books, lengthy reports) and as the tree-shaped cousin of GraphRAG's community summaries.</p>
+    </div>
+  </details>
+
+  <details class="sub">
+    <summary>GraphRAG (Microsoft) — entities, communities, global questions <span class="sumtag">the heavyweight</span></summary>
+    <div class="inner">
+      <p><strong>Index:</strong> LLM extracts entities + typed relations (+ claims) from every chunk → assemble a knowledge graph → run <strong>Leiden community detection</strong> to find clusters of related entities, hierarchically → LLM writes a <strong>community summary</strong> per cluster at each level. This is the expensive part: an LLM pass over the whole corpus plus summarization — indexing cost is the #1 practical objection.</p>
+      <p><strong>Query modes:</strong></p>
+      <ul>
+        <li><strong>Local search</strong> — entity-anchored: find query entities, expand to neighbors/claims/source chunks. For "tell me about X and its relationships."</li>
+        <li><strong>Global search</strong> — map-reduce over community summaries: each relevant community answers, answers get reduced into one. For corpus-level "what are the main themes / who are the key players?" questions that pure vector RAG structurally cannot answer (no chunk contains "the themes").</li>
+        <li><strong>DRIFT search</strong> — hybrid that starts global, drills local.</li>
+      </ul>
+      <p><strong>Decision rule:</strong> GraphRAG earns its cost when queries are <em>relational or global</em> ("how is A connected to B?", "summarize across everything") and the corpus is relatively static. For needle-in-haystack lookups it's expensive overkill.</p>
+    </div>
+  </details>
+
+  <details class="sub">
+    <summary>LightRAG &amp; HippoRAG — graph benefits, lighter bills <span class="sumtag">the pragmatic graph family</span></summary>
+    <div class="inner">
+      <p><strong>LightRAG:</strong> builds an entity/relation graph but skips community clustering. Indexes nodes and edges as key-value entries (key: short label; value: summary). At query time an LLM extracts <strong>dual-level keywords</strong> — low-level (concrete entities) matched against node keys, high-level (themes) matched against edge/relation keys — then enriches with one-hop neighbors. Incremental updates are cheap (no global re-clustering), a direct answer to GraphRAG's static-corpus weakness.</p>
+      <p><strong>HippoRAG (1 &amp; 2):</strong> inspired by hippocampal indexing theory of human memory. Index: OpenIE-style triple extraction → schemaless KG with synonym edges (passages stay linked to their entities). Query: extract query entities → use them as <em>seeds</em> for <strong>Personalized PageRank</strong> over the graph — activation spreads through the network and lights up multi-hop-connected passages in a <em>single retrieval step</em>, no iterative LLM hops. Reported as dramatically cheaper than iterative multi-hop retrieval. HippoRAG 2 deepens passage integration alongside the graph.</p>
+      <p>Interview value: shows you know the graph space has a cost spectrum — Microsoft GraphRAG (heavy, global summaries) → LightRAG (dual-level, incremental) → HippoRAG (PPR, single-step multi-hop).</p>
+    </div>
+  </details>
+
+  <details class="sub">
+    <summary>Agentic RAG — retrieval becomes a tool <span class="sumtag">the 2025–26 default for hard queries</span></summary>
+    <div class="inner">
+      <p>Invert the architecture: instead of a fixed pipeline with the LLM at the end, an LLM <strong>agent</strong> sits in a loop — plan → act (call a tool) → observe → repeat — and <em>retrieval is just one tool</em> alongside web search, SQL, calculators, other indexes. The agent decides whether to retrieve, which source, with what query, and whether results are good enough or warrant another round (self-correction loops subsume CRAG's grade-and-retry as a special case).</p>
+      <ul>
+        <li><strong>Patterns:</strong> single ReAct agent with tools; router agent → specialist retrievers; planner/executor; multi-agent (researcher + critic + writer). "Deep research" products are agentic RAG with web-scale tools and long budgets.</li>
+        <li><strong>What it buys:</strong> multi-source synthesis, multi-hop reasoning, query-adaptive strategy, self-correction.</li>
+        <li><strong>What it costs:</strong> latency (many LLM round-trips), tokens, and — the senior-engineer point — <em>variance</em>: agent trajectories are nondeterministic, harder to evaluate, debug, and bound. Production answer: agentic where queries demand it, behind a router; static pipeline for the 80% of simple queries; cap tool-call budgets; trace everything.</li>
+      </ul>
+      <p>Orchestration is exactly what LangGraph and LlamaIndex Workflows exist for — module 06.</p>
+    </div>
+  </details>
+
+  <details class="sub">
+    <summary>Multimodal RAG — when knowledge isn't text <span class="sumtag">ColPali &amp; vision-native retrieval</span></summary>
+    <div class="inner">
+      <p>Two competing strategies for visually rich documents (slide decks, scanned PDFs, financial reports full of tables and charts):</p>
+      <ul>
+        <li><strong>Parse-to-text:</strong> OCR/layout-parse everything into text (+ LLM-generated descriptions of figures), then ordinary text RAG. Mature, searchable, but lossy — complex tables and charts mangle.</li>
+        <li><strong>Vision-native retrieval:</strong> embed <em>page images directly</em> with a VLM. <strong>ColPali</strong> applies ColBERT-style late interaction over page-image patch embeddings — retrieval "sees" layout, tables, charts without parsing. 2025–26 brought production-grade multimodal embedders/rerankers (Qwen3-VL-Embedding/Reranker, Cohere Embed v4 multimodal, voyage-multimodal) and this went mainstream for enterprise documents.</li>
+      </ul>
+      <p>Generation side: a VLM receives retrieved page images (or image + extracted text) as context. Decision axis: parsing pipelines when text dominates and you need fine-grained citation; vision-native when layout/visuals carry the meaning.</p>
+    </div>
+  </details>
+
+  <div class="tblwrap"><table class="tbl">
+    <tr><th>Architecture</th><th>Failure it fixes</th><th>Main cost</th><th>One-line decision rule</th></tr>
+    <tr><td>Self-RAG</td><td>Retrieving when unnecessary; unsupported generations</td><td>Fine-tuning (or prompted approximations)</td><td>Cite as the origin of reflective patterns</td></tr>
+    <tr><td>CRAG</td><td>Bad/stale retrieval poisoning answers</td><td>+1 grading call; web dependency</td><td>Freshness-critical or unreliable corpora</td></tr>
+    <tr><td>RAPTOR</td><td>Thematic questions over long docs</td><td>Index-time summarization</td><td>Books/long reports, "big picture" queries</td></tr>
+    <tr><td>GraphRAG</td><td>Relational + global corpus questions</td><td>Very expensive indexing</td><td>Static corpus, connection-heavy queries</td></tr>
+    <tr><td>LightRAG</td><td>Graph benefits with updates</td><td>Moderate; LLM keyword extraction</td><td>Graph needs + changing corpus</td></tr>
+    <tr><td>HippoRAG</td><td>Multi-hop without iterative calls</td><td>Triple extraction at index</td><td>Multi-hop QA at scale, budget-aware</td></tr>
+    <tr><td>Agentic</td><td>One pipeline can't fit all queries</td><td>Latency, tokens, variance</td><td>Route hard queries to it; cap budgets</td></tr>
+    <tr><td>Multimodal</td><td>Meaning lives in layout/visuals</td><td>VLM infra; image storage</td><td>Vision-native when parsing is lossy</td></tr>
+  </table></div>
+
+  <div class="lens">
+    <div class="lt">interview lens</div>
+    <p class="say">I'd pick architecture by failure mode, not fashion. If eval shows answers missing because evidence spans documents, that's the graph family — full GraphRAG if I need global summaries and the corpus is static, LightRAG or HippoRAG if it updates often or budget is tight. If the failure is stale or unreliable retrieval, that's CRAG's grade-and-fallback. If query diversity is the problem, I put an agent behind a router with a tool-call budget — agentic only for the queries that earn it, because every loop iteration is latency and variance I have to own in production.</p>
+  </div>
+</div>
+
+<!-- ============ MODULE 6 ============ -->
+<div class="module" id="m6">
+  <div class="mod-eyebrow">module 06 / tooling</div>
+  <h2>Frameworks: LangChain, LangGraph, LlamaIndex</h2>
+  <p class="mod-why">Why interviewers ask: framework fluency is a proxy for "has built more than one of these." You haven't used them — so learn the concepts and own the trade-off of not using them.</p>
+
+  <h3>LangChain — and what changed in 1.0</h3>
+  <p>LangChain's historical pitch: standard interfaces over models, retrievers, vector stores, plus composition. <strong>LangChain 1.0 (Oct 2025)</strong> was a major refocus you should know about:</p>
+  <ul>
+    <li><strong><code>create_agent</code></strong> is now the standard way to build agents — it replaced <code>langgraph.prebuilt.create_react_agent</code> and the long-deprecated AgentExecutor. It runs a tool-calling (ReAct-style) loop <em>on LangGraph's durable runtime</em> under the hood.</li>
+    <li><strong>Middleware</strong> — composable hooks into the agent loop (before/after model calls and tool calls): summarize long histories, human-in-the-loop approval, PII scrubbing, dynamic prompts. This is LangChain's answer to "the abstraction was too rigid."</li>
+    <li><strong>Slimmed namespace</strong> — legacy chains moved to <code>langchain-classic</code>; standard <code>content_blocks</code> across providers; no breaking changes promised until 2.0.</li>
+    <li><strong>LCEL</strong> (the <code>|</code> pipe syntax over Runnables) remains the idiom for composing simple chains: <code>retriever | prompt | llm | parser</code>. Still what most RAG quickstarts look like — the Code Lab drills it.</li>
+  </ul>
+
+  <h3>LangGraph — when the loop needs to be a graph</h3>
+  <p>A lower-level orchestration runtime: you define a typed <strong>state</strong>, <strong>nodes</strong> (functions that read/update state), and <strong>edges</strong> — including <em>conditional</em> edges and <em>cycles</em>, which classic DAG pipelines can't express. Built for production agents: <strong>durable execution</strong> (checkpointing — a crashed run resumes where it stopped), persistence-backed memory, human-in-the-loop interrupts, time-travel debugging. Reached 1.0 alongside LangChain.</p>
+  <p>The decision rule the LangChain team itself gives: start with <code>create_agent</code>; drop to LangGraph when you need explicit custom control flow — multi-agent topologies, deterministic stages mixed with agentic ones, approval gates. CRAG's grade→branch→rewrite loop is the canonical teaching example.</p>
+
+  <h3>LlamaIndex — the data-first framework</h3>
+  <ul>
+    <li><strong>Ingestion:</strong> <code>SimpleDirectoryReader</code> + 300+ LlamaHub connectors → <code>Document</code> objects → <strong>node parsers</strong> (SentenceSplitter, SentenceWindowNodeParser, semantic splitter) → <code>Node</code> objects with metadata/relationships. <strong>LlamaParse</strong> is the hosted parser for messy PDFs (tables!).</li>
+    <li><strong>Indexing:</strong> <code>VectorStoreIndex</code> (plus property-graph, summary, keyword indexes) over any vector store; <code>StorageContext</code> for persistence.</li>
+    <li><strong>Querying:</strong> <code>index.as_query_engine()</code> wraps retriever → node postprocessors (rerankers live here) → <strong>response synthesizer</strong>. Synthesis modes are a classic interview detail: <code>refine</code> (sequential: one LLM call per node, each refining the previous answer), <code>compact</code> (default: stuff as many nodes per call as fit, then refine across calls — fewer calls), <code>tree_summarize</code> (bottom-up recursive summarization — good for "summarize everything").</li>
+    <li><strong>Composition:</strong> router query engines, SubQuestionQueryEngine (decomposition), chat engines (conversation + condensation). <strong>Workflows</strong> — event-driven steps (<code>@step</code> methods consuming/emitting typed events) — are now the recommended way to build anything non-trivial, replacing monolithic engine assembly; agents (<code>FunctionAgent</code>/<code>ReActAgent</code>) ride on top. <code>llama-deploy</code> serves workflows as services.</li>
+  </ul>
+
+  <h3>Choosing — and the "no framework" position you already hold</h3>
+  <div class="tblwrap"><table class="tbl">
+    <tr><th>Axis</th><th>LangChain + LangGraph</th><th>LlamaIndex</th></tr>
+    <tr><td>Center of gravity</td><td>Orchestration: agents, tools, control flow</td><td>Data: ingestion, indexing, query engines</td></tr>
+    <tr><td>RAG quickstart</td><td>Assemble primitives with LCEL</td><td>5 lines to a query engine; opinionated defaults</td></tr>
+    <tr><td>Complex flows</td><td>LangGraph graphs (state, cycles, checkpoints)</td><td>Workflows (event-driven steps)</td></tr>
+    <tr><td>Stand-out extras</td><td>Middleware, durable runtime, LangSmith tracing</td><td>LlamaParse, LlamaHub, retrieval eval modules</td></tr>
+    <tr><td>Converging?</td><td colspan="2">Yes — both now center on agents + retrieval-as-tooling; the choice is taste + which ecosystem pieces you need.</td></tr>
+  </table></div>
+  <div class="anchor">
+    <div class="lt">owning the "I used Elasticsearch directly" answer</div>
+    <p>Don't apologize for it — defend it, then show range. Frameworks buy <em>velocity and integrations</em> at the price of <em>abstraction depth</em>: more layers to debug, version churn, magic defaults you must audit anyway. For a stable, simple pipeline — one retrieval pattern, one index, your exact fusion logic — a thin client against ES is less code than the framework adapter, and you own every line on the latency path.</p>
+    <p class="say">We deliberately skipped frameworks: our pipeline was one stable pattern — hybrid search with RRF — and Elasticsearch exposes that natively, so a framework would have added an abstraction layer over an API we already controlled, plus dependency churn on our critical path. The trade-off I'd reconsider as scope grows: the moment we need multi-source routing, agent loops, or fast experimentation across rerankers and synthesis strategies, that's exactly the leverage LangGraph or LlamaIndex sells, and I'd rather adopt one than rebuild checkpointing and tracing myself.</p>
+  </div>
+
+  <div class="lens">
+    <div class="lt">interview lens — vector store name-drops</div>
+    <p>One sentence of landscape fluency: managed (Pinecone), open-source engines (Qdrant, Weaviate, Milvus), Postgres-native (pgvector — the "boring is good" pick when you already run Postgres), and search engines doing double duty (Elasticsearch/OpenSearch — dense kNN + BM25 + RRF in one system, which is exactly why your stack needed no extra vector DB).</p>
+  </div>
+</div>
+
+<!-- ============ MODULE 7 ============ -->
+<div class="module" id="m7">
+  <div class="mod-eyebrow">module 07 / measurement</div>
+  <h2>Evaluation &amp; production engineering</h2>
+  <p class="mod-why">Why interviewers ask: "how do you know it works?" separates people who demo from people who ship. This module is also your debugging vocabulary for the inevitable "our RAG is wrong, fix it" scenario.</p>
+
+  <h3>The first principle: evaluate the two stages separately</h3>
+  <p>An end-to-end "answer quality" number can't tell you <em>which component</em> to fix. Split it:</p>
+  <div class="tblwrap"><table class="tbl">
+    <tr><th>Stage</th><th>Metric</th><th>What it tells you</th></tr>
+    <tr><td rowspan="4">Retrieval</td><td>recall@k</td><td>Did the relevant docs make it into the top k <em>at all</em>? The ceiling on everything downstream.</td></tr>
+    <tr><td>precision@k / context precision</td><td>How much of what you retrieved is actually relevant — and (RAGAS context precision) is the relevant material ranked <em>high</em>? Low score with good recall = ranking problem → reranker.</td></tr>
+    <tr><td>MRR</td><td>Where does the <em>first</em> relevant doc rank? Great for FAQ-style single-answer tasks.</td></tr>
+    <tr><td>nDCG@k</td><td>Position-aware, graded relevance. Correlates best with end-to-end quality; the standard before/after metric for reranker changes.</td></tr>
+    <tr><td rowspan="3">Generation</td><td>faithfulness / groundedness</td><td>Fraction of claims in the answer supported by retrieved context. Measures hallucination — <em>not</em> correctness: a faithful answer to bad context is still wrong.</td></tr>
+    <tr><td>answer relevancy</td><td>Does the answer address the question? (RAGAS trick: generate questions <em>from the answer</em>, embed, compare to the original query.)</td></tr>
+    <tr><td>answer correctness</td><td>Agreement with ground truth, when you have it. The end-to-end truth metric.</td></tr>
+  </table></div>
+  <p>RAGAS mechanics worth knowing cold: <strong>faithfulness</strong> = LLM extracts atomic claims from the answer, verifies each against the context, score = supported/total. <strong>Context recall</strong> = can each sentence of the ground-truth answer be attributed to retrieved context (needs labels). <strong>Context precision</strong> rewards relevant chunks ranked above irrelevant ones. <strong>Noise sensitivity</strong> probes whether irrelevant retrieved content corrupts the answer. Citation metrics: track <strong>citation precision</strong> (cited sources actually support the claim) and <strong>citation recall</strong> (claims that have citations) separately.</p>
+
+  <details class="sub">
+    <summary>Golden datasets &amp; LLM-as-judge <span class="sumtag">where eval data comes from</span></summary>
+    <div class="inner">
+      <ul>
+        <li><strong>Golden set:</strong> 50–300 (query → relevant docs → reference answer) triples. Sources: real user queries (best), SME-written, or <strong>synthetic generation</strong> — LLM reads chunks and writes questions answerable from them (RAGAS testset generation does this, with evolution into multi-hop/reasoning variants). Synthetic sets skew easy: questions generated from a chunk are phrased like the chunk. Mix in real, adversarial, and unanswerable queries.</li>
+        <li><strong>LLM-as-judge:</strong> scalable scoring of faithfulness/relevance with rubrics. Known biases — verbosity preference, position bias in pairwise comparisons, self-preference. Mitigate: pinned judge model + version, rubric prompts, randomized order, periodic human calibration audit.</li>
+        <li><strong>Tooling:</strong> RAGAS (canonical metrics, dataset pipelines), DeepEval (pytest-style, CI-friendly), Promptfoo (A/B + red-teaming); tracing/observability via LangSmith, Langfuse, or Arize Phoenix. Eval in CI = retrieval regression tests run on every index or prompt change.</li>
+      </ul>
+    </div>
+  </details>
+
+  <details class="sub">
+    <summary>The failure-point taxonomy — your debugging map <span class="sumtag">symptom → component → fix</span></summary>
+    <div class="inner">
+      <p>Adapted from the "Seven Failure Points of RAG" line of work — this table <em>is</em> the answer to "our RAG gives wrong answers, what do you do?":</p>
+      <div class="tblwrap"><table class="tbl">
+        <tr><th>Symptom</th><th>Likely failure</th><th>First fixes</th></tr>
+        <tr><td>"I don't know" on answerable questions</td><td>Missing content or recall failure</td><td>Check doc actually ingested/parsed; hybrid retrieval; query expansion; raise k</td></tr>
+        <tr><td>Right doc exists, ranked too low</td><td>Ranking failure (recall ok, precision bad)</td><td>Add cross-encoder reranker; contextual enrichment; tune fusion weights</td></tr>
+        <tr><td>Retrieved chunk doesn't contain full answer</td><td>Chunking failure — answer split across boundaries</td><td>Parent-document / sentence-window; structure-aware chunking; bigger units</td></tr>
+        <tr><td>Hallucination despite good retrieval</td><td>Generation faithfulness failure</td><td>Grounding prompt + citations; lower temperature; post-hoc NLI verification; abstain threshold</td></tr>
+        <tr><td>Correct but stale answers</td><td>Index freshness failure</td><td>Incremental ingestion; recency-aware ranking; CRAG-style web fallback</td></tr>
+        <tr><td>Wrong format / ignored instructions</td><td>Prompt-assembly or output-contract failure</td><td>Structured output schemas; separate instruction block from evidence block</td></tr>
+        <tr><td>Inconsistent answers across phrasings</td><td>Query sensitivity</td><td>Multi-query + RRF; conversational condensation; eval per query-cluster</td></tr>
+      </table></div>
+      <p>The diagnostic <em>procedure</em> to narrate: reproduce → inspect the trace (what was retrieved, in what order, what entered the prompt) → classify against this table → fix the earliest failing stage → add the case to the golden set so it can't regress.</p>
+    </div>
+  </details>
+
+  <details class="sub">
+    <summary>Production realities <span class="sumtag">cost, latency, freshness, security</span></summary>
+    <div class="inner">
+      <ul>
+        <li><strong>Latency budget:</strong> embed query (~10–30ms) + ANN search (~10–50ms) + rerank (~30–150ms) + LLM generation (the elephant: 1–10s). Optimize generation first (streaming, smaller models, caching), then retrieval.</li>
+        <li><strong>Cost levers, in order:</strong> (1) retrieve <em>less but better</em> — k=6 with a reranker beats k=12 raw on both cost and quality; (2) model-tier routing — small model for easy queries, big for synthesis; (3) caching — semantic query cache, prompt-prefix caching, embedding cache.</li>
+        <li><strong>Freshness:</strong> incremental upserts with stable chunk IDs (hash content), tombstone deletes, re-embed only changed chunks; reconciliation jobs against the source of truth. Embedding-model upgrades = full re-embed migration — version your vectors.</li>
+        <li><strong>Security/ACLs:</strong> permission filtering at <em>retrieval time</em> (pre-filter by user's entitlements), never "retrieve everything, filter in the prompt." Multi-tenant isolation by namespace/partition. RAG also enlarges the prompt-injection surface: retrieved documents can carry adversarial instructions — sanitize, and treat retrieved text as data, not commands.</li>
+        <li><strong>Monitoring:</strong> online proxies (retrieval scores distribution, abstain rate, citation coverage, thumbs feedback) + periodic offline eval on the golden set; alert on drift.</li>
+      </ul>
+    </div>
+  </details>
+
+  <div class="lens">
+    <div class="lt">interview lens</div>
+    <p class="say">My evaluation rule is: never a single score. Retrieval gets recall@k and nDCG against a golden set; generation gets faithfulness and answer relevancy, judged by a pinned LLM judge with spot human audits. The split matters because the fix differs — low recall means better first-stage retrieval or query expansion, low context-precision with fine recall means I need a reranker, and hallucination with good retrieval is a generation problem, not a search problem. Every production incident becomes a golden-set case, so the suite gets harder as the system ages.</p>
+  </div>
+</div>
+
+<!-- ============ MODULE 8 ============ -->
+<div class="module" id="m8">
+  <div class="mod-eyebrow">module 08 / horizon</div>
+  <h2>2026 trends &amp; the "isn't RAG dead?" question</h2>
+  <p class="mod-why">Why interviewers ask: to see if you follow the field and can hold a nuanced position under a provocative framing.</p>
+
+  <h3>Long context vs RAG — the canonical answer</h3>
+  <p>The provocation: "models take 1M+ tokens now; why retrieve at all?" The senior answer has four legs:</p>
+  <ul>
+    <li><strong>Economics:</strong> stuffing a million tokens into <em>every query</em> costs orders of magnitude more than retrieving the relevant 4k — and is slower. Caching helps repeated context, not heterogeneous corpora.</li>
+    <li><strong>Scale:</strong> corpora are GB–TB; context windows are MB. The corpus will always be bigger than the window.</li>
+    <li><strong>Attention quality:</strong> effective use of context degrades as it fills ("lost in the middle", needle-in-haystack failures at depth). More context ≠ more comprehension.</li>
+    <li><strong>Governance:</strong> ACLs, freshness, and citation all require knowing <em>which</em> evidence supports the answer — which is retrieval by definition.</li>
+  </ul>
+  <p>The synthesis: long context and RAG are complements. Long windows let you retrieve <em>coarser</em> units (whole documents, whole sections) and stress chunking less; retrieval remains the mechanism that decides <em>what deserves the window</em>. The fashionable umbrella term is <strong>context engineering</strong> — RAG is its retrieval arm.</p>
+
+  <h3>What's actually moving in 2026</h3>
+  <ul>
+    <li><strong>Agentic search as the default for hard questions</strong> — deep-research products normalize multi-step retrieve-reason loops; RAG pipelines increasingly expose themselves as <em>tools</em> for agents rather than end-user endpoints.</li>
+    <li><strong>From RAG to memory systems</strong> — persistent agent memory (episodic, semantic, procedural) built on retrieval substrates; known failure mode to name-drop: memory consolidation that summarizes past interactions can <em>introduce</em> errors that compound ("the agent gets dumber as memory grows") and most stacks lack tooling to inspect or roll back memory state.</li>
+    <li><strong>Multimodal RAG mainstreaming</strong> — vision-native retrieval (ColPali-style, Qwen3-VL embedding/reranker families, Cohere Embed v4) moving enterprise document QA away from lossy OCR pipelines.</li>
+    <li><strong>Structured + neural hybrids</strong> — graphs, SQL, and symbolic filters fused with vectors; the "bag of isolated chunks" model acknowledged as incompatible with reasoning chains.</li>
+    <li><strong>Evaluation maturing into CI</strong> — retrieval regression suites, citation metrics, cost-per-passing-query as the composite KPI.</li>
+  </ul>
+
+  <div class="lens">
+    <div class="lt">interview lens</div>
+    <p class="say">RAG-the-buzzword is fading; RAG-the-capability is being absorbed. The 2023 fixed pipeline is dissolving into agentic systems where retrieval is a tool, and into context engineering where the job is deciding what earns the window. But every leg of the original case — cost, corpus scale, attention degradation, permissions, citations — still stands, so retrieval isn't going anywhere. What's dying is the assumption that one static retrieve-then-generate pass is the architecture. I'd build today's system so the retriever is a clean, separately-evaluated service — that's the part that survives every architecture shift above it.</p>
+  </div>
+</div>
+
+</div><!-- /wrap -->
+</section><!-- /tab-learn -->
+
+<!-- ================= SYSTEM DESIGN ================= -->
+<section class="tab" id="tab-design">
+<div class="wrap">
+  <div class="hero">
+    <h1>System design <em>scenarios</em></h1>
+    <p class="sub">Six interview-realistic prompts. For each: think out loud for 10–15 minutes before opening anything. Then compare against the clarifying questions, the model answer, and — most importantly — the rubric of what interviewers are actually listening for.</p>
+  </div>
+
+  <div class="panel" style="margin-top:18px">
+    <h2>The answer skeleton that works for every scenario</h2>
+    <p class="pd">Interviewers grade structure as much as content. Use the same five moves every time:</p>
+    <ol>
+      <li><strong>Clarify the workload</strong> — corpus size/shape, query types, freshness, latency/cost budget, accuracy stakes, security. (2 minutes; signals seniority instantly.)</li>
+      <li><strong>Decompose</strong> — ingestion → retrieval → generation → evaluation. Name the hard sub-problem this scenario hides.</li>
+      <li><strong>Baseline first</strong> — propose the simplest credible pipeline; say what it gets right.</li>
+      <li><strong>Layer upgrades as trade-offs</strong> — "if X fails, I add Y, which costs Z." Every component must pay rent.</li>
+      <li><strong>Close with evaluation</strong> — golden set, retrieval metrics vs generation metrics, how the system improves over time.</li>
+    </ol>
+  </div>
+
+  <!-- scenario 1 -->
+  <div class="scncard">
+    <span class="chip pri">scenario 01</span>
+    <h2>Legal document QA with mandatory citations</h2>
+    <div class="scnprompt"><b>the prompt</b>Design a question-answering system over 10 million legal PDFs — contracts, case law, regulatory filings. Lawyers must receive answers with exact citations down to page and paragraph. A confidently wrong answer is worse than no answer.</div>
+    <details class="sub"><summary>Clarifying questions to ask first <span class="sumtag">2 minutes that buy credibility</span></summary><div class="inner">
+      <ul>
+        <li>Query mix: single-document lookups, or cross-document synthesis ("how have courts interpreted clause X")?</li>
+        <li>Latency tolerance — is 5–10 seconds acceptable for a high-stakes answer? (Almost certainly yes; quality dominates.)</li>
+        <li>What fraction of the corpus is scanned (OCR required) vs born-digital? Tables and exhibits?</li>
+        <li>Update cadence — daily filings? Are old versions of contracts superseded or co-existing?</li>
+        <li>Citation granularity contract: page + paragraph IDs from the source PDF?</li>
+        <li>Jurisdiction/date filters needed as first-class query parameters?</li>
+      </ul>
+    </div></details>
+    <details class="sub"><summary>Model answer <span class="sumtag">architecture + the decisions that matter</span></summary><div class="inner">
+      <p><strong>Hard sub-problem named up front:</strong> trustworthy citations at scale — which forces structure-preserving ingestion and verification at generation, not just good retrieval.</p>
+      <p><strong>Ingestion.</strong> Layout-aware parsing (LlamaParse-class tooling or a layout model) + OCR lane for scans. Preserve structure: section hierarchy, clause numbers, page/paragraph anchors stored as chunk metadata. Chunk along legal structure — clauses and sections, never fixed windows; tables and exhibits extracted atomically. Add contextual enrichment per chunk (doc title, parties, jurisdiction, section path prepended before embedding — Anthropic-style contextual retrieval): at this quality bar the index-time LLM cost is justified and prompt caching keeps it sane.</p>
+      <p><strong>Index &amp; scale math.</strong> 10M documents at ~50–200 chunks each → call it 1–2B chunks: this is shard-and-partition territory. Partition by jurisdiction/doc-type (also your pre-filter), HNSW per shard if RAM allows, or IVF-PQ/DiskANN tiers for the cold tail. Hybrid channels: BM25 is non-negotiable — statute numbers, case citations, defined terms are exact strings embeddings blur — plus dense for paraphrase, fused with RRF; metadata pre-filters for jurisdiction and date.</p>
+      <p><strong>Query side.</strong> Self-query extraction of filters (jurisdiction, date range, doc type); routing between lookup (direct hybrid) and synthesis (decomposition into sub-questions per document family).</p>
+      <p><strong>Precision stage.</strong> Cross-encoder reranker over ~100 candidates → top 5–8, with a relevance floor: below threshold the system abstains ("no supporting authority found") rather than generating. Abstention is a feature here.</p>
+      <p><strong>Generation with enforced citations.</strong> Chunks enter the prompt with stable IDs carrying page/paragraph anchors. The model must emit claim→ID mappings (structured output). Then a verification pass — NLI or LLM-judge — checks each claim against its cited span; unsupported claims are dropped or the answer abstains. Citations are <em>verified</em>, never trusted.</p>
+      <p><strong>Evaluation.</strong> Lawyer-annotated golden set; retrieval recall@k and nDCG; citation precision (cited span supports claim) and citation recall (claims carrying citations) tracked separately; faithfulness; human review queue for low-confidence answers. Every escalation becomes a regression case.</p>
+    </div></details>
+    <details class="sub"><summary>What interviewers listen for <span class="sumtag">the rubric</span></summary><div class="inner">
+      <ul class="rubric">
+        <li>Scale arithmetic at the chunk level (docs × chunks), and partitioning as both a scale and filtering strategy.</li>
+        <li>An exact-match channel justified by the domain (legal identifiers) — hybrid as a reasoned choice, not a buzzword.</li>
+        <li>Citation enforcement as a mechanism (IDs + structured output + verification), not "the LLM will cite."</li>
+        <li>Abstention path and where the threshold lives.</li>
+        <li>OCR/parsing treated as a first-class risk, not a footnote.</li>
+        <li>Citation precision/recall named as separate metrics.</li>
+      </ul>
+    </div></details>
+    <details class="sub"><summary>Red flags to avoid <span class="sumtag">instant credibility loss</span></summary><div class="inner">
+      <ul class="redflag">
+        <li>"Embed everything, top-k, done" — no structure preservation, no exact-match channel.</li>
+        <li>Taking LLM-generated citations on faith.</li>
+        <li>No answer for scanned documents or tables.</li>
+        <li>No abstain behavior in a domain where wrong &gt; silent is catastrophic.</li>
+      </ul>
+    </div></details>
+  </div>
+
+  <!-- scenario 2 -->
+  <div class="scncard">
+    <span class="chip pri">scenario 02</span>
+    <h2>Enterprise assistant across Confluence, Jira, Drive, Slack — with permissions</h2>
+    <div class="scnprompt"><b>the prompt</b>Build an internal assistant that answers employee questions across Confluence, Jira, Google Drive, and Slack. Employees have different access rights, content changes constantly, and a permissions leak is a security incident.</div>
+    <details class="sub"><summary>Clarifying questions to ask first</summary><div class="inner">
+      <ul>
+        <li>Source of truth for permissions — IdP groups? Per-source ACLs? How fast must revocation propagate?</li>
+        <li>Freshness SLA per source (Slack minutes? Confluence hours?).</li>
+        <li>Query mix: how-to knowledge, project status, people/ownership questions?</li>
+        <li>Scale: documents per source, daily active users, peak QPS.</li>
+        <li>Audit/compliance requirements on what the assistant saw and said.</li>
+      </ul>
+    </div></details>
+    <details class="sub"><summary>Model answer</summary><div class="inner">
+      <p><strong>Hard sub-problem named up front:</strong> ACL-correct retrieval under constant change. Everything else is standard; this is what you must not get wrong.</p>
+      <p><strong>Ingestion.</strong> Per-source connectors on change feeds/webhooks → normalize into one schema: content, source, url, updated_at, <em>acl_principals</em> (users/groups allowed). Chunking per source type: Confluence pages → structure-aware by headings with heading-path prefixes; Drive docs similar; Jira tickets and Slack threads are short, self-contained units — <strong>document-level embedding is correct there</strong> (chunking them would fragment atomic content). One pipeline, per-type strategies.</p>
+      <p><strong>The ACL design.</strong> Index ACL principals as chunk metadata. At query time, expand the user's identity to their group set from the IdP, and apply it as a <em>pre-filter inside retrieval</em> — the ANN/BM25 search itself only traverses authorized chunks. Never post-filter (selective filters can empty your top-k, and worse, unauthorized text must never even reach the reranker or prompt). Permission changes: event-driven metadata updates with a revocation SLA, plus a periodic reconciliation sweep against the sources. Multi-tenant style partitioning where group structure allows it.</p>
+      <p><strong>Retrieval.</strong> Per-source hybrid (BM25 + dense, RRF) — then federated fusion across sources with source-aware weighting; recency boost for Slack/Jira where freshness ≈ relevance. Cross-encoder rerank on the merged set. Router for query classes (people questions → directory tool, not RAG).</p>
+      <p><strong>Conversation &amp; generation.</strong> Condense multi-turn history to standalone queries; answers carry source links and updated_at timestamps; audit log of retrieved IDs per answer.</p>
+      <p><strong>Evaluation &amp; the security test that impresses:</strong> automated <em>ACL leak tests in CI</em> — adversarial probes asserting user A can never retrieve content only user B may see, run on every index/code change. Plus per-source golden sets, freshness-lag monitoring (event → retrievable), and standard retrieval/generation metrics.</p>
+    </div></details>
+    <details class="sub"><summary>What interviewers listen for</summary><div class="inner">
+      <ul class="rubric">
+        <li>Pre-filtering at retrieval time, stated explicitly, with the post-filter failure modes explained.</li>
+        <li>Revocation propagation + reconciliation — permissions as a <em>pipeline</em>, not a flag.</li>
+        <li>Per-source chunking judgment (short atomic items embedded whole — your project pattern, generalized).</li>
+        <li>Federated fusion and recency weighting across heterogeneous sources.</li>
+        <li>ACL leak testing as part of evaluation, not an afterthought.</li>
+      </ul>
+    </div></details>
+    <details class="sub"><summary>Red flags to avoid</summary><div class="inner">
+      <ul class="redflag">
+        <li>Filtering results after retrieval, or "instructing the model" not to reveal unauthorized content.</li>
+        <li>One chunk size for wiki pages, tickets, and chat threads alike.</li>
+        <li>Nightly full re-crawls as the only freshness story.</li>
+        <li>No audit trail of what evidence produced an answer.</li>
+      </ul>
+    </div></details>
+  </div>
+
+  <!-- scenario 3 -->
+  <div class="scncard">
+    <span class="chip pri">scenario 03</span>
+    <h2>Customer support chatbot — multi-turn, with escalation</h2>
+    <div class="scnprompt"><b>the prompt</b>Design a customer-facing support bot over product docs, FAQs, and resolved tickets. Conversations are multi-turn. The bot must hand off to a human when it isn't confident — silently wrong answers create churn.</div>
+    <details class="sub"><summary>Clarifying questions to ask first</summary><div class="inner">
+      <ul>
+        <li>Success metric: deflection rate, CSAT, resolution rate — and which dominates when they conflict?</li>
+        <li>Latency budget (chat UX usually wants first token &lt; ~2–3s → streaming).</li>
+        <li>Can the bot access account data via tools, or knowledge-base only?</li>
+        <li>Languages? PII handling rules for the ticket corpus?</li>
+        <li>How is "not confident" allowed to behave — escalate, ask clarifying question, or both?</li>
+      </ul>
+    </div></details>
+    <details class="sub"><summary>Model answer</summary><div class="inner">
+      <p><strong>Hard sub-problem named up front:</strong> multi-turn query understanding + a principled abstention/escalation path. The retrieval itself is standard.</p>
+      <p><strong>Corpus design.</strong> Three collections, three unit strategies: product docs → structure-aware chunks with heading paths; FAQs → indexed as <em>QA pairs</em> — embed the question (queries match questions far better than answers), return the answer; resolved tickets → PII-scrubbed, filtered to resolution-bearing ones, embedded <em>whole</em> (short, self-contained — the document-level pattern again).</p>
+      <p><strong>Conversational layer.</strong> Every turn: condense history + new message into a standalone query (the step most designs forget — "what about the Pro plan?" retrieves nothing raw). Then route: chitchat → no retrieval; product question → RAG; account-specific → API tools or escalate; frustration signals → human, immediately.</p>
+      <p><strong>Retrieval &amp; confidence.</strong> Hybrid + RRF across the three collections; cross-encoder rerank with a calibrated threshold. Below threshold → the bot says it isn't sure, asks one clarifying question or escalates with full context attached (conversation + retrieved candidates) so the human starts warm. Optimizing deflection <em>quality</em> over deflection <em>rate</em> is the stance to state.</p>
+      <p><strong>Generation.</strong> Grounded prompt with doc links; guardrails on promises/refund policy; streaming; semantic cache for frequent questions (FAQ cache short-circuits the whole pipeline for the head of the distribution).</p>
+      <p><strong>The flywheel.</strong> Thumbs + escalation outcomes feed the golden set weekly; track resolution rate, escalation precision (of escalated, how many truly needed humans), faithfulness on a sampled basis; CSAT per answered-vs-escalated cohort. The eval suite grows from production pain.</p>
+    </div></details>
+    <details class="sub"><summary>What interviewers listen for</summary><div class="inner">
+      <ul class="rubric">
+        <li>History condensation named explicitly as a pipeline stage.</li>
+        <li>Routing before retrieval — not every turn deserves the vector DB.</li>
+        <li>FAQ-as-question-index insight; per-collection unit choices.</li>
+        <li>Escalation designed as a feature with a threshold and warm handoff, not a failure.</li>
+        <li>Feedback loop wired into evaluation; metrics that resist gaming (deflection quality).</li>
+      </ul>
+    </div></details>
+    <details class="sub"><summary>Red flags to avoid</summary><div class="inner">
+      <ul class="redflag">
+        <li>Retrieving on the raw last message in a multi-turn chat.</li>
+        <li>Answering account/billing specifics from documentation.</li>
+        <li>No abstention threshold — the bot always answers something.</li>
+        <li>Reporting deflection rate as the only success number.</li>
+      </ul>
+    </div></details>
+  </div>
+
+  <!-- scenario 4 -->
+  <div class="scncard">
+    <span class="chip pri">scenario 04</span>
+    <h2>Financial news QA — freshness is the product</h2>
+    <div class="scnprompt"><b>the prompt</b>Analysts ask questions about market-moving events. Sources: news wires and regulatory filings arriving continuously. Answers must reflect the latest information and must never silently serve stale facts.</div>
+    <details class="sub"><summary>Clarifying questions to ask first</summary><div class="inner">
+      <ul>
+        <li>Freshness SLO: how many seconds/minutes from publication to retrievable?</li>
+        <li>Temporal queries ("as of last Tuesday", "before the merger announcement") in scope?</li>
+        <li>How should conflicting reports be handled — prefer newest, prefer primary, or surface the conflict?</li>
+        <li>Numeric precision stakes (prices, EPS) — is paraphrase of numbers acceptable? (No.)</li>
+        <li>Is live web/search-API fallback allowed when the index lags?</li>
+      </ul>
+    </div></details>
+    <details class="sub"><summary>Model answer</summary><div class="inner">
+      <p><strong>Hard sub-problem named up front:</strong> time. Treat event-time as first-class metadata, make freshness structural, and design an explicit staleness escape hatch.</p>
+      <p><strong>Ingestion.</strong> Streaming pipeline: parse → enrich (tickers/entities normalized, event_time vs ingest_time both stored) → embed → upsert within the freshness SLO. <strong>Time-partitioned indexes:</strong> a hot index (last 24–72h, small, fast, re-rankable aggressively) and a warm/cold archive — recency boosts and TTL become index structure, not score hacks.</p>
+      <p><strong>Retrieval.</strong> Hybrid (tickers and exact figures are BM25 territory; event paraphrase is dense territory) + RRF; self-query extracts time filters and entities ("Tesla this week" → ticker=TSLA, event_time within 7d); recency-aware ranking inside the window the query implies.</p>
+      <p><strong>The CRAG layer — this scenario is where it earns its keep.</strong> A retrieval evaluator grades the candidate set for sufficiency and staleness relative to query intent. Confident → decompose-and-recompose strip refinement (keep only relevant sentences). Stale/insufficient → query-rewritten live search-API fallback. Ambiguous → merge both. The system <em>never</em> silently answers from an index it judged stale.</p>
+      <p><strong>Generation.</strong> Every answer states its evidence timestamp ("as of 14:32 UTC, per Reuters…"); numbers quoted verbatim from sources with citations; conflicts surfaced explicitly ("Reuters reports X; the 8-K states Y") with primary sources preferred. As-of semantics in the prompt for temporal queries.</p>
+      <p><strong>Evaluation.</strong> Freshness lag as a monitored SLO (publication → retrievable); staleness incidents become golden cases; faithfulness + numeric-accuracy spot checks; canary queries on scheduled events (earnings releases) to verify the pipeline catches them within SLO.</p>
+    </div></details>
+    <details class="sub"><summary>What interviewers listen for</summary><div class="inner">
+      <ul class="rubric">
+        <li>Hot/warm index partitioning — freshness as architecture.</li>
+        <li>event_time vs ingest_time distinction; temporal filters from self-query.</li>
+        <li>A graded fallback path (CRAG pattern) with explicit staleness detection.</li>
+        <li>Answers that disclose their as-of time; conflict surfacing policy.</li>
+        <li>Freshness SLO with monitoring, not "we re-index often."</li>
+      </ul>
+    </div></details>
+    <details class="sub"><summary>Red flags to avoid</summary><div class="inner">
+      <ul class="redflag">
+        <li>One monolithic index rebuilt nightly for a minute-fresh product.</li>
+        <li>Recency handled only by a score multiplier with no time metadata.</li>
+        <li>Letting the model answer from parametric memory about breaking news.</li>
+        <li>No behavior difference when the index is known-stale.</li>
+      </ul>
+    </div></details>
+  </div>
+
+  <!-- scenario 5 -->
+  <div class="scncard">
+    <span class="chip pri">scenario 05</span>
+    <h2>Codebase QA over a 10M-line monorepo</h2>
+    <div class="scnprompt"><b>the prompt</b>Build an assistant for engineers: "where is rate limiting implemented?", "how does the billing service talk to invoicing?", "write a client for our internal config API." The repo changes with every merge.</div>
+    <details class="sub"><summary>Clarifying questions to ask first</summary><div class="inner">
+      <ul>
+        <li>Languages in the repo; do docs (READMEs, ADRs, runbooks) join the corpus?</li>
+        <li>Query mix: symbol lookup vs conceptual "how does X work" vs code generation?</li>
+        <li>Freshness: index on every merge to main? Branch awareness needed?</li>
+        <li>Latency target (IDE-adjacent → snappy) and where it runs (code can't leave the VPC?).</li>
+      </ul>
+    </div></details>
+    <details class="sub"><summary>Model answer</summary><div class="inner">
+      <p><strong>Hard sub-problem named up front:</strong> code's meaning lives in <em>structure and references</em>, not prose similarity — so chunk by syntax and retrieve partly by graph.</p>
+      <p><strong>Chunking.</strong> AST-aware: functions/classes as units, each carrying file path, signature, docstring, and its import context as metadata; oversized functions split at block boundaries. READMEs/ADRs chunked by headings. Never fixed 512-token windows over code — that severs definitions mid-body.</p>
+      <p><strong>Retrieval — hybrid is non-negotiable here.</strong> Identifiers are exact tokens: <code>RateLimiterV2</code> must hit via BM25/keyword (with identifier-aware tokenization: camelCase/snake_case splitting), while "how do we throttle requests" needs dense embeddings (code-tuned embedding model). Fuse with RRF — your fusion pattern, third domain.</p>
+      <p><strong>Cross-file questions need a graph.</strong> "How does billing talk to invoicing" spans files no chunk covers. Build a lightweight code graph (imports, call edges, service interfaces from build metadata). Retrieval: text channels find seed symbols → expand 1–2 hops along the graph → rerank the expanded set. This is the LightRAG/HippoRAG idea applied where the graph is <em>free</em> — compilers already know it; no LLM extraction needed.</p>
+      <p><strong>Freshness.</strong> Index incrementally per merge: changed files only, chunk IDs = path + content-hash, tombstone removed symbols. Full re-index only on embedding-model upgrades.</p>
+      <p><strong>Generation.</strong> Answers cite file paths + line ranges; for "write code using our API" queries, retrieve usage examples — <em>tests are gold</em> (canonical, working invocations) — and pin to current signatures to avoid training-data drift of internal APIs.</p>
+      <p><strong>Evaluation.</strong> Golden set from real dev questions (Slack #help mining); exact-symbol-lookup recall tracked separately from conceptual-question quality; "first correct file in top-3" as a UX-aligned metric; generated-code compile/test pass rate.</p>
+    </div></details>
+    <details class="sub"><summary>What interviewers listen for</summary><div class="inner">
+      <ul class="rubric">
+        <li>AST/structure chunking with path+signature context attached.</li>
+        <li>Exact-identifier channel with code-aware tokenization, justified by failure modes.</li>
+        <li>Graph expansion for cross-file reasoning — and noticing the code graph is free.</li>
+        <li>Merge-time incremental indexing with content-hash IDs.</li>
+        <li>Tests-as-usage-examples; citations as file:line.</li>
+      </ul>
+    </div></details>
+    <details class="sub"><summary>Red flags to avoid</summary><div class="inner">
+      <ul class="redflag">
+        <li>Fixed-size text chunking over source code.</li>
+        <li>Dense-only retrieval where exact symbols dominate queries.</li>
+        <li>Nightly full re-embeds of a repo that merges hourly.</li>
+        <li>Code answers without file references.</li>
+      </ul>
+    </div></details>
+  </div>
+
+  <!-- scenario 6 -->
+  <div class="scncard">
+    <span class="chip pri">scenario 06</span>
+    <h2>"Our RAG gives wrong answers — you have two weeks"</h2>
+    <div class="scnprompt"><b>the prompt</b>You join a team running a naive pipeline (512-token chunks, single embedding model, top-5, straight into the prompt). Users report wrong answers, "I don't know" on covered topics, and invented policy details. Diagnose and fix it.</div>
+    <details class="sub"><summary>Clarifying questions to ask first</summary><div class="inner">
+      <ul>
+        <li>Is there tracing — per query, can I see what was retrieved, with what scores, and the final prompt?</li>
+        <li>Does any eval set exist? Labeled complaints? Can I mine tickets?</li>
+        <li>Complaint distribution: which of the three symptoms dominates?</li>
+        <li>Corpus shape: doc types, structure, size; who owns ingestion?</li>
+      </ul>
+    </div></details>
+    <details class="sub"><summary>Model answer — narrate a procedure, not a shopping list</summary><div class="inner">
+      <p><strong>Step 1 — instrument before touching anything.</strong> Add tracing: query → retrieved chunks + scores + ranks → assembled prompt → answer. You cannot debug retrieval you cannot see.</p>
+      <p><strong>Step 2 — build the golden set (day 1–3).</strong> 50–100 cases from complaint tickets + known-good queries, each labeled with relevant docs and a reference answer. This is the yardstick every change gets measured against.</p>
+      <p><strong>Step 3 — bucket failures with split metrics.</strong> Run the set; compute recall@5, context precision/nDCG, faithfulness. The three reported symptoms map cleanly: "I don't know" on covered topics → recall failure (content missing, badly chunked, or vocabulary mismatch); wrong-but-plausible answers → ranking failure (right doc exists, ranked below the cut) or context fragmentation; invented policy details → faithfulness failure at generation.</p>
+      <p><strong>Step 4 — fix in causal order, one change at a time, re-running eval after each.</strong></p>
+      <ul>
+        <li><em>Ingestion audit:</em> are the complained-about docs even ingested and parsed correctly? (Embarrassingly often: no.)</li>
+        <li><em>Chunking:</em> structure-aware splitting with heading paths; parent-document retrieval so fragments stop masquerading as answers.</li>
+        <li><em>Retrieval:</em> add BM25 alongside dense, fuse with RRF — fixes exact-term misses (policy names, codes) that pure vectors blur. Raise first-stage k to ~50.</li>
+        <li><em>Ranking:</em> cross-encoder reranker 50 → 5; measure nDCG before/after to prove it pays.</li>
+        <li><em>Generation:</em> grounding prompt with citations required; relevance floor → honest abstention with escalation instead of fluent invention.</li>
+      </ul>
+      <p><strong>Step 5 — lock it in.</strong> Ship behind an A/B, promote the golden set into CI as a regression gate, and route every new production failure into the set. Close by naming expected wins per change — hybrid fixes the exact-term misses, parent-doc fixes fragment answers, the reranker fixes "right doc at rank 12," abstention converts hallucinations into handoffs.</p>
+    </div></details>
+    <details class="sub"><summary>What interviewers listen for</summary><div class="inner">
+      <ul class="rubric">
+        <li>Observability and an eval set <em>before</em> any fix — discipline over heroics.</li>
+        <li>Symptom → component mapping using separate retrieval/generation metrics.</li>
+        <li>Causal-order fixes, one variable at a time, measured each step.</li>
+        <li>Cheap wins first (parsing, chunking, hybrid) before exotic architecture.</li>
+        <li>Regression suite + feedback loop as the ending, so it can't rot again.</li>
+      </ul>
+    </div></details>
+    <details class="sub"><summary>Red flags to avoid</summary><div class="inner">
+      <ul class="redflag">
+        <li>"First I'd swap the embedding model / add GraphRAG" — solution before diagnosis.</li>
+        <li>Prompt-tweaking your way around a retrieval problem.</li>
+        <li>Changing five things at once with no eval between.</li>
+        <li>No story for keeping it fixed (CI, feedback loop).</li>
+      </ul>
+    </div></details>
+  </div>
+
+</div><!-- /wrap -->
+</section><!-- /tab-design -->
+
+<!-- ================= QUIZ ================= -->
+<section class="tab" id="tab-quiz">
+<div class="wrap">
+  <div class="qshell" id="quizRoot"></div>
+</div>
+</section>
+
+<!-- ================= CODE LAB ================= -->
+<section class="tab" id="tab-lab">
+<div class="wrap">
+  <div class="hero">
+    <h1>Code Lab — <em>read, fill, debug</em></h1>
+    <p class="sub">Twelve exercises across LangChain/LangGraph and LlamaIndex. No environment needed: complete dropdowns in the code, predict outputs, or click the buggy line. Each one teaches an API pattern interviewers expect you to recognize on sight.</p>
+  </div>
+  <div id="labRoot"></div>
+</div>
+</section>
+
+<footer>RAG Interview Field Manual · built for interview week · sources: 2025–26 framework docs, Anthropic contextual retrieval, Jina late chunking, Microsoft GraphRAG, LightRAG, HippoRAG, RAPTOR, Self-RAG, CRAG papers &amp; RAGAS docs</footer>
+
+<script>
+/* ============ data: quiz ============ */
+const QUIZ_DATA = [
+{t:`Chunking`, q:`Chunk overlap primarily exists to…`, opts:[
+`Keep content near a boundary attached to its context in at least one chunk`,
+`Increase index size so recall improves mechanically`,
+`Speed up the embedding pass`,
+`Make BM25 scoring more accurate`], a:0,
+exp:`Overlap duplicates a margin so a sentence or idea cut at a boundary still appears intact in a neighboring chunk. It costs index size and can put near-duplicates in your context (dedupe at assembly) — it is not a recall booster by itself.`},
+
+{t:`Chunking`, q:`In Anthropic-style Contextual Retrieval, what exactly gets embedded for each chunk?`, opts:[
+`The raw chunk text only`,
+`The chunk with a short LLM-written situating context prepended`,
+`A document-level summary that replaces the chunk`,
+`The full document, truncated to the model limit`], a:1,
+exp:`An LLM reads the whole document and writes ~50–100 tokens situating the chunk (doc, section, referents). That context is prepended before embedding — and before BM25 indexing too. Reported ~49% reduction in top-20 retrieval failures, ~67% combined with reranking; prompt caching keeps the index-time cost sane.`},
+
+{t:`Chunking`, q:`Late chunking's defining property is that…`, opts:[
+`An LLM decides the chunk boundaries`,
+`Chunking happens after retrieval, on demand`,
+`Token embeddings are computed over the full document first; chunk vectors are pooled afterwards`,
+`Chunks are simply made larger`], a:2,
+exp:`The long-context embedding model runs over the entire document, so every token vector is conditioned on full-document context; boundaries are applied just before pooling. No LLM calls — cheaper than contextual retrieval, with consistent but smaller gains (~3–4% relative nDCG in the paper).`},
+
+{t:`Chunking`, q:`Parent-document retrieval means…`, opts:[
+`Embedding large chunks but returning only the best sentence`,
+`Retrieving document metadata instead of text`,
+`Keeping two indexes for two embedding models`,
+`Embedding small child chunks for matching, but returning their larger parent to the LLM`], a:3,
+exp:`Match on small precise units (better vector resolution), generate from the larger parent (enough context to answer). It is the standard cure for 'retrieval finds the right spot but the chunk alone can't answer' — the cleanest expression of decoupling retrieval unit from generation unit.`},
+
+{t:`Chunking`, q:`Semantic chunking decides boundaries by…`, opts:[
+`Embedding-distance spikes between adjacent sentences or windows`,
+`Fixed token counts with overlap`,
+`Regex on Markdown headers`,
+`An LLM labeling every paragraph`], a:0,
+exp:`Sentences are embedded and a split is placed where similarity between neighbors drops past a threshold — boundaries follow topic shifts. It costs an embedding pass over the corpus and, in public evals, often only ties recursive splitting — so measure before paying for it.`},
+
+{t:`Query Transform`, q:`HyDE improves retrieval by searching with…`, opts:[
+`An expanded keyword list generated from the query`,
+`The embedding of an LLM-written hypothetical answer`,
+`The query concatenated with conversation history`,
+`A query encoder fine-tuned on your corpus`], a:1,
+exp:`A fake answer is shaped like a real answer — declarative, domain vocabulary, right register — so answer-to-answer similarity beats question-to-answer similarity. Known failure: the hypothetical hallucinates the wrong entity and drags retrieval off-topic; skip it for precise lookups where BM25 already wins.`},
+
+{t:`Query Transform`, q:`RAG-Fusion is best described as…`, opts:[
+`BM25 plus dense retrieval in one index`,
+`A reranker ensemble`,
+`Multi-query generation plus Reciprocal Rank Fusion across the result lists`,
+`Merging multiple vector indexes at build time`], a:2,
+exp:`Generate several query phrasings, retrieve for each, fuse the lists with RRF — documents ranking well across multiple phrasings float up. Same fusion operator you use for hybrid BM25+dense, applied across query variants: one operator, two jobs.`},
+
+{t:`Query Transform`, q:`Step-back prompting helps by…`, opts:[
+`Asking the user a clarifying question first`,
+`Reducing top-k to focus results`,
+`Retrying retrieval when scores are low`,
+`Deriving a more general question and retrieving for both it and the original`], a:3,
+exp:`Corpora often discuss principles while users ask about instances. Retrieving for the abstraction ('what physics principles govern…') plus the original query covers both levels and feeds synthesis from the union.`},
+
+{t:`Query Transform`, q:`Query decomposition pays off most on…`, opts:[
+`Multi-hop or comparative questions whose parts live in different places`,
+`Exact-match lookups like error codes`,
+`Small-talk turns`,
+`Very small corpora`], a:0,
+exp:`'Compare X and Y' or bridge questions ('Where did the founder of A study?') need evidence no single chunk holds. Sub-questions retrieve independently — possibly sequentially, where answer 1 parameterizes question 2 — then a synthesis step combines. It is the static ancestor of agentic RAG.`},
+
+{t:`Query Transform`, q:`The standard first step of conversational RAG on each new turn is…`, opts:[
+`Embed the latest message as-is`,
+`Condense history + new turn into a standalone query before retrieval`,
+`Rerank the previous turn's results`,
+`Clear the retrieval cache`], a:1,
+exp:`'What about the second one?' retrieves nothing raw. An LLM rewrites history + turn into a self-contained query ('what is the refund window for the Pro plan?'). Unglamorous, near-universal, and the step most candidates forget in support-bot designs.`},
+
+{t:`Retrieval & Indexing`, q:`Raising HNSW's efSearch parameter…`, opts:[
+`Reduces memory usage`,
+`Requires rebuilding the index`,
+`Improves recall at the cost of query latency`,
+`Only affects index build time`], a:2,
+exp:`efSearch widens the candidate list during the graph walk at query time — the live recall↔latency dial you can tune per SLA. M and efConstruction are build-time knobs (graph density and build quality).`},
+
+{t:`Retrieval & Indexing`, q:`RRF's key advantage over weighted score fusion is…`, opts:[
+`It uses raw scores, which carry more information`,
+`It is differentiable and trainable`,
+`It guarantees higher recall`,
+`It is scale-free — ranks fuse across heterogeneous channels with no normalization`], a:3,
+exp:`BM25 scores are unbounded; cosine lives in [-1,1] — adding them raw is meaningless and normalization is fragile. RRF uses only ranks: score = Σ 1/(k + rank). The cost: it discards score magnitude — a 0.95 hit and a 0.51 hit fuse identically at the same rank — which weighted RRF or a downstream reranker compensates.`},
+
+{t:`Retrieval & Indexing`, q:`SPLADE is best described as…`, opts:[
+`Learned sparse term weights with expansion, served by an ordinary inverted index`,
+`A dense bi-encoder with extra dimensions`,
+`A cross-encoder reranker`,
+`A graph retrieval algorithm`], a:0,
+exp:`A transformer maps text onto vocabulary-sized sparse vectors — learned term importances plus expansion onto related terms that never appear in the text ('laptop' activates 'notebook'). Semantic matching on inverted-index infrastructure; Elasticsearch's ELSER is this idea.`},
+
+{t:`Retrieval & Indexing`, q:`BM25 reliably beats dense embeddings on…`, opts:[
+`Paraphrased natural-language questions`,
+`Exact identifiers, error codes, rare jargon, product names`,
+`Cross-lingual queries`,
+`Very long documents`], a:1,
+exp:`Embeddings blur rare exact strings into their semantic neighborhood; BM25's IDF treats them as gold. That complementarity — exact-match channel + paraphrase channel — is the entire case for hybrid retrieval.`},
+
+{t:`Retrieval & Indexing`, q:`The IVF-PQ vs HNSW trade in one line:`, opts:[
+`They achieve identical recall at identical cost`,
+`IVF-PQ is always faster`,
+`IVF-PQ trades recall/accuracy for large memory savings; HNSW spends RAM to buy speed and recall`,
+`HNSW is disk-based, IVF-PQ is in-memory`], a:2,
+exp:`PQ compresses vectors to bytes via codebooks (approximate distances); IVF probes only nprobe cells. Billion-scale or RAM-bound corpora push you to IVF/PQ (or DiskANN); latency-critical few-million-vector workloads favor HNSW; under ~100k, honest brute force is often fine.`},
+
+{t:`Retrieval & Indexing`, q:`ColBERT's MaxSim operator computes…`, opts:[
+`The max cosine between two pooled vectors`,
+`The maximum reranker score across candidates`,
+`BM25's max term frequency`,
+`For each query token, its best-matching document token similarity — then sums over query tokens`], a:3,
+exp:`Late interaction: token-level vectors stored per document, fine-grained matching at query time. Precision approaches cross-encoders while doc vectors stay precomputed; storage is the price (mitigated in ColBERTv2/PLAID). The same idea powers ColPali on page images.`},
+
+{t:`Retrieval & Indexing`, q:`With a highly selective metadata filter, post-filtering top-k results can…`, opts:[
+`Return fewer than k results — possibly zero`,
+`Improve recall`,
+`Speed up the ANN search`,
+`Duplicate results`], a:0,
+exp:`Filter-after-search throws away most of the k you fetched. Pre-filtering during traversal is correct but stresses HNSW graph connectivity under selective predicates — hence filter-aware indexes and partitioning (also exactly how ACL enforcement must work: at retrieval, never after).`},
+
+{t:`Reranking`, q:`Cross-encoders outrank bi-encoders because…`, opts:[
+`They have more parameters`,
+`Query and document attend to each other jointly in a single forward pass`,
+`They output higher-dimensional vectors`,
+`They are trained on more data`], a:1,
+exp:`A bi-encoder forms two vectors independently — it never sees query and document together. A cross-encoder scores the pair with full cross-attention, resolving fine-grained interactions. Cost: one forward pass per candidate, which is why it lives in stage two over ~100 candidates, not stage one over millions.`},
+
+{t:`Reranking`, q:`'Lost in the middle' is best mitigated by…`, opts:[
+`Maximizing the context window`,
+`Raising temperature`,
+`Passing fewer, better chunks and placing the strongest evidence first and last`,
+`Increasing first-stage k`], a:2,
+exp:`LLM attention over long contexts is U-shaped — mid-context content is used worst. The fixes are selection (rerank harder, pass less) and assembly order. More context is not more comprehension.`},
+
+{t:`Reranking`, q:`A typical production two-stage funnel looks like…`, opts:[
+`Retrieve 5 → rerank 5`,
+`Retrieve 1000 → keep 500`,
+`Rerank first, then retrieve`,
+`Retrieve ~50–150 candidates → cross-encode → keep top 5–10`], a:3,
+exp:`Stage one is a recall machine (cheap, wide); stage two is a precision machine (expensive, narrow). The reranker's candidate count sets your recall ceiling; its output count sets your context budget. A relevance floor lets the system abstain instead of generating from noise.`},
+
+{t:`Architectures`, q:`Self-RAG's reflection tokens let the model…`, opts:[
+`Decide when to retrieve and self-grade relevance, support, and usefulness during generation`,
+`Compress retrieved context`,
+`Emit citations in a fixed format`,
+`Route queries between indexes`], a:0,
+exp:`A fine-tuned LM emits Retrieve / ISREL / ISSUP / ISUSE tokens, making retrieval adaptive and generation self-critiqued. The trained version is research-grade, but the pattern — decide, grade, verify — is widely reproduced with prompted judges; cite it as the origin of reflective RAG.`},
+
+{t:`Architectures`, q:`In CRAG, the 'ambiguous' verdict triggers…`, opts:[
+`Immediate abstention`,
+`Combining refined strips of retrieved docs with web-search results`,
+`Regenerating with higher temperature`,
+`Doubling top-k`], a:1,
+exp:`The retrieval evaluator grades evidence: correct → decompose-then-recompose strip refinement; incorrect → discard and fall back to (rewritten) web search; ambiguous → both. It is the canonical freshness/robustness pattern — and the textbook LangGraph conditional-edge example.`},
+
+{t:`Architectures`, q:`RAPTOR's index is…`, opts:[
+`An entity knowledge graph`,
+`A flat FAQ list`,
+`A recursive tree of cluster summaries, embedded at every level`,
+`A trained reranker`], a:2,
+exp:`Embed leaves → cluster → LLM-summarize → embed summaries → repeat. Retrieval runs across all levels ('collapsed tree'), so detail questions hit leaves and thematic questions hit high-level summaries — fixing the 'three random fragments pretending to be the themes' failure on long documents.`},
+
+{t:`Architectures`, q:`GraphRAG's *global* search answers corpus-level questions via…`, opts:[
+`Top-k chunk similarity with a bigger k`,
+`Translating the question to SQL`,
+`A single entity lookup`,
+`Map-reduce over hierarchical community summaries built at index time`], a:3,
+exp:`Index time: LLM-extracted entities/relations → Leiden community detection → community summaries per level (the expensive part). 'What are the main themes / key players' has no answer-bearing chunk — community summaries are the only structure that can answer it. Local search handles entity-anchored questions; DRIFT mixes both.`},
+
+{t:`Architectures`, q:`LightRAG's dual-level retrieval matches…`, opts:[
+`Low-level (entity) keywords against node keys and high-level (theme) keywords against relation keys`,
+`Two different embedding models`,
+`Local and global GraphRAG modes`,
+`Queries against two separate corpora`], a:0,
+exp:`An LLM extracts both keyword levels from the query; vector search runs over key-value entries for graph nodes and edges, then enriches with one-hop neighbors. No community clustering → cheap incremental updates, directly answering GraphRAG's static-corpus weakness.`},
+
+{t:`Architectures`, q:`HippoRAG retrieves multi-hop evidence by…`, opts:[
+`Iterative LLM-driven hops between documents`,
+`Personalized PageRank over a triple-extracted graph, seeded by query entities`,
+`Breadth-first search to depth 2`,
+`Reranking with a graph neural network`], a:1,
+exp:`Index: OpenIE triples → schemaless KG with synonym edges, passages linked to entities. Query: extract entities → seed PPR → activation spreads and lights up multi-hop-connected passages in a single step — reported drastically cheaper than iterative multi-hop. HippoRAG 2 deepens passage integration.`},
+
+{t:`Architectures`, q:`The honest first-order costs of agentic RAG are…`, opts:[
+`Lower answer quality`,
+`Vector storage growth`,
+`Latency, token spend, and behavioral variance that complicates eval and debugging`,
+`Licensing fees`], a:2,
+exp:`Each loop iteration is an LLM round-trip; trajectories are nondeterministic. Production posture: a router sends only hard queries to the agent, tool-call budgets cap the loop, everything is traced, and the easy 80% stays on the static pipeline.`},
+
+{t:`Architectures`, q:`ColPali retrieves documents using…`, opts:[
+`OCR text extracted from pages`,
+`Human-written captions`,
+`Table extraction only`,
+`Late interaction over page-image patch embeddings from a vision-language model`], a:3,
+exp:`Pages are embedded as images — retrieval 'sees' layout, tables, charts without parsing. ColBERT-style MaxSim over patches makes it precise. It anchors the vision-native lane (vs parse-to-text) that went mainstream with 2025–26 multimodal embedder/reranker families.`},
+
+{t:`Frameworks`, q:`In LangChain 1.0, the standard way to build an agent is…`, opts:[
+`create_agent, running on LangGraph's runtime and customized via middleware`,
+`AgentExecutor`,
+`initialize_agent`,
+`Raw LCEL chains only`], a:0,
+exp:`create_agent replaced langgraph.prebuilt.create_react_agent (and the long-deprecated AgentExecutor): a tool-calling loop on the durable LangGraph runtime, with middleware hooks before/after model and tool calls. Legacy chains moved to langchain-classic.`},
+
+{t:`Frameworks`, q:`You should drop from create_agent down to LangGraph when…`, opts:[
+`You need faster inference`,
+`You need explicit custom control flow — branches, cycles, multi-agent topologies, checkpointed long runs`,
+`You switch model providers`,
+`You add a retriever tool`], a:1,
+exp:`LangGraph exposes typed state, nodes, conditional edges and cycles, plus durable execution (checkpointing, human-in-the-loop interrupts). The CRAG grade→branch→rewrite loop is the canonical example of flow a prebuilt agent loop can't express.`},
+
+{t:`Frameworks`, q:`LlamaIndex response_mode='refine' means…`, opts:[
+`One LLM call total, with all nodes stuffed in`,
+`A bottom-up tree of summaries`,
+`A sequential LLM call per retrieved node, each refining the running answer`,
+`Parallel calls merged by voting`], a:2,
+exp:`refine threads the evolving answer through one call per node (highest cost, thorough). compact — the default — packs as many node texts per call as fit, then refines across the few calls. tree_summarize recursively summarizes bottom-up, ideal for 'summarize everything'. Knowing the call counts is instant credibility.`},
+
+{t:`Frameworks`, q:`LlamaIndex Workflows compose application logic as…`, opts:[
+`A DAG of chains`,
+`YAML pipeline definitions`,
+`Prompt graphs`,
+`Event-driven async steps — @step methods that consume and emit typed events`], a:3,
+exp:`Each @step declares the event type it consumes in its signature and returns the next event; StartEvent enters, StopEvent exits. Routing is type-driven rather than explicit edges — the philosophical contrast with LangGraph. Now the recommended composition layer; agents and query engines ride on top; llama-deploy serves them.`},
+
+{t:`Frameworks`, q:`The strongest defensible reason to skip frameworks (e.g., hit Elasticsearch directly) is…`, opts:[
+`One stable retrieval pattern your engine supports natively — the abstraction adds debug surface without adding leverage`,
+`Frameworks are too slow at runtime`,
+`Frameworks cost money`,
+`Frameworks only support OpenAI`], a:0,
+exp:`For a single stable pipeline (hybrid + RRF on ES), a thin client is less code than the framework adapter and you own every line on the latency path. The honest flip side: the moment you need routing, agent loops, or fast experimentation across rerankers/synthesis, framework leverage wins — say both halves.`},
+
+{t:`Evaluation`, q:`RAGAS faithfulness measures…`, opts:[
+`Agreement with a ground-truth answer`,
+`The fraction of answer claims supported by the retrieved context`,
+`Retrieval recall`,
+`Fluency of the answer`], a:1,
+exp:`An LLM extracts atomic claims from the answer and verifies each against the context: supported/total. Crucially it is not correctness — a faithful answer grounded in wrong or stale context is still wrong, which is why you pair it with answer correctness on a labeled set.`},
+
+{t:`Evaluation`, q:`Recall@k is healthy but context precision / nDCG is low. The right move is…`, opts:[
+`Re-chunk the corpus`,
+`Use a larger generation model`,
+`Add or improve a reranker — it's a ranking problem`,
+`Increase chunk overlap`], a:2,
+exp:`The relevant material arrives but sits low in the list. A cross-encoder rescoring stage is the targeted fix; measure nDCG before/after to prove the stage pays rent. This symptom→component mapping is the core of RAG debugging.`},
+
+{t:`Evaluation`, q:`Users get 'I don't know' on topics the corpus covers. First suspect…`, opts:[
+`The generation prompt`,
+`Too low a temperature`,
+`The output parser`,
+`Recall failure — ingestion/parsing gaps, vocabulary mismatch, or chunking`], a:3,
+exp:`Verify the documents were actually ingested and parsed (embarrassingly often: no), then attack vocabulary mismatch with hybrid retrieval and query expansion, then revisit chunking and k. Generation can't answer from context it never received.`},
+
+{t:`Evaluation`, q:`Hallucinations persist even though retrieval metrics look great. Fix at…`, opts:[
+`Generation — grounding prompt, required citations, NLI verification, an abstain threshold`,
+`The ANN index`,
+`Chunk size`,
+`The embedding model`], a:0,
+exp:`This is a faithfulness failure, not a search failure. Constrain generation to the evidence, require claim→source citations, verify them post-hoc, and let the system abstain below a relevance floor instead of inventing fluent policy details.`},
+
+{t:`Evaluation`, q:`nDCG adds over plain recall@k…`, opts:[
+`Lower computation cost`,
+`Position-aware, graded credit — rewarding the most relevant docs ranked earliest`,
+`No need for relevance labels`,
+`A bound on hallucination`], a:1,
+exp:`Recall@k is binary set membership; nDCG discounts gains by rank and supports graded relevance, so it tracks what the LLM actually experiences at the top of the context. It correlates better with end-to-end answer quality and is the standard before/after metric for ranking changes.`}
+];
+
+/* ============ data: code lab ============ */
+const LAB_DATA = [
+/* ---------- LangChain / LangGraph ---------- */
+{fw:`LangChain + LangGraph`, kind:`fill`, title:`Wire a classic LCEL RAG chain`,
+scen:`Complete the canonical retrieval chain. Each dropdown has one correct choice — pick all three, then Check.`,
+lines:[
+`from langchain_openai import ChatOpenAI, OpenAIEmbeddings`,
+`from langchain_community.vectorstores import FAISS`,
+`from langchain_core.output_parsers import StrOutputParser`,
+`from langchain_core.runnables import RunnablePassthrough`,
+`from langchain_core.prompts import ChatPromptTemplate`,
+``,
+`llm = ChatOpenAI(model="gpt-4o-mini")`,
+`vectorstore = FAISS.from_documents(chunks, OpenAIEmbeddings())`,
+`retriever = vectorstore.\u00AB0\u00BB(search_kwargs={"k": 6})`,
+``,
+`prompt = ChatPromptTemplate.from_template(`,
+`    "Answer ONLY from the context.\\nContext: {context}\\nQuestion: {question}"`,
+`)`,
+``,
+`def format_docs(docs):`,
+`    return "\\n\\n".join(d.page_content for d in docs)`,
+``,
+`chain = (`,
+`    {"context": retriever | format_docs, "question": \u00AB1\u00BB}`,
+`    | prompt`,
+`    | llm`,
+`    | \u00AB2\u00BB()`,
+`)`,
+`answer = chain.invoke("How does RRF fuse rankings?")`],
+blanks:[
+{opts:[`as_retriever`,`to_retriever`,`get_search`,`as_searcher`], a:0},
+{opts:[`retriever`,`RunnablePassthrough()`,`lambda q: q.text`,`str`], a:1},
+{opts:[`JsonOutputParser`,`OutputFixer`,`StrOutputParser`,`MessageParser`], a:2}],
+exp:`as_retriever() wraps the vector store in the standard Runnable retriever interface. The dict literal fans the input into parallel branches: the context branch pipes retrieved Documents through format_docs (so the prompt sees clean text, not Document reprs), while RunnablePassthrough() forwards the raw question string untouched. StrOutputParser() unwraps the chat message into a plain string at the end.`,
+takeaway:`LCEL = composing Runnables with the | pipe; a dict creates parallel named branches feeding the prompt. This is still the idiom for simple chains in LangChain 1.0 — agents moved to create_agent, chains kept LCEL.`},
+
+{fw:`LangChain + LangGraph`, kind:`predict`, title:`Predict the splitter's behavior`,
+scen:`Read the configuration carefully — the separators list is the whole point.`,
+lines:[
+`from langchain_text_splitters import RecursiveCharacterTextSplitter`,
+``,
+`text = ("RAG overview.\\n\\n"`,
+`        "Dense retrieval uses embeddings. BM25 matches terms.\\n\\n"`,
+`        "RRF fuses both rankings.")`,
+``,
+`splitter = RecursiveCharacterTextSplitter(`,
+`    chunk_size=60, chunk_overlap=0,`,
+`    separators=["\\n\\n", "\\n", " ", ""],`,
+`)`,
+`chunks = splitter.split_text(text)`],
+q:`How does the splitter actually form chunks here?`,
+opts:[
+`Cuts every 60 characters regardless of content`,
+`Splits on "\\n\\n" first, and only recurses to finer separators if a piece still exceeds 60 chars`,
+`Splits on spaces first because they occur most often`,
+`Returns the whole text as one chunk because it is short`], a:1,
+exp:`'Recursive' means: try the separator hierarchy in order. The paragraph splits already satisfy chunk_size=60, so "\\n", spaces, and characters are never consulted. If one paragraph had exceeded 60 chars, only that piece would recurse to the next separator. This is why recursive splitting respects natural structure when structure exists — and why it is the default baseline.`,
+takeaway:`Separator hierarchy + recurse-only-when-needed. If you can answer 'what happens when one paragraph is oversized', you understand the splitter.`},
+
+{fw:`LangChain + LangGraph`, kind:`bug`, title:`Click the bug: a silently broken index`,
+scen:`This script runs without errors, but retrieval quality is terrible and the chunks variable seems pointless. Click the line containing the conceptual bug.`,
+lines:[
+`from langchain_community.document_loaders import PyPDFLoader`,
+`from langchain_text_splitters import RecursiveCharacterTextSplitter`,
+`from langchain_community.vectorstores import FAISS`,
+`from langchain_openai import OpenAIEmbeddings`,
+``,
+`docs = PyPDFLoader("handbook.pdf").load()`,
+`embeddings = OpenAIEmbeddings()`,
+`vectorstore = FAISS.from_documents(docs, embeddings)`,
+`splitter = RecursiveCharacterTextSplitter(chunk_size=500, chunk_overlap=50)`,
+`chunks = splitter.split_documents(docs)`,
+`retriever = vectorstore.as_retriever(search_kwargs={"k": 4})`],
+bug:7,
+exp:`The index is built from the raw, unsplit documents — and then chunks are computed and never used. Whole-document embeddings average many topics into one diluted vector (poor precision), and giant retrieved blobs blow the context budget. Fix the order: split first, then FAISS.from_documents(chunks, embeddings). Load → split → embed → index.`,
+takeaway:`Pipeline order is a real bug class, not a style issue: embedding dilution comes from indexing units that are too big.`},
+
+{fw:`LangChain + LangGraph`, kind:`fill`, title:`Build the CRAG loop in LangGraph`,
+scen:`Grade retrieval, branch on the verdict, loop back through a query rewrite — the flow a DAG can't express.`,
+lines:[
+`from typing import TypedDict`,
+`from langgraph.graph import StateGraph, START, END`,
+``,
+`class RAGState(TypedDict):`,
+`    question: str`,
+`    docs: list`,
+`    answer: str`,
+``,
+`def retrieve(state): ...`,
+`def grade(state): ...        # scores docs, may empty the list`,
+`def rewrite_query(state): ...`,
+`def generate(state): ...`,
+``,
+`def route_after_grade(state):`,
+`    return "good" if state["docs"] else "bad"`,
+``,
+`graph = \u00AB0\u00BB(RAGState)`,
+`graph.add_node("retrieve", retrieve)`,
+`graph.add_node("grade", grade)`,
+`graph.add_node("rewrite", rewrite_query)`,
+`graph.add_node("generate", generate)`,
+``,
+`graph.add_edge(START, "retrieve")`,
+`graph.add_edge("retrieve", "grade")`,
+`graph.\u00AB1\u00BB("grade", route_after_grade,`,
+`    {"good": "generate", "bad": "rewrite"})`,
+`graph.add_edge("rewrite", "retrieve")   # the cycle`,
+`graph.add_edge("generate", \u00AB2\u00BB)`,
+`app = graph.compile()`],
+blanks:[
+{opts:[`Graph`,`StateGraph`,`FlowGraph`,`AgentGraph`], a:1},
+{opts:[`add_edge`,`add_branch`,`add_conditional_edges`,`add_router`], a:2},
+{opts:[`"end"`,`STOP`,`None`,`END`], a:3}],
+exp:`StateGraph is parameterized by the typed state schema every node reads and updates. add_conditional_edges maps the router function's return value onto next nodes — and rewrite → retrieve forms a cycle, the thing classic DAG pipelines cannot express. END terminates. compile() returns a runnable app, with checkpointing/persistence available because it runs on the durable runtime.`,
+takeaway:`This graph IS the CRAG pattern: grade → branch → correct → loop. It is also the canonical answer to 'when do I need LangGraph instead of create_agent'.`},
+
+{fw:`LangChain + LangGraph`, kind:`fill`, title:`Agentic RAG in LangChain 1.0`,
+scen:`Make retrieval a tool and let the agent decide when to call it — the 1.0 way.`,
+lines:[
+`from langchain.agents import create_agent`,
+`from langchain.tools import tool`,
+``,
+`\u00AB0\u00BB`,
+`def search_docs(query: str) -> str:`,
+`    """Search the internal knowledge base."""`,
+`    return run_hybrid_retrieval(query)`,
+``,
+`agent = \u00AB1\u00BB(`,
+`    model="claude-sonnet-4-5",`,
+`    tools=[search_docs],`,
+`    system_prompt="Answer using search_docs; cite sources.",`,
+`)`,
+``,
+`result = agent.invoke(`,
+`    {"messages": [{"role": "user",`,
+`                   "content": "What changed in v2 auth?"}]}`,
+`)`],
+blanks:[
+{opts:[`@register`,`@tool`,`@function_tool`,`@agent.tool`], a:1},
+{opts:[`AgentExecutor`,`initialize_agent`,`create_react_agent`,`create_agent`], a:3}],
+exp:`@tool converts the function into a callable tool — the docstring becomes the description the model reasons over, so write it like an API doc. create_agent is the LangChain 1.0 standard: a tool-calling (ReAct-style) loop running on LangGraph's durable runtime, customizable with middleware (summarization, human-in-the-loop, PII scrubbing). Agents speak the messages format. create_react_agent and AgentExecutor are the deprecated ancestors.`,
+takeaway:`Agentic RAG in ten lines: retrieval is just a tool; the agent decides whether and how often to call it. Middleware is where production concerns hook in.`},
+
+{fw:`LangChain + LangGraph`, kind:`predict`, title:`What fusion does EnsembleRetriever run?`,
+scen:`A hybrid retriever in four lines — but what is it doing underneath?`,
+lines:[
+`from langchain.retrievers import EnsembleRetriever`,
+`from langchain_community.retrievers import BM25Retriever`,
+``,
+`bm25 = BM25Retriever.from_documents(chunks)`,
+`bm25.k = 20`,
+`dense = vectorstore.as_retriever(search_kwargs={"k": 20})`,
+``,
+`hybrid = EnsembleRetriever(`,
+`    retrievers=[bm25, dense],`,
+`    weights=[0.4, 0.6],`,
+`)`,
+`results = hybrid.invoke("error code E429 rate limit")`],
+q:`How does EnsembleRetriever combine the two result lists?`,
+opts:[
+`Averages the raw BM25 and cosine scores after min-max normalization`,
+`Weighted Reciprocal Rank Fusion over each list's rank positions`,
+`Takes the top 10 from each list and deduplicates`,
+`Trains a small logistic-regression blender on the fly`], a:1,
+exp:`It is weighted RRF: each document scores the sum of weight × 1/(rank + c) across the lists it appears in. Only ranks are used — no cross-channel score normalization needed — and the weights scale each channel's contribution. The query here ('error code E429') is exactly where the BM25 channel earns its keep.`,
+takeaway:`The framework's hybrid is the same RRF you run on Elasticsearch — a perfect interview line: 'I implemented what EnsembleRetriever does, directly on ES, and tuned the channel weights myself.'`},
+
+/* ---------- LlamaIndex ---------- */
+{fw:`LlamaIndex`, kind:`fill`, title:`The five-line starter`,
+scen:`The canonical LlamaIndex quickstart — know it cold; it is the 'hello world' interviewers expect you to recognize instantly.`,
+lines:[
+`from llama_index.core import VectorStoreIndex, SimpleDirectoryReader`,
+``,
+`documents = \u00AB0\u00BB("./docs").load_data()`,
+`index = VectorStoreIndex.\u00AB1\u00BB(documents)`,
+`query_engine = index.\u00AB2\u00BB(similarity_top_k=5)`,
+`print(query_engine.query("How do we rotate API keys?"))`],
+blanks:[
+{opts:[`DirectoryLoader`,`SimpleDirectoryReader`,`FileReader`,`DocsReader`], a:1},
+{opts:[`build`,`from_docs`,`from_documents`,`create`], a:2},
+{opts:[`as_retriever`,`as_query_engine`,`get_engine`,`to_engine`], a:1}],
+exp:`SimpleDirectoryReader loads files into Document objects. from_documents runs the default ingestion: parse into Nodes with SentenceSplitter, embed, index. as_query_engine wires retriever → node postprocessors → response synthesizer into one ask-able object. Everything is an opinionated default you can override — fastest possible start, audit the defaults before production.`,
+takeaway:`The LlamaIndex spine: Document → Node → Index → QueryEngine. Every advanced feature hangs off one of those four.`},
+
+{fw:`LlamaIndex`, kind:`fill`, title:`Take control of chunking`,
+scen:`Replace the default parser settings — globally via Settings, and explicitly via the two-step path.`,
+lines:[
+`from llama_index.core import VectorStoreIndex, Settings`,
+`from llama_index.core.node_parser import \u00AB0\u00BB`,
+``,
+`Settings.text_splitter = SentenceSplitter(`,
+`    chunk_size=512,`,
+`    \u00AB1\u00BB=64,`,
+`)`,
+`index = VectorStoreIndex.from_documents(documents)`,
+``,
+`# equivalent explicit two-step:`,
+`parser = SentenceSplitter(chunk_size=512, chunk_overlap=64)`,
+`nodes = parser.\u00AB2\u00BB(documents)`,
+`index2 = VectorStoreIndex(nodes)`],
+blanks:[
+{opts:[`SentenceSplitter`,`RecursiveSplitter`,`TokenChunker`,`TextCutter`], a:0},
+{opts:[`stride`,`window`,`chunk_overlap`,`overlap_tokens`], a:2},
+{opts:[`split`,`get_nodes_from_documents`,`parse_all`,`chunkify`], a:1}],
+exp:`SentenceSplitter is the default node parser — it packs sentences into the token budget without cutting mid-sentence. Settings is the global config singleton (it replaced the old ServiceContext). The explicit path shows the real object flow: parser turns Documents into Nodes (get_nodes_from_documents), and an index can be built from Nodes directly — which is also how you'd inject custom metadata or relationships per node.`,
+takeaway:`Chunking lives in node parsers. Settings for global defaults; explicit Nodes when you need control. (SentenceWindowNodeParser is one import away when you want window retrieval.)`},
+
+{fw:`LlamaIndex`, kind:`bug`, title:`Click the bug: paying to rebuild every restart`,
+scen:`This service restarts daily. Startup is slow and the embedding bill spiked. The persistence code exists — click the line that defeats it.`,
+lines:[
+`from llama_index.core import (`,
+`    VectorStoreIndex, SimpleDirectoryReader,`,
+`    StorageContext, load_index_from_storage,`,
+`)`,
+``,
+`# ---- first boot ----`,
+`documents = SimpleDirectoryReader("./kb").load_data()`,
+`index = VectorStoreIndex.from_documents(documents)`,
+`index.storage_context.persist(persist_dir="./storage")`,
+``,
+`# ---- every restart ----`,
+`storage = StorageContext.from_defaults(persist_dir="./storage")`,
+`index = VectorStoreIndex.from_documents(documents)`,
+`engine = index.as_query_engine()`],
+bug:12,
+exp:`The restart path loads the StorageContext… and then ignores it, calling from_documents again — re-parsing and re-embedding the entire corpus on every boot. That is the slow startup and the bill. The fix: index = load_index_from_storage(storage). from_documents means BUILD; load_index_from_storage means RELOAD.`,
+takeaway:`persist() writes; StorageContext + load_index_from_storage reads. Build once, load forever — the #1 LlamaIndex cost bug in the wild.`},
+
+{fw:`LlamaIndex`, kind:`fill`, title:`Two-stage retrieval: wide then precise`,
+scen:`Wire a cross-encoder reranker into the query engine — and notice which knob controls which stage.`,
+lines:[
+`from llama_index.core.postprocessor import SentenceTransformerRerank`,
+``,
+`reranker = SentenceTransformerRerank(`,
+`    model="BAAI/bge-reranker-v2-m3",`,
+`    \u00AB0\u00BB=4,`,
+`)`,
+``,
+`engine = index.as_query_engine(`,
+`    \u00AB1\u00BB=20,`,
+`    node_postprocessors=[\u00AB2\u00BB],`,
+`)`,
+`response = engine.query("Which plans include SSO?")`],
+blanks:[
+{opts:[`top_k`,`top_n`,`keep`,`limit`], a:1},
+{opts:[`top_n`,`k`,`similarity_top_k`,`fetch_k`], a:2},
+{opts:[`reranker`,`SentenceTransformerRerank`,`"rerank"`,`model`], a:0}],
+exp:`similarity_top_k=20 is stage one: how wide the vector search casts (your recall ceiling). The postprocessor then cross-encodes those 20 candidates against the query and keeps top_n=4 — stage two, your precision filter and context budget. node_postprocessors is LlamaIndex's slot for rerankers, metadata filters, and sentence-window replacement, executed in order after retrieval and before synthesis.`,
+takeaway:`similarity_top_k = funnel mouth, top_n = funnel exit. Saying 'I retrieve 20 and rerank to 4' with the right knob names is exactly the fluency interviews probe.`},
+
+{fw:`LlamaIndex`, kind:`predict`, title:`Count the LLM calls per response mode`,
+scen:`Same query, same 8 retrieved nodes, three synthesizers. Where does the money go?`,
+lines:[
+`# 8 nodes come back from retrieval`,
+``,
+`engine_a = index.as_query_engine(response_mode="refine")`,
+`engine_b = index.as_query_engine(response_mode="compact")`,
+`engine_c = index.as_query_engine(response_mode="tree_summarize")`],
+q:`With 8 retrieved nodes, which statement is true?`,
+opts:[
+`refine makes ~8 sequential LLM calls, each updating the running answer`,
+`compact always makes 8 parallel calls`,
+`tree_summarize always makes exactly 1 call`,
+`All three modes make the same number of calls`], a:0,
+exp:`refine threads the evolving answer through one call per node, sequentially — most thorough, most expensive, highest latency. compact (the default) packs as many node texts as fit into each call, then refines across those few calls — usually 1–2 total here. tree_summarize builds a bottom-up summary tree; call count depends on fan-in, and it shines on 'summarize everything' queries rather than pointed QA.`,
+takeaway:`response_mode is a cost/quality dial most users never touch. Knowing the call-count behavior of refine vs compact vs tree_summarize is cheap, rare knowledge.`},
+
+{fw:`LlamaIndex`, kind:`fill`, title:`An event-driven Workflow`,
+scen:`Compose retrieve → synthesize as a Workflow — the now-recommended way to build non-trivial LlamaIndex apps.`,
+lines:[
+`from llama_index.core.workflow import (`,
+`    Workflow, step, StartEvent, StopEvent, Event,`,
+`)`,
+``,
+`class RetrievedEvent(Event):`,
+`    nodes: list`,
+``,
+`class RAGFlow(Workflow):`,
+`    \u00AB0\u00BB`,
+`    async def retrieve(self, ev: StartEvent) -> RetrievedEvent:`,
+`        nodes = await retriever.aretrieve(ev.query)`,
+`        return RetrievedEvent(nodes=nodes)`,
+``,
+`    @step`,
+`    async def synthesize(self, ev: \u00AB1\u00BB) -> StopEvent:`,
+`        answer = await synthesizer.asynthesize(ev.nodes)`,
+`        return \u00AB2\u00BB(result=str(answer))`,
+``,
+`result = await RAGFlow(timeout=30).run(query="What is RRF?")`],
+blanks:[
+{opts:[`@node`,`@step`,`@task`,`@event`], a:1},
+{opts:[`StartEvent`,`StopEvent`,`RetrievedEvent`,`Event`], a:2},
+{opts:[`EndEvent`,`Result`,`Done`,`StopEvent`], a:3}],
+exp:`Workflows route by event types: each @step declares what it consumes in its type signature and emits the next event — retrieve consumes StartEvent and produces RetrievedEvent, so synthesize must consume RetrievedEvent. StopEvent(result=...) terminates the run. No explicit edges anywhere: the type system IS the wiring. Contrast with LangGraph, where you write add_edge/add_conditional_edges by hand.`,
+takeaway:`Two orchestration philosophies: LangGraph wires control flow explicitly (edges on a state graph); LlamaIndex Workflows route implicitly by event types. Being able to compare them in one sentence reads as real breadth.`}
+];
+
+/* ============ shared helpers ============ */
+function el(tag, cls, text){ const n=document.createElement(tag); if(cls) n.className=cls; if(text!==undefined) n.textContent=text; return n; }
+function shuffle(arr){ const a=arr.slice(); for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
+
+/* ============ tabs ============ */
+const tabBtns=document.querySelectorAll('.tabbtn');
+let quizInit=false, labInit=false;
+function setTab(name){
+  tabBtns.forEach(b=>b.classList.toggle('active', b.dataset.tab===name));
+  document.querySelectorAll('.tab').forEach(s=>s.classList.toggle('active', s.id==='tab-'+name));
+  if(name==='quiz' && !quizInit){ renderQuizStart(); quizInit=true; }
+  if(name==='lab' && !labInit){ renderLab(); labInit=true; }
+  window.scrollTo({top:0});
+}
+tabBtns.forEach(b=>b.addEventListener('click',()=>setTab(b.dataset.tab)));
+
+/* ============ rail ============ */
+const STATIONS=[["00","landscape","m0"],["01","chunking","m1"],["02","query transform","m2"],["03","index + retrieve","m3"],["04","rerank","m4"],["05","architectures","m5"],["06","frameworks","m6"],["07","evaluation","m7"],["08","trends","m8"]];
+const rail=document.getElementById('rail');
+STATIONS.forEach(([num,label,target])=>{
+  const st=el('div','st');
+  const b=el('button');
+  b.appendChild(el('span','num',num)); b.appendChild(el('span','',label));
+  b.addEventListener('click',()=>{ setTab('learn'); requestAnimationFrame(()=>document.getElementById(target).scrollIntoView({behavior:'smooth'})); });
+  st.appendChild(b); rail.appendChild(st);
+});
+
+/* ============ quiz engine ============ */
+const quizRoot=document.getElementById('quizRoot');
+const TOPICS=[...new Set(QUIZ_DATA.map(q=>q.t))];
+let pickedTopics=new Set(TOPICS);
+let qState=null, qBest=null;
+
+function renderQuizStart(){
+  qState=null;
+  quizRoot.innerHTML='';
+  const p=el('div','panel');
+  p.appendChild(el('h2','', 'Drill: '+QUIZ_DATA.length+' questions, graded like a retriever'));
+  p.appendChild(el('p','pd','Pick your topics. Answers grade instantly with full explanations; results report your precision overall and per topic, so you know exactly where to re-read.'));
+  const grid=el('div','topicgrid');
+  TOPICS.forEach(t=>{
+    const c=el('button','tchip'+(pickedTopics.has(t)?' on':''),t+' ('+QUIZ_DATA.filter(q=>q.t===t).length+')');
+    c.addEventListener('click',()=>{ pickedTopics.has(t)?pickedTopics.delete(t):pickedTopics.add(t); renderQuizStart(); });
+    grid.appendChild(c);
+  });
+  p.appendChild(grid);
+  const n=QUIZ_DATA.filter(q=>pickedTopics.has(q.t)).length;
+  const row=el('div','qactions');
+  const info=el('span','qmeta', n+' questions selected'); info.style.marginRight='auto'; info.style.alignSelf='center';
+  const start=el('button','btn pri','Start drill');
+  start.disabled = n===0;
+  start.addEventListener('click',()=>{
+    const idx=QUIZ_DATA.map((q,i)=>i).filter(i=>pickedTopics.has(QUIZ_DATA[i].t));
+    startQuiz(shuffle(idx));
+  });
+  row.appendChild(info); row.appendChild(start);
+  p.appendChild(row);
+  quizRoot.appendChild(p);
+}
+
+function startQuiz(pool){
+  qState={pool, i:0, correct:0, perTopic:{}, missed:[], sel:null, answered:false};
+  renderQuestion();
+}
+
+function renderQuestion(){
+  const q=QUIZ_DATA[qState.pool[qState.i]];
+  qState.sel=null; qState.answered=false;
+  quizRoot.innerHTML='';
+  const p=el('div','panel');
+  const prog=el('div','qprog');
+  const bar=el('div','qbar'); const fill=el('i'); fill.style.width=((qState.i)/qState.pool.length*100)+'%'; bar.appendChild(fill);
+  prog.appendChild(bar);
+  prog.appendChild(el('span','qmeta','Q '+(qState.i+1)+' / '+qState.pool.length));
+  p.appendChild(prog);
+  p.appendChild(el('div','qtopic',q.t));
+  p.appendChild(el('div','qtext',q.q));
+  const opts=[];
+  q.opts.forEach((o,oi)=>{
+    const b=el('button','opt');
+    b.appendChild(el('span','key',String(oi+1)));
+    b.appendChild(el('span','',o));
+    b.addEventListener('click',()=>{ if(qState.answered) return; qState.sel=oi; opts.forEach((x,xi)=>x.classList.toggle('sel',xi===oi)); submit.disabled=false; });
+    opts.push(b); p.appendChild(b);
+  });
+  const exp=el('div','exp');
+  p.appendChild(exp);
+  const act=el('div','qactions');
+  const quit=el('button','btn ghost','Quit'); quit.addEventListener('click',renderQuizStart);
+  const submit=el('button','btn pri','Submit'); submit.disabled=true;
+  submit.addEventListener('click',()=>{
+    if(!qState.answered){
+      qState.answered=true;
+      const right=qState.sel===q.a;
+      if(right) qState.correct++;
+      const pt=qState.perTopic[q.t]||(qState.perTopic[q.t]=[0,0]);
+      pt[1]++; if(right) pt[0]++;
+      if(!right) qState.missed.push(qState.pool[qState.i]);
+      opts.forEach((x,xi)=>{
+        x.classList.remove('sel');
+        if(xi===q.a) x.classList.add('correct');
+        else if(xi===qState.sel) x.classList.add('wrong');
+        else x.classList.add('dim');
+        x.disabled=true;
+      });
+      const v=el('div','verdict', right?'score: 1.00 — correct':'score: 0.00 — the correct answer is '+(q.a+1));
+      v.style.color=right?'var(--good)':'var(--bad)';
+      exp.appendChild(v);
+      exp.appendChild(el('div','',q.exp));
+      exp.classList.add('show');
+      fill.style.width=((qState.i+1)/qState.pool.length*100)+'%';
+      submit.textContent = qState.i+1<qState.pool.length ? 'Next' : 'See results';
+    } else {
+      qState.i++;
+      if(qState.i<qState.pool.length) renderQuestion(); else renderResults();
+    }
+  });
+  act.appendChild(quit); act.appendChild(submit);
+  p.appendChild(act);
+  quizRoot.appendChild(p);
+  window.scrollTo({top:0});
+}
+
+function renderResults(){
+  const n=qState.pool.length, c=qState.correct;
+  const pct=Math.round(c/n*100);
+  if(qBest===null||pct>qBest){ qBest=pct; document.getElementById('cQuiz').textContent=qBest+'%'; }
+  quizRoot.innerHTML='';
+  const p=el('div','panel');
+  p.appendChild(el('h2','', pct>=85?'Interview-ready on these topics.':(pct>=60?'Solid — patch the gaps below.':'Good diagnostic — the gaps now have names.')));
+  const hero=el('div','scorehero');
+  const mk=(k,v)=>{ const s=el('div','scorechip'); s.appendChild(el('span','k',k)); s.appendChild(el('span','v',v)); return s; };
+  hero.appendChild(mk('precision@'+n, c+' / '+n));
+  hero.appendChild(mk('accuracy', pct+'%'));
+  hero.appendChild(mk('missed', String(qState.missed.length)));
+  p.appendChild(hero);
+  const brk=el('div','tbrk');
+  Object.entries(qState.perTopic).forEach(([t,[tc,tt]])=>{
+    const row=el('div','tbrow');
+    row.appendChild(el('span','nm',t));
+    const bar=el('div','tbbar'); const i=el('i'); i.style.width=(tc/tt*100)+'%'; i.style.background = tc===tt?'var(--good)':(tc/tt>=0.5?'var(--pri)':'var(--bad)'); bar.appendChild(i);
+    row.appendChild(bar);
+    row.appendChild(el('span','sc',tc+'/'+tt));
+    brk.appendChild(row);
+  });
+  p.appendChild(brk);
+  if(qState.missed.length){
+    const m=el('div','missed');
+    m.appendChild(el('h3','','Missed — read these twice'));
+    qState.missed.forEach(mi=>{
+      const q=QUIZ_DATA[mi];
+      const it=el('div','missitem');
+      it.appendChild(el('div','mq',q.q));
+      it.appendChild(el('div','ma','✓ '+q.opts[q.a]));
+      m.appendChild(it);
+    });
+    p.appendChild(m);
+  }
+  const act=el('div','qactions');
+  const again=el('button','btn ghost','New selection'); again.addEventListener('click',renderQuizStart);
+  if(qState.missed.length){
+    const pm=el('button','btn ghost','Practice missed ('+qState.missed.length+')');
+    const missedPool=qState.missed.slice();
+    pm.addEventListener('click',()=>startQuiz(shuffle(missedPool)));
+    act.appendChild(pm);
+  }
+  const re=el('button','btn pri','Run it again');
+  const samePool=qState.pool.slice();
+  re.addEventListener('click',()=>startQuiz(shuffle(samePool)));
+  act.appendChild(again); act.appendChild(re);
+  p.appendChild(act);
+  quizRoot.appendChild(p);
+  window.scrollTo({top:0});
+}
+
+/* keyboard for quiz */
+document.addEventListener('keydown',e=>{
+  if(!document.getElementById('tab-quiz').classList.contains('active')||!qState) return;
+  const panel=quizRoot.querySelector('.panel'); if(!panel) return;
+  if(e.key>='1'&&e.key<='4'){ const o=panel.querySelectorAll('.opt')[+e.key-1]; if(o&&!o.disabled) o.click(); }
+  if(e.key==='Enter'){ const b=[...panel.querySelectorAll('.btn.pri')].pop(); if(b&&!b.disabled) b.click(); }
+});
+
+/* ============ code lab ============ */
+const labRoot=document.getElementById('labRoot');
+const labSolved=new Set();
+function bumpLab(){ document.getElementById('cLab').textContent=labSolved.size+'/'+LAB_DATA.length; }
+function solve(card,i,expBox,msg,okText){
+  if(!labSolved.has(i)){ labSolved.add(i); bumpLab(); }
+  card.classList.add('solved');
+  expBox.classList.add('show');
+  if(msg){ msg.textContent=okText; msg.className='labmsg ok'; }
+}
+
+function buildCodebox(ex, interactive){
+  const box=el('div','codebox');
+  const selects=[];
+  ex.lines.forEach((line,li)=>{
+    const row=el('div','cl');
+    row.appendChild(el('span','lno',String(li+1)));
+    const lc=el('span','lc');
+    if(ex.kind==='fill' && line.indexOf('\u00AB')>-1){
+      const parts=line.split(/\u00AB(\d+)\u00BB/);
+      parts.forEach((part,pi)=>{
+        if(pi%2===0){ lc.appendChild(document.createTextNode(part)); }
+        else {
+          const bi=+part, blank=ex.blanks[bi];
+          const s=document.createElement('select'); s.className='blank';
+          const ph=document.createElement('option'); ph.value=''; ph.textContent='— ? —'; ph.disabled=true; ph.selected=true; s.appendChild(ph);
+          blank.opts.forEach((o,oi)=>{ const op=document.createElement('option'); op.value=String(oi); op.textContent=o; s.appendChild(op); });
+          selects[bi]=s; lc.appendChild(s);
+        }
+      });
+    } else {
+      lc.textContent=line.length?line:' ';
+    }
+    row.appendChild(lc);
+    box.appendChild(row);
+  });
+  return {box, selects};
+}
+
+function renderLab(){
+  const groups={};
+  LAB_DATA.forEach((ex,i)=>{ (groups[ex.fw]=groups[ex.fw]||[]).push(i); });
+  Object.entries(groups).forEach(([fw,idxs])=>{
+    const g=el('div','fwgroup');
+    const h=el('h2','',fw);
+    h.appendChild(el('span','chip pri',idxs.length+' exercises'));
+    g.appendChild(h);
+    idxs.forEach(i=>g.appendChild(buildExercise(i)));
+    labRoot.appendChild(g);
+  });
+  bumpLab();
+}
+
+function buildExercise(i){
+  const ex=LAB_DATA[i];
+  const card=el('div','ex');
+  const head=el('div','exhead');
+  head.appendChild(el('span','kind '+ex.kind, ex.kind==='fill'?'fill in':'predict'===ex.kind?'predict':'find the bug'));
+  head.appendChild(el('span','xt',ex.title));
+  head.appendChild(el('span','done','solved ✓'));
+  head.addEventListener('click',()=>card.classList.toggle('open'));
+  card.appendChild(head);
+
+  const body=el('div','exbody');
+  body.appendChild(el('p','scen',ex.scen));
+  const expBox=el('div','labexp');
+  const expInner=el('div','exp show'); expInner.style.display='block';
+  expInner.appendChild(el('div','',ex.exp));
+  expBox.appendChild(expInner);
+  const tk=el('div','takeaway'); tk.appendChild(el('div','lt','api takeaway')); tk.appendChild(el('div','',ex.takeaway));
+  expBox.appendChild(tk);
+  const msg=el('span','labmsg','');
+
+  if(ex.kind==='fill'){
+    const {box,selects}=buildCodebox(ex,true);
+    body.appendChild(box);
+    const act=el('div','labactions');
+    const check=el('button','btn pri','Check');
+    check.addEventListener('click',()=>{
+      let ok=0;
+      selects.forEach((s,bi)=>{
+        if(s.value===''){ s.className='blank no'; return; }
+        const good=+s.value===ex.blanks[bi].a;
+        s.className='blank '+(good?'ok':'no');
+        if(good) ok++;
+      });
+      if(ok===selects.length){ selects.forEach(s=>s.disabled=true); solve(card,i,expBox,msg,'All '+ok+' correct.'); }
+      else { msg.textContent=ok+' / '+selects.length+' correct — wrong picks are marked.'; msg.className='labmsg no'; }
+    });
+    const reveal=el('button','btn ghost','Reveal');
+    reveal.addEventListener('click',()=>{
+      selects.forEach((s,bi)=>{ s.value=String(ex.blanks[bi].a); s.className='blank ok'; s.disabled=true; });
+      expBox.classList.add('show');
+      msg.textContent='Revealed — re-read it, then try the next one cold.'; msg.className='labmsg';
+    });
+    act.appendChild(check); act.appendChild(reveal); act.appendChild(msg);
+    body.appendChild(act);
+  }
+
+  if(ex.kind==='predict'){
+    const {box}=buildCodebox(ex,false);
+    body.appendChild(box);
+    body.appendChild(el('div','qtext',ex.q));
+    const optEls=[];
+    ex.opts.forEach((o,oi)=>{
+      const b=el('button','opt');
+      b.appendChild(el('span','key',String(oi+1)));
+      b.appendChild(el('span','',o));
+      b.addEventListener('click',()=>{
+        if(card.classList.contains('solved')&&oi!==ex.a) return;
+        if(oi===ex.a){
+          optEls.forEach((x,xi)=>{ x.disabled=true; if(xi!==oi) x.classList.add('dim'); });
+          b.classList.add('correct');
+          solve(card,i,expBox,msg,'Correct.');
+        } else {
+          b.classList.add('wrong'); b.disabled=true;
+          msg.textContent='Not quite — eliminate and try again.'; msg.className='labmsg no';
+        }
+      });
+      optEls.push(b); body.appendChild(b);
+    });
+    const act=el('div','labactions'); act.appendChild(msg); body.appendChild(act);
+  }
+
+  if(ex.kind==='bug'){
+    const {box}=buildCodebox(ex,false);
+    [...box.children].forEach((row,li)=>{
+      row.classList.add('clickable');
+      row.addEventListener('click',()=>{
+        if(card.classList.contains('solved')) return;
+        if(li===ex.bug){
+          row.classList.add('hit');
+          solve(card,i,expBox,msg,'Found it — line '+(li+1)+'.');
+        } else {
+          row.classList.add('miss');
+          msg.textContent='Line '+(li+1)+' is fine — keep looking.'; msg.className='labmsg no';
+          setTimeout(()=>row.classList.remove('miss'),900);
+        }
+      });
+    });
+    body.appendChild(box);
+    const act=el('div','labactions'); act.appendChild(msg); body.appendChild(act);
+  }
+
+  body.appendChild(expBox);
+  card.appendChild(body);
+  return card;
+}
+</script>
+</body>
+</html>
