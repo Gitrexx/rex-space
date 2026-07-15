@@ -1,0 +1,1526 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Terraform — Learning Module</title>
+<style>
+  :root{
+    --bg:#faf7f2; --panel:#fffdf9; --ink:#26221d; --muted:#6b6357; --line:#e6ded1;
+    --accent:#b4531f; --accent-soft:#f3e2d5; --ok:#1f7a4d; --bad:#b03030;
+    --code-bg:#2a2620; --code-ink:#f3ece0; --shadow:0 1px 2px rgba(0,0,0,.05),0 6px 20px rgba(60,45,25,.06);
+    --sans:'Inter',system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+    --serif:'Charter','Georgia',Cambria,'Times New Roman',serif;
+    --mono:'SF Mono',ui-monospace,'JetBrains Mono',Menlo,Consolas,monospace;
+  }
+  html[data-theme="dark"]{
+    --bg:#17150f; --panel:#201d16; --ink:#efe8db; --muted:#a79d8c; --line:#332e24;
+    --accent:#e08a52; --accent-soft:#3a2c20; --code-bg:#0f0d09; --code-ink:#f3ece0;
+    --ok:#4bbd85; --bad:#e07070;
+    --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 24px rgba(0,0,0,.35);
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);
+    line-height:1.65;font-size:17px;-webkit-font-smoothing:antialiased}
+  .progress{position:fixed;top:0;left:0;height:3px;width:0;background:var(--accent);z-index:50;transition:width .1s}
+  .wrap{display:grid;grid-template-columns:240px minmax(0,760px);gap:48px;max-width:1080px;
+    margin:0 auto;padding:0 28px 120px}
+  @media(max-width:820px){.wrap{grid-template-columns:1fr;gap:0}.toc{display:none}}
+
+  header{grid-column:1/-1;padding:44px 0 24px;border-bottom:1px solid var(--line);margin-bottom:36px}
+  .eyebrow{font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:var(--accent);font-weight:600}
+  h1{font-family:var(--serif);font-size:38px;line-height:1.15;margin:.25em 0 .15em;font-weight:650}
+  .why{color:var(--muted);font-size:18px;max-width:62ch;margin:.4em 0 0}
+  .controls{display:flex;gap:10px;margin-top:22px;flex-wrap:wrap;align-items:center}
+  .btn{font:inherit;font-size:14px;padding:7px 14px;border:1px solid var(--line);background:var(--panel);
+    color:var(--ink);border-radius:999px;cursor:pointer;box-shadow:var(--shadow);transition:.15s}
+  .btn:hover{border-color:var(--accent)}
+  .btn.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+
+  .toc{position:sticky;top:24px;align-self:start;font-size:14px;max-height:90vh;overflow:auto}
+  .toc a{display:block;color:var(--muted);text-decoration:none;padding:4px 0 4px 12px;
+    border-left:2px solid transparent;transition:.15s}
+  .toc a:hover{color:var(--ink)}
+  .toc a.active{color:var(--accent);border-left-color:var(--accent);font-weight:600}
+
+  main{grid-column:2}
+  section{margin:0 0 52px;scroll-margin-top:24px}
+  h2{font-family:var(--serif);font-size:26px;margin:0 0 .5em;font-weight:640}
+  h3{font-size:19px;margin:1.6em 0 .4em}
+  h4{font-size:16px;margin:1.3em 0 .3em}
+  p{margin:0 0 1em}
+  code{font-family:var(--mono);font-size:.88em;background:var(--accent-soft);
+    padding:.1em .35em;border-radius:4px}
+  ul,ol{padding-left:1.2em} li{margin:.25em 0}
+
+  .deep-dive{border-left:3px solid var(--accent-soft);padding:2px 0 2px 18px;margin:1em 0;transition:.2s}
+  .depth-note{font-size:13px;color:var(--muted);font-style:italic}
+  html.skim .deep-dive{display:none}
+  html:not(.skim) .skim-only{display:none}
+
+  .callout{border:1px solid var(--line);border-radius:12px;padding:16px 18px;margin:1.4em 0;
+    background:var(--panel);box-shadow:var(--shadow)}
+  .callout .tag{font-size:12px;font-weight:700;letter-spacing:.05em;text-transform:uppercase}
+  .callout.insight{border-color:#c7a34d55}.callout.insight .tag{color:#a9791b}
+  .callout.pitfall{border-color:#b0303055}.callout.pitfall .tag{color:var(--bad)}
+  .callout p:last-child{margin-bottom:0}
+  details{margin:1em 0;border:1px solid var(--line);border-radius:10px;padding:0 16px;background:var(--panel)}
+  details summary{cursor:pointer;padding:12px 0;font-weight:600}
+  details[open]{padding-bottom:6px}
+
+  .lab{border:1px solid var(--line);border-left:3px solid var(--accent);border-radius:12px;
+    padding:14px 20px 18px;margin:1.8em 0;background:var(--panel);box-shadow:var(--shadow)}
+  .lab .tag{font-size:12px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--accent)}
+  .lab h3{margin:.25em 0 .5em}
+  .lab p:last-child,.lab ol:last-child,.lab ul:last-child{margin-bottom:0}
+
+  pre.code{background:var(--code-bg);color:var(--code-ink);font-family:var(--mono);font-size:13px;
+    line-height:1.6;padding:14px 16px;border-radius:12px;overflow:auto;border:1px solid var(--line);
+    box-shadow:var(--shadow);margin:1.3em 0}
+  pre.code code{background:none;padding:0;color:inherit;font-size:inherit}
+  pre.code .c{color:#8f877a}
+  pre.code .k{color:#e0a35a}
+  pre.code .s{color:#8fbf7f}
+
+  table{border-collapse:collapse;width:100%;margin:1.2em 0;font-size:14.5px}
+  th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+  th{font-size:12.5px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);font-weight:700}
+  td code{white-space:nowrap;font-size:.85em}
+
+  .viz{border:1px solid var(--line);border-radius:14px;background:var(--panel);
+    padding:16px;margin:1.6em 0;box-shadow:var(--shadow)}
+  .viz canvas{width:100%;height:auto;display:block;border-radius:8px;background:var(--bg)}
+  .viz .vbar{display:flex;gap:8px;margin-top:12px;align-items:center;flex-wrap:wrap}
+  .viz .cap{font-size:14px;color:var(--ink);margin-top:12px;min-height:3.4em}
+  .viz .cap b{color:var(--accent)}
+  .viz .stepno{font-size:12px;font-family:var(--mono);color:var(--muted);margin-left:auto}
+
+  .code-runner{margin:1.6em 0;border-radius:12px;overflow:hidden;border:1px solid var(--line);box-shadow:var(--shadow)}
+  .code-runner .cr-head{display:flex;justify-content:space-between;align-items:center;
+    background:var(--code-bg);padding:8px 12px}
+  .cr-head .lang{color:#9c9384;font-size:12px;font-family:var(--mono);text-transform:uppercase;letter-spacing:.08em}
+  .cr-head .cr-btns{display:flex;gap:6px}
+  .cr-btns button{font:inherit;font-size:12px;font-family:var(--mono);color:var(--code-ink);
+    background:#ffffff18;border:1px solid #ffffff22;border-radius:6px;padding:4px 10px;cursor:pointer}
+  .cr-btns button:hover{background:#ffffff30}
+  .code-runner textarea{width:100%;border:0;resize:vertical;min-height:120px;padding:14px;
+    background:var(--code-bg);color:var(--code-ink);font-family:var(--mono);font-size:13px;line-height:1.55;outline:none}
+  .code-runner .output{margin:0;padding:12px 14px;background:#00000030;color:var(--code-ink);
+    font-family:var(--mono);font-size:12.5px;white-space:pre-wrap;min-height:20px;border-top:1px solid #ffffff14}
+
+  .quiz{border:1px solid var(--line);border-radius:14px;padding:18px 20px;margin:1.6em 0;
+    background:var(--panel);box-shadow:var(--shadow)}
+  .quiz .q{font-weight:600;margin:0 0 12px}
+  .quiz .options{list-style:none;padding:0;margin:0;display:grid;gap:8px}
+  .quiz .options li{border:1px solid var(--line);border-radius:9px;padding:10px 14px;cursor:pointer;transition:.12s;font-size:15.5px}
+  .quiz .options li:hover{border-color:var(--accent)}
+  .quiz .options li.correct{border-color:var(--ok);background:#1f7a4d18}
+  .quiz .options li.wrong{border-color:var(--bad);background:#b0303018}
+  .quiz .options li.locked{cursor:default;opacity:.85}
+  .quiz .explain{display:none;margin-top:14px;padding-top:12px;border-top:1px dashed var(--line);
+    color:var(--muted);font-size:15px}
+  .quiz.answered .explain{display:block}
+
+  a.ref{color:var(--accent)}
+  footer{grid-column:1/-1;border-top:1px solid var(--line);margin-top:20px;padding-top:24px;
+    color:var(--muted);font-size:14px}
+</style>
+</head>
+<body>
+<div class="progress" id="progress"></div>
+<div class="wrap">
+
+  <header>
+    <div class="eyebrow">Infrastructure as Code · Terraform / HCL</div>
+    <h1>Terraform, for someone who already knows Docker and Kubernetes</h1>
+    <p class="why">You've spent your career on the application side — FastAPI services, containers, clusters — and never had to
+      provision the cloud underneath them. Good news: you already hold the hardest idea (declarative desired state; a machine
+      reconciles it). Terraform is that idea applied to cloud APIs, with one twist Kubernetes doesn't have — a state file.
+      Understanding <em>why that file must exist</em> is 70% of learning Terraform. The rest is syntax.</p>
+    <div class="controls">
+      <button class="btn active" id="depthBtn" data-mode="full">Mode: Full detail</button>
+      <button class="btn" id="themeBtn">◐ Theme</button>
+      <span class="depth-note" id="depthNote">Full mode — deep-dive blocks visible</span>
+    </div>
+  </header>
+
+  <nav class="toc" id="toc" aria-label="Contents"></nav>
+
+  <main>
+
+    <!-- ============================================================ -->
+    <section id="why">
+      <h2>Why it exists</h2>
+      <p>Before IaC, infrastructure was built by a human clicking through a console or running a shell script.
+        Both fail in the same specific ways:</p>
+      <ul>
+        <li><b>Not reproducible.</b> The staging VPC and the prod VPC were built six months apart by two people. Nobody knows how they differ.</li>
+        <li><b>Not reviewable.</b> There's no diff. A change to a security group has no pull request, no reviewer, no history.</li>
+        <li><b>Not idempotent.</b> A bash script that runs <code>aws ec2 run-instances</code> creates a <em>second</em> instance when re-run. To make it safe you'd have to hand-write "does it exist? then what's different? then patch only that" — for every resource type.</li>
+        <li><b>Not disposable.</b> Nobody dares delete anything, because nobody can rebuild it.</li>
+      </ul>
+      <p>Terraform's pitch: describe the <em>desired end state</em> in files, commit those files, and let a tool compute the
+        minimal set of API calls that moves reality to match. You get diffs, code review, git history, and a repeatable
+        <code>destroy</code>.</p>
+
+      <div class="callout insight"><span class="tag">The analogy that actually fits</span>
+        <p>A Kubernetes manifest is desired state; a controller loop watches and continuously reconciles. Terraform is desired
+          state too — but there's no controller. <b>You are the reconciliation loop.</b> It runs when you type
+          <code>terraform apply</code> and then stops caring. That single difference explains drift, state files, locking,
+          and most of the operational pain.</p></div>
+
+      <div class="deep-dive">
+        <p class="depth-note">Deep dive — why not just write the API calls yourself</p>
+        <p>You could. The reason nobody does is <em>ordering and diffing</em>. To create an EC2 instance you need a subnet;
+          for the subnet you need a VPC; the security group needs the VPC id; the instance needs both subnet and SG ids. That's
+          a dependency graph, and you'd have to topologically sort it by hand, then parallelise the independent branches, then
+          handle partial failure, then figure out on the next run which of those 40 things already exist and which of their
+          attributes drifted. Terraform's real product is that engine — a DAG builder plus a diff algorithm. The HCL syntax is
+          just the input format.</p>
+      </div>
+    </section>
+
+    <!-- ============================================================ -->
+    <section id="model">
+      <h2>The one idea: a diff engine over three worlds</h2>
+      <p>Everything Terraform does is a comparison between three things. Hold this and the rest follows:</p>
+      <table>
+        <tr><th>World</th><th>Lives in</th><th>Answers</th></tr>
+        <tr><td><b>Config</b></td><td>your <code>.tf</code> files, in git</td><td>"What do I <em>want</em>?"</td></tr>
+        <tr><td><b>State</b></td><td><code>terraform.tfstate</code> (JSON), local or in S3/GCS</td><td>"What do I <em>manage</em>, and what did it look like last time?"</td></tr>
+        <tr><td><b>Reality</b></td><td>the actual cloud, reachable via provider APIs</td><td>"What's <em>actually</em> there right now?"</td></tr>
+      </table>
+      <p><code>terraform plan</code> = refresh <b>state</b> from <b>reality</b>, then diff <b>config</b> against <b>state</b>.
+        <code>terraform apply</code> = execute that diff, then rewrite state.</p>
+
+      <div class="callout insight"><span class="tag">Why state must exist</span>
+        <p>Kubernetes doesn't need a state file because the cluster <em>is</em> the state store — every object is stored under
+          the name <em>you</em> gave it. AWS has no such thing. You call your instance <code>aws_instance.web</code>; AWS calls it
+          <code>i-0a1b2c3d</code>. Nothing in AWS knows the string "web". <b>State is the mapping from your names to their IDs</b>
+          — plus a cached snapshot of attributes so a diff is possible without re-reading the whole account. Delete the state
+          file and Terraform doesn't "rediscover" your infra; it concludes you own nothing and offers to build it all again.</p></div>
+
+      <h3>Watch the three worlds move</h3>
+      <div class="viz">
+        <canvas id="viz" width="720" height="330"></canvas>
+        <div class="vbar">
+          <button class="btn" id="vizPlay">▶ Play</button>
+          <button class="btn" id="vizStep">Step</button>
+          <button class="btn" id="vizReset">Reset</button>
+          <span class="stepno" id="vizNo">step 1 / 8</span>
+        </div>
+        <p class="cap" id="vizCap"></p>
+      </div>
+      <p class="depth-note">Watch specifically for steps 6 and 8: drift (reality changed behind your back) and amnesia
+        (state was lost). They're the two failure modes that make state a real operational concern rather than an implementation detail.</p>
+
+      <div class="quiz">
+        <p class="q">Your colleague resizes an instance in the AWS console. Nobody touches the repo. You run <code>terraform plan</code>. What do you see?</p>
+        <ul class="options">
+          <li>No changes — the config never changed, so there's nothing to do.</li>
+          <li data-correct="true">A change that reverts the instance back to the size in your <code>.tf</code> file.</li>
+          <li>An error, because state no longer matches reality.</li>
+          <li>Terraform updates your <code>.tf</code> file to match the console.</li>
+        </ul>
+        <div class="explain">Plan refreshes state from the API first, so state now says <code>t3.large</code>. It then diffs
+          <em>config</em> (still <code>t3.small</code>) against that refreshed state, and plans to change it back. Config is
+          the source of truth for intent; Terraform never writes your <code>.tf</code> files. This is exactly why "just make
+          one quick fix in the console" is corrosive — the next apply silently undoes it.</div>
+      </div>
+    </section>
+
+    <!-- ============================================================ -->
+    <section id="lifecycle">
+      <h2>The lifecycle: init → plan → apply → destroy</h2>
+      <table>
+        <tr><th>Command</th><th>What it actually does</th></tr>
+        <tr><td><code>terraform init</code></td><td>Reads <code>required_providers</code>, downloads provider plugins into <code>.terraform/</code>, writes/verifies <code>.terraform.lock.hcl</code>, initialises the backend, fetches modules. Run it after any provider/module/backend change.</td></tr>
+        <tr><td><code>terraform fmt</code></td><td>Canonical formatting. Wire it into pre-commit; <code>-check</code> in CI.</td></tr>
+        <tr><td><code>terraform validate</code></td><td>Syntax + internal consistency. No API calls, no credentials needed.</td></tr>
+        <tr><td><code>terraform plan</code></td><td>Refresh state from APIs, build the graph, compute the diff, print it. Read-only against your infra.</td></tr>
+        <tr><td><code>terraform apply</code></td><td>Plan again, ask for confirmation, then execute the diff in dependency order and write state.</td></tr>
+        <tr><td><code>terraform destroy</code></td><td>Diff config-is-empty against state. Walks the graph in reverse.</td></tr>
+      </table>
+
+      <h3>Reading a plan</h3>
+      <pre class="code"><code><span class="c"># terraform plan</span>
+Terraform will perform the following actions:
+
+  <span class="k">+</span> aws_s3_bucket.logs        <span class="c"># create</span>
+  <span class="k">~</span> aws_instance.web          <span class="c"># update in-place</span>
+      ~ instance_type: "t3.small" -&gt; "t3.large"
+  <span class="k">-/+</span> aws_instance.batch      <span class="c"># destroy and then create replacement</span>
+      ~ ami: "ami-111" -&gt; "ami-222" <span class="c"># forces replacement</span>
+  <span class="k">-</span> aws_eip.old               <span class="c"># destroy</span>
+
+Plan: 2 to add, 1 to change, 2 to destroy.</code></pre>
+      <table>
+        <tr><th>Symbol</th><th>Meaning</th><th>Danger</th></tr>
+        <tr><td><code>+</code></td><td>create</td><td>low</td></tr>
+        <tr><td><code>~</code></td><td>update in-place (a PATCH-style API call)</td><td>low</td></tr>
+        <tr><td><code>-/+</code></td><td><b>replace</b> — destroy then create, because an attribute is immutable in the API</td><td><b>high — this is downtime</b></td></tr>
+        <tr><td><code>-</code></td><td>destroy</td><td>high</td></tr>
+        <tr><td><code>&lt;=</code></td><td>a data source will be read</td><td>none</td></tr>
+      </table>
+      <div class="callout pitfall"><span class="tag">Read every plan for <code>-/+</code></span>
+        <p>Nothing in the syntax tells you which attributes force replacement — it's a property of the cloud API, encoded in the
+          provider (an RDS <code>identifier</code>, an EC2 <code>ami</code>, an S3 <code>bucket</code> name). A one-character
+          typo in a name can plan a destroy of your production database, and <code>-auto-approve</code> will happily do it.
+          <code>lifecycle { prevent_destroy = true }</code> is your seatbelt.</p></div>
+
+      <div class="deep-dive">
+        <p class="depth-note">Deep dive — plan is not a promise</p>
+        <p>A plan is computed at time T and applied at time T+n. In between, anything can change. Use a saved plan when it matters:</p>
+        <pre class="code"><code>terraform plan -out=tfplan       <span class="c"># serialise the plan</span>
+terraform show -json tfplan | jq  <span class="c"># machine-readable — policy checks, cost estimation, CI gates</span>
+terraform apply tfplan            <span class="c"># apply exactly this, no re-prompt</span></code></pre>
+        <p>Applying a saved plan still errors out if state has moved since (the plan records the state serial). That's the
+          safety property CI pipelines rely on: plan on PR, human approves the artefact, apply that exact artefact on merge.</p>
+      </div>
+    </section>
+
+    <!-- ============================================================ -->
+    <section id="syntax">
+      <h2>HCL: the whole syntax in one page</h2>
+      <p>HCL is a declarative configuration language. It has exactly one shape — <code>block_type "label" "label" { arguments }</code>
+        — and about eight block types you'll ever use. It is not a programming language: no loops in the imperative sense, no
+        mutable variables, no <code>if</code> statements. Order in the file is irrelevant; the dependency graph decides execution order.</p>
+
+      <pre class="code"><code><span class="c"># ---------- 1. terraform: settings for Terraform itself ----------</span>
+terraform {
+  required_version = <span class="s">"&gt;= 1.10"</span>
+
+  required_providers {
+    aws = {
+      source  = <span class="s">"hashicorp/aws"</span>   <span class="c"># registry.terraform.io/hashicorp/aws</span>
+      version = <span class="s">"~&gt; 6.0"</span>            <span class="c"># &gt;= 6.0, &lt; 7.0 — pessimistic constraint</span>
+    }
+  }
+
+  backend <span class="s">"s3"</span> {                 <span class="c"># where state lives. NO variables allowed in here.</span>
+    bucket       = <span class="s">"rex-tfstate"</span>
+    key          = <span class="s">"prod/app/terraform.tfstate"</span>
+    region       = <span class="s">"ap-southeast-1"</span>
+    encrypt      = true
+    use_lockfile = true          <span class="c"># S3-native locking (GA in 1.11; DynamoDB table no longer needed)</span>
+  }
+}
+
+<span class="c"># ---------- 2. provider: how to talk to a platform ----------</span>
+provider <span class="s">"aws"</span> {
+  region = var.region
+  default_tags { tags = { managed_by = <span class="s">"terraform"</span>, repo = <span class="s">"rex/infra"</span> } }
+}
+
+<span class="c"># ---------- 3. variable: typed inputs ----------</span>
+variable <span class="s">"env"</span> {
+  type        = string
+  description = <span class="s">"Deployment environment"</span>
+  default     = <span class="s">"dev"</span>
+  validation {
+    condition     = contains([<span class="s">"dev"</span>, <span class="s">"stg"</span>, <span class="s">"prod"</span>], var.env)
+    error_message = <span class="s">"env must be dev, stg or prod."</span>
+  }
+}
+
+variable <span class="s">"db_password"</span> {
+  type      = string
+  sensitive = true    <span class="c"># redacts from CLI output. Does NOT encrypt it in state.</span>
+}
+
+<span class="c"># ---------- 4. locals: named expressions (DRY, not inputs) ----------</span>
+locals {
+  name_prefix = <span class="s">"${var.env}-app"</span>
+  is_prod     = var.env == <span class="s">"prod"</span>
+}
+
+<span class="c"># ---------- 5. data: read something Terraform does NOT manage ----------</span>
+data <span class="s">"aws_ami"</span> <span class="s">"ubuntu"</span> {
+  most_recent = true
+  owners      = [<span class="s">"099720109477"</span>]
+  filter {
+    name   = <span class="s">"name"</span>
+    values = [<span class="s">"ubuntu/images/hvm-ssd/ubuntu-jammy-22.04-amd64-server-*"</span>]
+  }
+}
+
+<span class="c"># ---------- 6. resource: something Terraform DOES manage ----------</span>
+resource <span class="s">"aws_instance"</span> <span class="s">"web"</span> {
+  <span class="c">#        ^type          ^local name  --&gt; address: aws_instance.web</span>
+  ami           = data.aws_ami.ubuntu.id     <span class="c"># &lt;-- this reference creates a dependency edge</span>
+  instance_type = local.is_prod ? <span class="s">"m5.large"</span> : <span class="s">"t3.micro"</span>
+  subnet_id     = aws_subnet.a.id
+
+  tags = { Name = <span class="s">"${local.name_prefix}-web"</span> }
+
+  lifecycle {
+    create_before_destroy = true
+    prevent_destroy       = false
+    ignore_changes        = [tags[<span class="s">"LastScanned"</span>]]   <span class="c"># stop fighting another system</span>
+  }
+}
+
+<span class="c"># ---------- 7. output: values out of this configuration ----------</span>
+output <span class="s">"web_ip"</span> {
+  value       = aws_instance.web.public_ip
+  description = <span class="s">"Public IP of the web box"</span>
+}
+
+<span class="c"># ---------- 8. module: reuse a folder of the above ----------</span>
+module <span class="s">"network"</span> {
+  source  = <span class="s">"terraform-aws-modules/vpc/aws"</span>
+  version = <span class="s">"~&gt; 5.0"</span>
+  name    = local.name_prefix
+  cidr    = <span class="s">"10.0.0.0/16"</span>
+}</code></pre>
+
+      <div class="callout insight"><span class="tag">resource vs data</span>
+        <p><code>resource</code> = "I own this; create, update and delete it, and record it in state."
+          <code>data</code> = "someone else owns this; just look it up every plan." Data sources are read-only and are how you
+          reference things another team's Terraform (or a human) created.</p></div>
+
+      <div class="quiz">
+        <p class="q">Why can't the <code>backend "s3"</code> block use <code>var.env</code> in its <code>key</code>?</p>
+        <ul class="options">
+          <li>Because backends only accept string literals for security reasons.</li>
+          <li data-correct="true">Because Terraform must load state <em>before</em> it can evaluate anything — and variables are part of what it evaluates.</li>
+          <li>Because <code>var.env</code> isn't in scope inside <code>terraform {}</code> blocks.</li>
+          <li>It can; you just need <code>terraform init -upgrade</code>.</li>
+        </ul>
+        <div class="explain">It's a chicken-and-egg: the backend has to be initialised before any evaluation happens, so nothing
+          dynamic is available yet. The standard workaround is <em>partial configuration</em> — leave the values out and pass them at init:
+          <code>terraform init -backend-config=env/prod.tfbackend</code>. (Notable divergence: OpenTofu 1.8 added early variable
+          evaluation, which does allow variables in backend blocks — config using it won't run on Terraform.)</div>
+      </div>
+    </section>
+
+    <!-- ============================================================ -->
+    <section id="expressions">
+      <h2>Expressions, types, and pseudo-loops</h2>
+
+      <h3>Types</h3>
+      <p>Primitives: <code>string</code>, <code>number</code>, <code>bool</code>. Collections: <code>list(T)</code>,
+        <code>set(T)</code>, <code>map(T)</code>. Structural: <code>object({...})</code>, <code>tuple([...])</code>.
+        Plus <code>any</code>, and <code>null</code> (meaning "unset — use the provider default").</p>
+      <pre class="code"><code>variable <span class="s">"services"</span> {
+  type = map(object({
+    image    = string
+    port     = number
+    replicas = optional(number, 1)   <span class="c"># optional attribute with a default</span>
+  }))
+}</code></pre>
+
+      <h3>The bits of syntax you'll actually type</h3>
+      <table>
+        <tr><th>Form</th><th>Example</th></tr>
+        <tr><td>Interpolation</td><td><code>"${var.env}-web"</code> — and never <code>"${var.x}"</code> alone; just write <code>var.x</code></td></tr>
+        <tr><td>Ternary</td><td><code>local.is_prod ? 3 : 1</code></td></tr>
+        <tr><td>Splat</td><td><code>aws_subnet.private[*].id</code> → a list of ids</td></tr>
+        <tr><td><code>for</code> (list)</td><td><code>[for s in var.subnets : s.cidr]</code></td></tr>
+        <tr><td><code>for</code> (map)</td><td><code>{for k, v in var.services : k =&gt; v.port}</code></td></tr>
+        <tr><td>Filter</td><td><code>[for s in var.svc : s.name if s.enabled]</code></td></tr>
+        <tr><td>Functions</td><td><code>merge()</code> <code>lookup()</code> <code>try()</code> <code>coalesce()</code> <code>jsonencode()</code> <code>cidrsubnet()</code> <code>templatefile()</code></td></tr>
+      </table>
+
+      <h3><code>count</code> vs <code>for_each</code> — the single most consequential choice</h3>
+      <p>Both create multiple instances of one resource block. They differ in <em>how instances are addressed in state</em>,
+        and that difference bites hard.</p>
+      <pre class="code"><code><span class="c"># count -&gt; addressed by INDEX: aws_iam_user.u[0], u[1], u[2]</span>
+resource <span class="s">"aws_iam_user"</span> <span class="s">"u"</span> {
+  count = length(var.usernames)
+  name  = var.usernames[count.index]
+}
+
+<span class="c"># for_each -&gt; addressed by KEY: aws_iam_user.u["alpha"], u["beta"]</span>
+resource <span class="s">"aws_iam_user"</span> <span class="s">"u"</span> {
+  for_each = toset(var.usernames)
+  name     = each.key          <span class="c"># each.key / each.value</span>
+}</code></pre>
+      <p>Remove <code>"beta"</code> from the middle of the list. With <code>count</code>, every index after it shifts —
+        Terraform sees <code>u[1]</code> change from beta to gamma and <code>u[2]</code> disappear, so it destroys and rebuilds
+        resources that you never intended to touch. With <code>for_each</code>, only <code>u["beta"]</code> is destroyed.
+        Run it below and watch the plans differ.</p>
+
+      <div class="code-runner" data-lang="js">
+        <div class="cr-head"><span class="lang">javascript</span>
+          <div class="cr-btns"><button class="run">▶ Run</button><button class="copy">Copy</button></div></div>
+        <textarea spellcheck="false">// Simulating how Terraform addresses instances in state.
+const before = ["alpha", "beta", "gamma"];
+const after  = ["alpha", "gamma"];          // <-- "beta" removed from the MIDDLE
+
+const countAddr   = xs => xs.map((v, i) => [`aws_iam_user.u[${i}]`, v]);
+const forEachAddr = xs => xs.map(v       => [`aws_iam_user.u["${v}"]`, v]);
+
+function plan(b, a) {
+  const bm = new Map(b), am = new Map(a), out = [];
+  for (const [addr, v] of bm) {
+    if (!am.has(addr))          out.push(`  -   ${addr.padEnd(26)} destroy (${v})`);
+    else if (am.get(addr) !== v) out.push(`  -/+ ${addr.padEnd(26)} replace: ${v} -> ${am.get(addr)}`);
+  }
+  for (const [addr, v] of am) if (!bm.has(addr)) out.push(`  +   ${addr.padEnd(26)} create (${v})`);
+  return out.length ? out.join("\n") : "  no changes";
+}
+
+console.log("--- count = length(var.usernames) ---");
+console.log(plan(countAddr(before), countAddr(after)));
+console.log("\n--- for_each = toset(var.usernames) ---");
+console.log(plan(forEachAddr(before), forEachAddr(after)));
+
+// Try: remove "gamma" (the LAST one) instead. count suddenly looks fine —
+// which is exactly why this bug survives code review.</textarea>
+        <pre class="output"></pre>
+      </div>
+
+      <div class="callout insight"><span class="tag">Rule of thumb</span>
+        <p>Use <code>for_each</code> for a collection of <em>distinct named things</em> (users, buckets, environments, containers).
+          Use <code>count</code> only for genuinely interchangeable clones, or as an on/off switch:
+          <code>count = var.enabled ? 1 : 0</code>. Switching an existing resource from <code>count</code> to
+          <code>for_each</code> changes every address — use <code>moved</code> blocks or you'll rebuild the world.</p></div>
+
+      <div class="quiz">
+        <p class="q">You have <code>count = length(var.subnet_cidrs)</code> with 4 subnets, each holding a running database. You delete the 2nd CIDR from the list. What does plan show?</p>
+        <ul class="options">
+          <li>1 to destroy — the second subnet.</li>
+          <li data-correct="true">Roughly 2 to replace and 1 to destroy — indices 1 and 2 get rewritten and index 3 vanishes.</li>
+          <li>No changes until you also update <code>count</code> manually.</li>
+          <li>An error about a shifted index.</li>
+        </ul>
+        <div class="explain">Index-based addressing means removing a middle element shifts everything after it. <code>[1]</code> now
+          holds what <code>[2]</code> held, <code>[2]</code> holds what <code>[3]</code> held, and <code>[3]</code> no longer exists.
+          Since subnet CIDR is immutable, those "changes" are replacements — destroying live infrastructure. This is the classic
+          3am incident, and it's why <code>for_each</code> is the default recommendation for anything named.</div>
+      </div>
+    </section>
+
+    <!-- ============================================================ -->
+    <section id="graph">
+      <h2>The dependency graph</h2>
+      <p>You never declare ordering. Terraform infers it from <em>references</em>: writing <code>subnet_id = aws_subnet.a.id</code>
+        creates an edge from <code>aws_subnet.a</code> to <code>aws_instance.app</code>. It then applies independent nodes in
+        parallel (default <code>-parallelism=10</code>) and walks the graph in reverse on destroy.</p>
+
+      <div class="viz">
+        <canvas id="viz2" width="720" height="310"></canvas>
+        <div class="vbar">
+          <button class="btn" id="viz2Play">▶ Play</button>
+          <button class="btn" id="viz2Step">Step</button>
+          <button class="btn" id="viz2Reset">Reset</button>
+          <span class="stepno" id="viz2No">step 1 / 9</span>
+        </div>
+        <p class="cap" id="viz2Cap"></p>
+      </div>
+
+      <p><code>depends_on</code> is the escape hatch for dependencies that exist in reality but not in your references —
+        e.g. an IAM policy must exist before a Lambda can assume the role, but no attribute of the policy appears in the Lambda
+        block. Use it sparingly; it's a code smell that usually means you should have referenced an attribute instead.</p>
+
+      <p>Compute the apply waves yourself:</p>
+      <div class="code-runner" data-lang="python">
+        <div class="cr-head"><span class="lang">python</span>
+          <div class="cr-btns"><button class="run">▶ Run</button><button class="copy">Copy</button></div></div>
+        <textarea spellcheck="false"># First Run downloads a Python runtime (a few seconds), then it's instant.
+# Terraform's graph walk, in 15 lines. Deps come from references in your HCL.
+config = {
+    "aws_vpc.main":            [],
+    "aws_subnet.a":            ["aws_vpc.main"],
+    "aws_subnet.b":            ["aws_vpc.main"],
+    "aws_security_group.web":  ["aws_vpc.main"],
+    "aws_instance.app":        ["aws_subnet.a", "aws_security_group.web"],
+    "aws_s3_bucket.logs":      [],                     # no refs -> wave 0, fully parallel
+    "aws_eip.app":             ["aws_instance.app"],
+}
+PARALLELISM = 10        # terraform apply -parallelism=10 (the default)
+
+done, wave, order = set(), 0, []
+while len(done) < len(config):
+    ready = sorted(a for a, deps in config.items()
+                   if a not in done and set(deps) <= done)
+    if not ready:
+        print("cycle detected"); break
+    batch = ready[:PARALLELISM]
+    print(f"apply wave {wave}: " + ", ".join(batch))
+    order += batch
+    done |= set(batch)
+    wave += 1
+
+print(f"\n{len(config)} resources in {wave} waves.")
+print("destroy order is the reverse:\n  " + "\n  ".join(reversed(order)))
+
+# Try: set PARALLELISM = 1 and watch the wave count explode. That is what
+# happens when your provider is rate-limited or you pass -parallelism=1 to debug.
+# Try: add a cycle -- "aws_vpc.main": ["aws_eip.app"] -- and see it caught.</textarea>
+        <pre class="output"></pre>
+      </div>
+
+      <div class="deep-dive">
+        <p class="depth-note">Deep dive — inspecting the real graph</p>
+        <p><code>terraform graph | dot -Tsvg &gt; graph.svg</code> renders the actual DAG (needs graphviz: <code>brew install graphviz</code>).
+          On a real config it's an unreadable hairball, which is itself the lesson: if the graph is a hairball, your state file
+          is too big and your blast radius is the whole thing. Splitting configurations is how teams keep plans fast and mistakes contained.</p>
+      </div>
+    </section>
+
+    <!-- ============================================================ -->
+    <section id="state">
+      <h2>State, properly</h2>
+      <p><code>terraform.tfstate</code> is JSON. Four things you must internalise:</p>
+      <ol>
+        <li><b>It's the source of truth for ownership.</b> "Is this mine?" is answered by state, not by the cloud. Nothing else knows.</li>
+        <li><b>It contains secrets in plaintext.</b> Every attribute of every resource is cached — RDS passwords, private keys, TLS certs.
+          <code>sensitive = true</code> only redacts CLI output. Never commit state to git. Put it in an encrypted, versioned,
+          access-controlled bucket.</li>
+        <li><b>It must be locked.</b> Two concurrent applies = two writers = corrupted state.</li>
+        <li><b>It's the thing you'll have to surgically repair.</b> Learn the commands before you need them at 3am.</li>
+      </ol>
+
+      <h4>Remote backend — the current shape on AWS</h4>
+      <pre class="code"><code>terraform {
+  backend <span class="s">"s3"</span> {
+    bucket       = <span class="s">"rex-tfstate"</span>
+    key          = <span class="s">"prod/app/terraform.tfstate"</span>
+    region       = <span class="s">"ap-southeast-1"</span>
+    encrypt      = true
+    use_lockfile = true     <span class="c"># S3-native lock: writes a .tflock object using a conditional PUT</span>
+  }
+}</code></pre>
+      <p class="depth-note">Note for anyone reading older tutorials: state locking used to require a separate DynamoDB table
+        (<code>dynamodb_table</code>). Native S3 locking arrived experimentally in Terraform 1.10 and went GA in 1.11; the
+        DynamoDB arguments are deprecated and slated for removal. New backends shouldn't create a lock table at all.</p>
+
+      <h4>State surgery</h4>
+      <table>
+        <tr><th>Command</th><th>Use</th></tr>
+        <tr><td><code>terraform state list</code></td><td>every address Terraform manages</td></tr>
+        <tr><td><code>terraform state show ADDR</code></td><td>all cached attributes of one resource</td></tr>
+        <tr><td><code>terraform state mv A B</code></td><td>rename in state without touching infra (prefer a <code>moved</code> block)</td></tr>
+        <tr><td><code>terraform state rm ADDR</code></td><td><b>stop managing</b> without deleting — the resource keeps running, orphaned</td></tr>
+        <tr><td><code>terraform state pull / push</code></td><td>fetch / force-write remote state. <code>push</code> is a loaded gun.</td></tr>
+        <tr><td><code>terraform force-unlock ID</code></td><td>clear a stale lock — only after confirming the holder is really dead</td></tr>
+        <tr><td><code>terraform show -json | jq</code></td><td>machine-readable state/plan for CI, policy, drift dashboards</td></tr>
+      </table>
+
+      <h4>Declarative state operations (prefer these)</h4>
+      <pre class="code"><code><span class="c"># Adopt existing infra created by hand or by another tool (1.5+)</span>
+import {
+  to = aws_instance.web
+  id = <span class="s">"i-0a1b2c3d4e5f"</span>
+}
+<span class="c"># then: terraform plan -generate-config-out=generated.tf   &lt;-- writes the HCL for you</span>
+
+<span class="c"># Refactor without destroying: renames, module extraction, count -&gt; for_each (1.1+)</span>
+moved {
+  from = aws_instance.web
+  to   = module.app.aws_instance.web
+}
+
+<span class="c"># Stop managing without destroying — the declarative `state rm` (1.7+)</span>
+removed {
+  from = aws_instance.legacy
+  lifecycle { destroy = false }
+}</code></pre>
+      <p>These beat the imperative <code>state mv/rm</code> commands because they live in git, get code-reviewed, and run
+        identically in CI. That's the whole point of IaC — apply it to your state operations too.</p>
+
+      <div class="quiz">
+        <p class="q">You run <code>terraform state rm aws_instance.web</code>. What happens to the EC2 instance?</p>
+        <ul class="options">
+          <li>It's terminated immediately.</li>
+          <li>It's terminated on the next <code>apply</code>.</li>
+          <li data-correct="true">Nothing — it keeps running, but Terraform now considers it none of its business.</li>
+          <li>It's tainted and will be replaced next apply.</li>
+        </ul>
+        <div class="explain"><code>state rm</code> only edits the ledger. The instance keeps running and now nothing manages it —
+          you've created an orphan that will quietly cost money forever. Worse: if the resource is still in your config,
+          the <em>next</em> plan sees it missing from state and offers to create a <em>second</em> one. This is the intended
+          tool for handing a resource to another config, but it's a footgun everywhere else.</div>
+      </div>
+
+      <div class="quiz">
+        <p class="q">Which of these is the strongest argument for splitting one big state file into several?</p>
+        <ul class="options">
+          <li>Terraform has a hard limit on state file size.</li>
+          <li data-correct="true">Blast radius and lock contention — one state means one lock, one plan over everything, and one mistake reaching everything.</li>
+          <li>Providers can only be configured once per state.</li>
+          <li>Modules require a state file each.</li>
+        </ul>
+        <div class="explain">There's no size limit, and modules share their root's state. The real reasons are operational:
+          every plan refreshes <em>every</em> resource (slow), one lock serialises the whole team, and a bad apply can touch
+          anything in the file. The usual split is by rate of change and blast radius — network/IAM (rarely changes) separate
+          from apps (changes hourly) — wired together with <code>terraform_remote_state</code> data sources or, better, by
+          looking things up with normal data sources.</div>
+      </div>
+    </section>
+
+    <!-- ============================================================ -->
+    <section id="engine">
+      <h2>Build the diff engine yourself</h2>
+      <p>This is Terraform's core loop in ~30 lines. Edit the three worlds and watch the plan change — it's the fastest way to
+        make the mental model stick.</p>
+      <div class="code-runner" data-lang="js">
+        <div class="cr-head"><span class="lang">javascript</span>
+          <div class="cr-btns"><button class="run">▶ Run</button><button class="copy">Copy</button></div></div>
+        <textarea spellcheck="false">// ---------- WORLD 1: config — your .tf files ----------
+const config = {
+  "aws_instance.web":   { instance_type: "t3.small", ami: "ami-111" },
+  "aws_s3_bucket.logs": { bucket: "rex-logs-2026" },
+};
+
+// ---------- WORLD 2: state — what Terraform thinks it manages ----------
+const state = {
+  "aws_instance.web": { instance_type: "t3.micro", ami: "ami-111", id: "i-0a1b" },
+};
+
+// ---------- WORLD 3: reality — the actual cloud, keyed by real IDs ----------
+const real = {
+  "i-0a1b": { instance_type: "t3.micro", ami: "ami-111" },
+};
+
+const FORCES_NEW = new Set(["ami", "bucket"]);   // immutable in the API -> replace
+
+// plan step 1: REFRESH. Re-read every managed resource from the provider API.
+function refresh(state, real) {
+  for (const [addr, s] of Object.entries(state)) {
+    const live = real[s.id];
+    if (!live) { delete state[addr]; continue; }   // deleted behind our back
+    Object.assign(s, live);                        // reality overwrites the cache
+  }
+  return state;
+}
+
+// plan step 2: DIFF config against the refreshed state.
+function plan(config, state) {
+  const out = [];
+  for (const addr of Object.keys(config)) {
+    if (!(addr in state)) { out.push(`  +   ${addr.padEnd(22)} create`); continue; }
+    const changed = Object.keys(config[addr]).filter(k => config[addr][k] !== state[addr][k]);
+    if (!changed.length)                            out.push(`      ${addr.padEnd(22)} no changes`);
+    else if (changed.some(k => FORCES_NEW.has(k)))  out.push(`  -/+ ${addr.padEnd(22)} REPLACE (${changed.join(",")} forces new)`);
+    else                                            out.push(`  ~   ${addr.padEnd(22)} update in-place: ${changed.join(",")}`);
+  }
+  for (const addr of Object.keys(state))
+    if (!(addr in config)) out.push(`  -   ${addr.padEnd(22)} destroy`);
+  return out.join("\n");
+}
+
+console.log(plan(config, refresh(state, real)));
+
+// EXPERIMENT 1 — drift: set real["i-0a1b"].instance_type = "t3.large" above.
+//   Refresh picks it up, and the plan reverts it to the config value.
+// EXPERIMENT 2 — replacement: change config ami to "ami-222". Watch -/+ appear.
+// EXPERIMENT 3 — amnesia: delete the whole "aws_instance.web" entry from `state`.
+//   The instance still exists in `real`, but the plan says CREATE. That is a lost
+//   state file, and that is why the bucket is versioned.
+// EXPERIMENT 4 — orphan: delete "aws_instance.web" from `config` instead. `-` destroy.</textarea>
+        <pre class="output"></pre>
+      </div>
+    </section>
+
+    <!-- ============================================================ -->
+    <section id="modules">
+      <h2>Modules</h2>
+      <p>A module is just <em>a folder with .tf files</em>. That's the entire concept. The folder you run <code>terraform apply</code>
+        in is the <b>root module</b>; anything it calls is a <b>child module</b>. Variables are the function parameters, outputs
+        are the return values, and there's no state of its own — everything lands in the root's state under a prefixed address
+        (<code>module.network.aws_vpc.main</code>).</p>
+
+      <pre class="code"><code><span class="c"># modules/site/variables.tf</span>
+variable <span class="s">"name"</span> { type = string }
+variable <span class="s">"port"</span> { type = number }
+
+<span class="c"># modules/site/main.tf</span>
+resource <span class="s">"docker_container"</span> <span class="s">"this"</span> {
+  name  = var.name
+  image = var.image_id
+  ports { internal = 80, external = var.port }
+}
+
+<span class="c"># modules/site/outputs.tf</span>
+output <span class="s">"url"</span> { value = <span class="s">"http://localhost:${var.port}"</span> }
+
+<span class="c"># root main.tf — calling it</span>
+module <span class="s">"site"</span> {
+  source   = <span class="s">"./modules/site"</span>       <span class="c"># local path, git URL, or registry ref</span>
+  for_each = var.sites                <span class="c"># modules take for_each/count/depends_on too</span>
+  name     = <span class="s">"tf-${each.key}"</span>
+  port     = each.value.port
+  image_id = docker_image.nginx.image_id
+}
+
+output <span class="s">"urls"</span> { value = { for k, m in module.site : k =&gt; m.url } }</code></pre>
+
+      <table>
+        <tr><th>Source</th><th>Example</th><th>Pin with</th></tr>
+        <tr><td>Local</td><td><code>./modules/site</code></td><td>— (same repo, same commit)</td></tr>
+        <tr><td>Registry</td><td><code>terraform-aws-modules/vpc/aws</code></td><td><code>version = "~&gt; 5.0"</code></td></tr>
+        <tr><td>Git</td><td><code>git::https://github.com/org/repo.git//modules/vpc</code></td><td><code>?ref=v1.2.0</code> (a tag, never a branch)</td></tr>
+      </table>
+
+      <div class="callout pitfall"><span class="tag">Don't over-modularise on day one</span>
+        <p>The common failure is wrapping every resource in a module "for reusability", producing a config where finding what
+          actually gets created means opening six files. A module earns its existence when it's used <em>twice</em> (or when it
+          enforces a real standard across teams). Start with a flat root module; extract later — <code>moved</code> blocks make
+          that refactor safe, which is exactly what Lab 3 practises.</p></div>
+
+      <div class="quiz">
+        <p class="q">Where does the state for <code>module.network.aws_vpc.main</code> live?</p>
+        <ul class="options">
+          <li>In a state file inside <code>modules/network/</code>.</li>
+          <li data-correct="true">In the root module's single state file, under a prefixed address.</li>
+          <li>In whichever backend the child module declares.</li>
+          <li>Nowhere — child modules are stateless.</li>
+        </ul>
+        <div class="explain">A child module has no state, no backend, and no provider configuration of its own — those are all
+          root-level concerns. It's closer to a function call than to a microservice. Which is also why "just add a module" never
+          reduces blast radius: the resources still land in the same state file, behind the same lock.</div>
+      </div>
+    </section>
+
+    <!-- ============================================================ -->
+    <section id="labs">
+      <h2>Hands-on labs</h2>
+      <p>All of these run on your Mac. Labs 1–4 create <b>zero cloud resources and cost nothing</b> — no AWS account, no
+        credentials. Do them in order; each one is designed around a specific misconception.</p>
+
+      <h4>Setup</h4>
+      <pre class="code"><code>brew tap hashicorp/tap
+brew install hashicorp/tap/terraform
+terraform -version        <span class="c"># 1.15.x is current as of July 2026</span>
+
+<span class="c"># optional: shell completion + the OpenTofu fork side by side</span>
+terraform -install-autocomplete
+brew install opentofu      <span class="c"># gives you `tofu`, same commands</span></code></pre>
+
+      <div class="lab">
+        <span class="tag">Lab 1 · 20 min</span>
+        <h3>Feel the loop (no cloud, no cost)</h3>
+        <p>Create <code>~/tf-lab1/main.tf</code>:</p>
+        <pre class="code"><code>terraform {
+  required_version = <span class="s">"&gt;= 1.10"</span>
+  required_providers {
+    local  = { source = <span class="s">"hashicorp/local"</span>,  version = <span class="s">"~&gt; 2.5"</span> }
+    random = { source = <span class="s">"hashicorp/random"</span>, version = <span class="s">"~&gt; 3.6"</span> }
+  }
+}
+
+variable <span class="s">"env"</span> {
+  type    = string
+  default = <span class="s">"dev"</span>
+  validation {
+    condition     = contains([<span class="s">"dev"</span>, <span class="s">"stg"</span>, <span class="s">"prod"</span>], var.env)
+    error_message = <span class="s">"env must be dev, stg or prod."</span>
+  }
+}
+
+resource <span class="s">"random_pet"</span> <span class="s">"name"</span> {
+  length    = 2
+  separator = <span class="s">"-"</span>
+}
+
+resource <span class="s">"local_file"</span> <span class="s">"greeting"</span> {
+  filename = <span class="s">"${path.module}/out/${var.env}-${random_pet.name.id}.txt"</span>
+  content  = <span class="s">"hello from ${var.env}, I am ${random_pet.name.id}\n"</span>
+}
+
+output <span class="s">"file_path"</span> { value = local_file.greeting.filename }</code></pre>
+        <ol>
+          <li><code>terraform init</code> → then <code>ls -a</code>. Look inside <code>.terraform/</code> and open
+            <code>.terraform.lock.hcl</code>. <b>Q:</b> what is that lock file for, and should it be in git?</li>
+          <li><code>terraform plan</code>. <b>Q:</b> why is <code>filename</code> shown as <code>(known after apply)</code>?</li>
+          <li><code>terraform apply</code> → <code>cat out/*.txt</code>. Now open <code>terraform.tfstate</code>. Find the pet name in it.</li>
+          <li><code>terraform state list</code>, then <code>terraform state show random_pet.name</code>.</li>
+          <li><b>In-place update:</b> change the <code>content</code> string → <code>plan</code>. You should see <code>~</code>.</li>
+          <li><b>Replacement:</b> change <code>separator</code> to <code>"_"</code> → <code>plan</code>. You should see <code>-/+</code>
+            on the pet <em>and</em> a cascade onto the file. <b>Q:</b> why did the file get replaced too?</li>
+          <li><b>Drift:</b> <code>rm out/*.txt</code> then <code>terraform plan</code> without touching any <code>.tf</code>.
+            <b>Q:</b> what does the refresh phase discover, and what does plan propose?</li>
+          <li><b>Amnesia:</b> <code>terraform state rm random_pet.name</code> → <code>plan</code>. <b>Q:</b> why does Terraform now
+            want to create a pet even though one is clearly named inside your file?</li>
+          <li><b>Validation:</b> <code>terraform apply -var env=production</code>. Read the error. Then try <code>-var env=prod</code>.</li>
+          <li><code>terraform destroy</code>. Check that <code>out/</code> is empty and state has no resources.</li>
+        </ol>
+      </div>
+
+      <div class="lab">
+        <span class="tag">Lab 2 · 30 min</span>
+        <h3>Real resources with the Docker provider</h3>
+        <p>Same loop, but now Terraform manages actual running containers — you already have Docker on your Mac, so this is the
+          closest thing to real infrastructure you can get for free. <code>~/tf-lab2/main.tf</code>:</p>
+        <pre class="code"><code>terraform {
+  required_providers {
+    docker = { source = <span class="s">"kreuzwerker/docker"</span>, version = <span class="s">"~&gt; 3.0"</span> }
+  }
+}
+
+provider <span class="s">"docker"</span> {}
+<span class="c"># Colima/OrbStack users: host = "unix://${pathexpand("~/.colima/default/docker.sock")}"</span>
+
+variable <span class="s">"sites"</span> {
+  type = map(object({ port = number }))
+  default = {
+    alpha = { port = 8081 }
+    beta  = { port = 8082 }
+  }
+}
+
+resource <span class="s">"docker_image"</span> <span class="s">"nginx"</span> {
+  name         = <span class="s">"nginx:1.27-alpine"</span>
+  keep_locally = false
+}
+
+resource <span class="s">"docker_container"</span> <span class="s">"site"</span> {
+  for_each = var.sites
+  name     = <span class="s">"tf-${each.key}"</span>
+  image    = docker_image.nginx.image_id
+  ports {
+    internal = 80
+    external = each.value.port
+  }
+}
+
+output <span class="s">"urls"</span> {
+  value = { for k, c in docker_container.site : k =&gt; <span class="s">"http://localhost:${c.ports[0].external}"</span> }
+}</code></pre>
+        <ol>
+          <li><code>terraform init &amp;&amp; terraform apply</code> → <code>docker ps</code> → open the URLs from the output.</li>
+          <li><code>terraform state list</code>. <b>Q:</b> what exactly are the two container addresses, and where did those keys come from?</li>
+          <li><b>The for_each payoff:</b> add <code>gamma = { port = 8083 }</code> to <code>var.sites</code> → <code>plan</code>.
+            Exactly 1 to add, 0 to change. Now delete <code>alpha</code> → exactly 1 to destroy. Nothing else moves.
+            <b>Q:</b> rewrite this with <code>count</code> over a list and predict the plan. (You proved the answer in the runner above.)</li>
+          <li><b>Drift:</b> <code>docker rm -f tf-beta</code>, then <code>plan</code>. Then <code>apply</code> to heal it.</li>
+          <li><b>Cascade:</b> bump the image to <code>nginx:1.28-alpine</code> → <code>plan</code>. <b>Q:</b> why do all the
+            containers get replaced, and what would <code>lifecycle { create_before_destroy = true }</code> change?</li>
+          <li><b>Graph:</b> <code>brew install graphviz &amp;&amp; terraform graph | dot -Tsvg &gt; graph.svg &amp;&amp; open graph.svg</code>.
+            Find the edge from <code>docker_image.nginx</code> to each container. You never wrote that edge.</li>
+          <li><code>terraform destroy</code>, confirm with <code>docker ps -a</code>.</li>
+        </ol>
+      </div>
+
+      <div class="lab">
+        <span class="tag">Lab 3 · 25 min</span>
+        <h3>Refactor into a module without destroying anything</h3>
+        <p>Start from a working Lab 2 (apply it first — you need live containers to prove the point).</p>
+        <ol>
+          <li>Create <code>modules/site/{main.tf,variables.tf,outputs.tf}</code> holding just the <code>docker_container</code>
+            (inputs: <code>name</code>, <code>port</code>, <code>image_id</code>; output: <code>url</code>).</li>
+          <li>In the root, replace the <code>docker_container.site</code> resource with a <code>module "site"</code> call using the
+            same <code>for_each</code>.</li>
+          <li><code>terraform init</code> (new module ⇒ re-init) then <code>plan</code>. <b>Read it carefully: it wants to destroy
+            all your containers and create identical ones.</b> Do not apply. <b>Q:</b> why? Nothing about the containers changed.</li>
+          <li>Add moved blocks and re-plan:
+            <pre class="code"><code>moved {
+  from = docker_container.site[<span class="s">"alpha"</span>]
+  to   = module.site[<span class="s">"alpha"</span>].docker_container.this
+}
+moved {
+  from = docker_container.site[<span class="s">"beta"</span>]
+  to   = module.site[<span class="s">"beta"</span>].docker_container.this
+}</code></pre>
+          </li>
+          <li>Now plan says <b>0 to add, 0 to change, 0 to destroy</b> — just address moves. Apply it. <code>docker ps</code>: same
+            container IDs, never restarted. <b>Q:</b> what did <code>moved</code> actually modify — the containers, or the ledger?</li>
+          <li>Once applied, the <code>moved</code> blocks can be deleted in a later commit. <b>Q:</b> why keep them around for one release cycle?</li>
+        </ol>
+        <p class="depth-note">This lab is the single highest-leverage Terraform skill. Every real codebase gets refactored, and
+          the difference between a senior and a junior Terraform user is whether that refactor causes an outage.</p>
+      </div>
+
+      <div class="lab">
+        <span class="tag">Lab 4 · 20 min</span>
+        <h3>Adopt something that already exists (import)</h3>
+        <p>The situation you'll actually walk into at work: infrastructure exists, nobody wrote it in code, and you're asked to
+          bring it under management.</p>
+        <ol>
+          <li>Create a container <em>outside</em> Terraform: <code>docker run -d --name legacy-box -p 8099:80 nginx:1.27-alpine</code></li>
+          <li>Get its id: <code>docker inspect --format='{{.Id}}' legacy-box</code></li>
+          <li>In a fresh directory with the docker provider block, add:
+            <pre class="code"><code>import {
+  to = docker_container.legacy
+  id = <span class="s">"&lt;paste the full container id&gt;"</span>
+}</code></pre></li>
+          <li><code>terraform plan -generate-config-out=generated.tf</code> → open <code>generated.tf</code>. Terraform wrote the
+            HCL for you by reading the live resource.</li>
+          <li>Clean up the generated file (it's verbose and includes computed junk), then <code>terraform apply</code>.
+            <b>Q:</b> the apply reports "1 imported" — was any container created or restarted?</li>
+          <li><code>terraform plan</code> again. <b>Q:</b> if it isn't clean, what does that tell you about the difference between
+            what the API reports and what your HCL says?</li>
+          <li>Finish with <code>removed { from = docker_container.legacy, lifecycle { destroy = false } }</code> and apply.
+            <b>Q:</b> is <code>legacy-box</code> still running? What just changed?</li>
+        </ol>
+      </div>
+
+      <div class="lab">
+        <span class="tag">Lab 5 · when you have AWS creds</span>
+        <h3>Plan-only against real AWS (still free)</h3>
+        <p><code>terraform plan</code> makes read-only API calls. With credentials configured
+          (<code>aws sso login</code> or <code>aws configure</code>), you can plan a real VPC + subnets + instance and read the
+          diff <em>without ever applying it</em>. Add <code>required_version</code>, an <code>aws</code> provider pinned to
+          <code>~&gt; 6.0</code>, region <code>ap-southeast-1</code>, and build: VPC → 2 subnets (use <code>cidrsubnet()</code>) →
+          security group → <code>t3.micro</code> instance from a <code>data "aws_ami"</code> lookup. Read the plan; count the
+          resources you didn't explicitly ask for. Then <code>terraform plan -destroy</code> and stop there. If you do apply,
+          set a budget alert first and destroy the same day.</p>
+      </div>
+    </section>
+
+    <!-- ============================================================ -->
+    <section id="pitfalls">
+      <h2>Where people go wrong</h2>
+
+      <div class="callout pitfall"><span class="tag">1 · State is a security asset</span>
+        <p>Plaintext secrets, in a file, that new engineers casually <code>cat</code>. Encrypt the bucket, restrict IAM on it,
+          enable versioning (your undo button), add <code>*.tfstate*</code> to <code>.gitignore</code> on day one. Prefer
+          <code>ephemeral</code> values and write-only arguments where the provider supports them, and generate secrets in a
+          secrets manager rather than in Terraform.</p></div>
+
+      <div class="callout pitfall"><span class="tag">2 · <code>-auto-approve</code> as a habit</span>
+        <p>Fine in a CI pipeline applying a plan a human already approved. Not fine in your terminal. The confirmation prompt is
+          the last thing standing between a typo and a deleted database.</p></div>
+
+      <div class="callout pitfall"><span class="tag">3 · Renaming a resource in code</span>
+        <p><code>aws_instance.web</code> → <code>aws_instance.frontend</code> is not a rename to Terraform. It's a destroy and a
+          create, because the address <em>is</em> the identity. Always pair a rename with a <code>moved</code> block.</p></div>
+
+      <div class="callout pitfall"><span class="tag">4 · Not pinning, or not committing the lock file</span>
+        <p><code>version = "~&gt; 6.0"</code> in <code>required_providers</code> and <code>.terraform.lock.hcl</code> committed to git.
+          Without both, CI can silently pull a new provider minor with different defaults and plan a change nobody wrote.</p></div>
+
+      <div class="callout pitfall"><span class="tag">5 · Using Terraform as a config management tool</span>
+        <p><code>provisioner "remote-exec"</code> is officially a last resort. Terraform provisions the box; Ansible/cloud-init/a
+          container image configures what's on it. Provisioners run once at create time, aren't in the diff, and turn your
+          declarative config into a fragile shell script.</p></div>
+
+      <div class="callout pitfall"><span class="tag">6 · One state file for everything</span>
+        <p>It starts convenient and ends as a 20-minute plan, a permanently contended lock, and a blast radius covering prod.
+          Split by rate-of-change and blast radius before it hurts, not after.</p></div>
+
+      <div class="deep-dive">
+        <p class="depth-note">Deep dive — the misconceptions specifically worth naming</p>
+        <ul>
+          <li><b>"Terraform reads my cloud account."</b> No. It reads <em>state</em>, then refreshes only the resources listed there.
+            Anything not in state is invisible to it.</li>
+          <li><b>"<code>sensitive = true</code> encrypts it."</b> No. It redacts CLI/log output. State is still plaintext.</li>
+          <li><b>"Modules isolate blast radius."</b> No. Same state, same lock, same apply.</li>
+          <li><b>"Plan means it will work."</b> No. The provider can still get a 403, a quota error, or an eventual-consistency
+            failure at apply time. Plan validates intent, not outcome.</li>
+          <li><b>"<code>terraform destroy</code> deletes everything I built."</b> Only what's in <em>this</em> state file. Things you
+            <code>state rm</code>'d, or that another config owns, survive — which is usually the surprise, not the relief.</li>
+        </ul>
+      </div>
+
+      <div class="quiz">
+        <p class="q">CI runs <code>terraform apply -auto-approve</code> on merge to main. A PR renames <code>aws_db_instance.main</code> to <code>aws_db_instance.primary</code>, no other change. What ships?</p>
+        <ul class="options">
+          <li>Nothing — it's cosmetic, the address isn't part of the resource.</li>
+          <li>An in-place update to the database's identifier.</li>
+          <li data-correct="true">The production database is destroyed and a new empty one is created.</li>
+          <li>An error, because two addresses would collide.</li>
+        </ul>
+        <div class="explain">The address is the identity in state. The old address vanishes from config ⇒ destroy; the new address
+          has no state ⇒ create. Terraform is doing exactly what it was told. Three things would have stopped it: a
+          <code>moved</code> block, <code>lifecycle { prevent_destroy = true }</code>, or a human reading the plan before apply.
+          Note that all three are cheap, and that the reviewer saw a one-word diff.</div>
+      </div>
+    </section>
+
+    <!-- ============================================================ -->
+    <section id="landscape">
+      <h2>When not to use it, and what else is out there</h2>
+      <p>Terraform is a default, not a law. Where it's genuinely weak:</p>
+      <table>
+        <tr><th>Situation</th><th>Why Terraform struggles</th><th>Usual answer</th></tr>
+        <tr><td>In-cluster Kubernetes workloads</td><td>No continuous reconciliation; drift only surfaces when you run plan; the K8s provider fights the cluster's own controllers</td><td>Argo CD / Flux (GitOps), or Crossplane if you want cloud resources reconciled by a K8s controller loop</td></tr>
+        <tr><td>OS / app configuration</td><td>Not its model at all</td><td>Ansible, cloud-init, a container image</td></tr>
+        <tr><td>Highly dynamic or short-lived resources</td><td>State is a bottleneck; a lock per change doesn't scale</td><td>The platform's own API / a controller</td></tr>
+        <tr><td>Complex conditional logic</td><td>HCL deliberately isn't a programming language; you'll fight it</td><td>Pulumi or CDKTF (real languages — at the cost of a larger blast radius for bugs)</td></tr>
+        <tr><td>Single-cloud, deep AWS shop</td><td>Nothing wrong — but you're maintaining state yourself</td><td>AWS CDK / CloudFormation (AWS manages the state; you lose multi-cloud and the plan UX)</td></tr>
+      </table>
+      <p>The genuine strength is the opposite case: heterogeneous providers (AWS + Cloudflare + Datadog + GitHub + Snowflake in
+        one graph), an enormous provider ecosystem, and a plan output that a human can review. For your world specifically, the
+        common split is Terraform for the cluster, node pools, IAM and networking; GitOps for everything inside the cluster.</p>
+
+      <h3>Terraform or OpenTofu?</h3>
+      <p>You'll hit this on day one, so here are the facts rather than a recommendation.</p>
+      <p>In August 2023 HashiCorp relicensed Terraform from MPL 2.0 to the Business Source License (BSL/BUSL), effective from
+        v1.6. The community forked the last MPL version; the Linux Foundation adopted it as <b>OpenTofu</b>, which later entered
+        the CNCF and stayed on MPL 2.0. IBM subsequently acquired HashiCorp, so Terraform is now an IBM product. Both are
+        production-grade; <code>tofu</code> takes the same commands, reads the same state format, and uses the same providers.</p>
+      <table>
+        <tr><th>Axis</th><th>Terraform</th><th>OpenTofu</th></tr>
+        <tr><td>License</td><td>BUSL 1.1 (not OSI-approved; converts to Apache 2.0 after 4 years)</td><td>MPL 2.0 (OSI-approved)</td></tr>
+        <tr><td>Governance</td><td>IBM / HashiCorp</td><td>Linux Foundation, multi-vendor</td></tr>
+        <tr><td>Practical BUSL impact</td><td>None if you use it to manage your own infra. Real if you build a product that competes with HCP Terraform.</td><td>None</td></tr>
+        <tr><td>Exclusive features</td><td>Stacks (<code>.tfstack.hcl</code>), deep HCP Terraform + Sentinel integration</td><td>Client-side state encryption, <code>for_each</code> on providers, early variable evaluation, <code>-exclude</code></td></tr>
+        <tr><td>Ecosystem</td><td>Largest; every tutorial and module assumes it</td><td>Same providers; supported by Spacelift, Scalr, env0, Atlantis</td></tr>
+      </table>
+      <p>Honest reading of the evidence: for <em>learning</em>, it doesn't matter — everything in this module works in both.
+        For a team, the deciding axes are your legal/procurement posture on BUSL, whether you depend on HCP Terraform features,
+        and how much you value vendor-neutral governance. Be aware that much of the published comparison is written by vendors
+        with a commercial stake (Scalr and Spacelift back OpenTofu; HashiCorp is now IBM), so weigh sources accordingly. The
+        divergence is real and growing, but the overlap is still large enough that switching is currently cheap.</p>
+    </section>
+
+    <!-- ============================================================ -->
+    <section id="check">
+      <h2>Check yourself</h2>
+
+      <div class="quiz">
+        <p class="q">A resource is in your config and running in the cloud, but its state entry was lost. What does <code>terraform apply</code> do?</p>
+        <ul class="options">
+          <li>Detects the existing resource and adopts it automatically.</li>
+          <li data-correct="true">Tries to create a second one — and probably fails on a name collision, or succeeds and gives you a duplicate.</li>
+          <li>Errors out saying state is inconsistent.</li>
+          <li>Nothing; reality already matches config.</li>
+        </ul>
+        <div class="explain">Terraform has no discovery mechanism. State is the only thing that says "this is mine, here's its
+          real id". Without it, the resource is invisible and the config looks unfulfilled. The fix is an <code>import</code>
+          block, which is precisely why Lab 4 exists — and why remote state gets versioning turned on.</div>
+      </div>
+
+      <div class="quiz">
+        <p class="q">Which change is safe to apply without reading the plan?</p>
+        <ul class="options">
+          <li>Adding a tag to an existing instance.</li>
+          <li>Bumping a provider version.</li>
+          <li>Adding a new S3 bucket.</li>
+          <li data-correct="true">None of them.</li>
+        </ul>
+        <div class="explain">Not a trick question — a discipline one. Adding a tag can force replacement on some resource types.
+          A provider bump can change defaults and produce diffs you never wrote. A "new" bucket whose name collides fails the
+          apply halfway, leaving a partial change. The plan takes ten seconds to read and it is the entire safety model.</div>
+      </div>
+
+      <div class="quiz">
+        <p class="q">Terraform applies <code>aws_vpc</code>, <code>aws_subnet</code> (refs the VPC) and <code>aws_s3_bucket</code> (refs nothing). What runs in parallel?</p>
+        <ul class="options">
+          <li>Nothing — Terraform applies strictly in file order.</li>
+          <li data-correct="true">The VPC and the bucket start together; the subnet waits for the VPC.</li>
+          <li>All three, since only <code>depends_on</code> creates ordering.</li>
+          <li>Nothing, unless you pass <code>-parallelism</code>.</li>
+        </ul>
+        <div class="explain">Order in the file is irrelevant — the graph decides. The reference <code>vpc_id = aws_vpc.main.id</code>
+          is what creates the edge, and it's implicit. The bucket shares no edges, so it's in the first wave alongside the VPC.
+          Parallelism defaults to 10 and only caps the width of each wave.</div>
+      </div>
+    </section>
+
+    <!-- ============================================================ -->
+    <section id="cheatsheet">
+      <h2>Cheat-sheet</h2>
+
+      <h4>Commands</h4>
+      <pre class="code"><code>terraform init [-upgrade] [-backend-config=f.tfbackend]
+terraform fmt -recursive | terraform validate
+terraform plan [-out=tfplan] [-var-file=prod.tfvars] [-target=ADDR]
+terraform apply [tfplan] [-auto-approve] [-parallelism=10]
+terraform destroy [-target=ADDR]
+terraform output [-json] [NAME]
+terraform console                      <span class="c"># REPL for expressions — underrated</span>
+terraform state list|show|mv|rm|pull|push
+terraform force-unlock LOCK_ID
+terraform graph | dot -Tsvg &gt; g.svg
+terraform show -json tfplan | jq       <span class="c"># CI gates, policy, cost tools</span>
+terraform test                         <span class="c"># native test framework (1.6+), .tftest.hcl files</span>
+terraform workspace list|new|select    <span class="c"># same config, separate state — weak for prod/dev, fine for ephemera</span></code></pre>
+
+      <h4>Block types</h4>
+      <table>
+        <tr><td><code>terraform{}</code></td><td>versions, providers, backend</td></tr>
+        <tr><td><code>provider{}</code></td><td>credentials/region for a platform; <code>alias</code> for multiple</td></tr>
+        <tr><td><code>resource{}</code></td><td>something you own</td></tr>
+        <tr><td><code>data{}</code></td><td>something you only read</td></tr>
+        <tr><td><code>variable{}</code> / <code>output{}</code> / <code>locals{}</code></td><td>inputs / returns / named expressions</td></tr>
+        <tr><td><code>module{}</code></td><td>call a folder</td></tr>
+        <tr><td><code>moved{}</code> / <code>import{}</code> / <code>removed{}</code></td><td>declarative state surgery</td></tr>
+        <tr><td><code>check{}</code></td><td>post-apply assertions that warn instead of failing</td></tr>
+      </table>
+
+      <h4>Meta-arguments (work on any resource or module)</h4>
+      <table>
+        <tr><td><code>count</code></td><td>N interchangeable copies; index-addressed</td></tr>
+        <tr><td><code>for_each</code></td><td>one per key of a map/set; key-addressed — prefer this</td></tr>
+        <tr><td><code>depends_on</code></td><td>explicit edge when no reference exists</td></tr>
+        <tr><td><code>provider</code></td><td>pick an aliased provider (multi-region, multi-account)</td></tr>
+        <tr><td><code>lifecycle</code></td><td><code>create_before_destroy</code>, <code>prevent_destroy</code>, <code>ignore_changes</code>, <code>replace_triggered_by</code></td></tr>
+      </table>
+
+      <h4>Version constraints</h4>
+      <p><code>"~&gt; 6.0"</code> = <code>&gt;= 6.0, &lt; 7.0</code> · <code>"~&gt; 6.1.0"</code> = <code>&gt;= 6.1.0, &lt; 6.2.0</code> ·
+        <code>"&gt;= 1.10"</code> · commit <code>.terraform.lock.hcl</code> always.</p>
+
+      <h4>The four sentences</h4>
+      <ol>
+        <li>Config is intent; state is the ledger of what you own; reality is reality. Plan diffs them.</li>
+        <li>State maps your names to their IDs — nothing else does, so losing it means losing ownership.</li>
+        <li>The address is the identity: rename it and you destroy it, unless you use <code>moved</code>.</li>
+        <li>References build the graph. Ordering is inferred, never declared.</li>
+      </ol>
+    </section>
+
+    <!-- ============================================================ -->
+    <section id="reading">
+      <h2>Further reading</h2>
+      <ul>
+        <li><a class="ref" href="https://developer.hashicorp.com/terraform/language">Terraform language reference</a> —
+          the canonical spec for every block type and function. Skip the tutorials; read this like an API doc.</li>
+        <li><a class="ref" href="https://developer.hashicorp.com/terraform/install">Install / current version</a> —
+          1.15.8 is the current stable line as of July 2026; 1.16 is in alpha. Support window is ~2 years per release.</li>
+        <li><a class="ref" href="https://developer.hashicorp.com/terraform/language/backend/s3">S3 backend docs</a> —
+          read this before you copy any blog post about DynamoDB lock tables. <code>use_lockfile</code> is the current answer.</li>
+        <li><a class="ref" href="https://registry.terraform.io">Terraform Registry</a> — providers and modules. Read the
+          <code>terraform-aws-modules/vpc/aws</code> source; it's a masterclass in <code>for_each</code>, <code>dynamic</code>, and
+          input validation.</li>
+        <li><a class="ref" href="https://registry.terraform.io/providers/kreuzwerker/docker/latest/docs">kreuzwerker/docker provider</a> —
+          the provider Labs 2–4 use.</li>
+        <li><a class="ref" href="https://github.com/hashicorp/terraform/releases">Terraform changelog</a> —
+          how you'll learn about <code>moved</code>/<code>import</code>/<code>removed</code>-class features. Most engineers are
+          years behind on these.</li>
+        <li><a class="ref" href="https://opentofu.org">OpenTofu</a> and
+          <a class="ref" href="https://scalr.com/learning-center/opentofu-vs-terraform">a detailed comparison</a> —
+          the latter is published by Scalr, an OpenTofu-backing vendor; useful and well-sourced, but read it knowing that.</li>
+        <li><b>Terraform: Up &amp; Running</b> (Yevgeniy Brikman, O'Reilly) — still the best book-length treatment,
+          particularly on state layout and module design at team scale.</li>
+      </ul>
+    </section>
+
+    <footer>Generated for on-demand learning · single file, works offline (Python cells need one CDN fetch on first Run)
+      · verified against Terraform 1.15.x, July 2026 · edit the code cells freely.</footer>
+  </main>
+</div>
+
+<script>
+/* ---------- theme ---------- */
+const root=document.documentElement;
+document.getElementById('themeBtn').onclick=()=>{
+  root.dataset.theme = root.dataset.theme==='dark' ? '' : 'dark';
+  if(window.__redraw) window.__redraw();
+};
+
+/* ---------- depth toggle ---------- */
+const depthBtn=document.getElementById('depthBtn'), depthNote=document.getElementById('depthNote');
+depthBtn.onclick=()=>{
+  const skim=root.classList.toggle('skim');
+  depthBtn.textContent = skim ? 'Mode: Skim' : 'Mode: Full detail';
+  depthBtn.dataset.mode = skim ? 'skim' : 'full';
+  depthBtn.classList.toggle('active', !skim);
+  depthNote.textContent = skim ? 'Skim mode — deep-dive blocks hidden' : 'Full mode — deep-dive blocks visible';
+};
+
+/* ---------- TOC + scroll-spy ---------- */
+const toc=document.getElementById('toc'), secs=[...document.querySelectorAll('main section[id]')];
+secs.forEach(s=>{
+  const h=s.querySelector('h2'); if(!h) return;
+  const a=document.createElement('a'); a.href='#'+s.id; a.textContent=h.textContent; a.dataset.for=s.id;
+  toc.appendChild(a);
+});
+const spy=new IntersectionObserver(es=>{
+  es.forEach(e=>{ if(e.isIntersecting){
+    toc.querySelectorAll('a').forEach(a=>a.classList.toggle('active',a.dataset.for===e.target.id));
+  }});
+},{rootMargin:'-20% 0px -70% 0px'});
+secs.forEach(s=>spy.observe(s));
+
+/* ---------- progress bar ---------- */
+const prog=document.getElementById('progress');
+addEventListener('scroll',()=>{
+  const h=document.documentElement, max=h.scrollHeight-h.clientHeight;
+  prog.style.width=(max>0?(h.scrollTop/max*100):0)+'%';
+},{passive:true});
+
+/* ---------- quizzes ---------- */
+document.querySelectorAll('.quiz').forEach(q=>{
+  const opts=q.querySelectorAll('.options li');
+  opts.forEach(li=>li.onclick=()=>{
+    if(q.classList.contains('answered')) return;
+    q.classList.add('answered');
+    opts.forEach(o=>{o.classList.add('locked'); if(o.dataset.correct) o.classList.add('correct');});
+    if(!li.dataset.correct) li.classList.add('wrong');
+  });
+});
+
+/* ---------- code runners ---------- */
+function fmt(v){ if(typeof v==='object'&&v!==null){try{return JSON.stringify(v);}catch(e){return String(v);}} return String(v); }
+function runJS(code,out){
+  const logs=[]; const c={log:(...a)=>logs.push(a.map(fmt).join(' ')),
+    error:(...a)=>logs.push('⚠ '+a.map(fmt).join(' ')), warn:(...a)=>logs.push(a.map(fmt).join(' '))};
+  try{ const r=new Function('console',code)(c); if(r!==undefined) logs.push(fmt(r)); }
+  catch(e){ logs.push('⚠ '+e); }
+  out.textContent = logs.join('\n') || '(no output)';
+}
+let pyodide=null;
+function ensurePy(out){
+  if(pyodide) return pyodide;
+  out.textContent='Loading Python runtime…';
+  pyodide=new Promise((res,rej)=>{
+    const s=document.createElement('script');
+    s.src='https://cdn.jsdelivr.net/pyodide/v0.26.2/full/pyodide.js';
+    s.onload=async()=>{ try{ res(await loadPyodide()); }catch(e){ rej(e); } };
+    s.onerror=()=>rej(new Error('Could not load Pyodide (needs internet).'));
+    document.head.appendChild(s);
+  });
+  return pyodide;
+}
+async function runPy(code,out){
+  try{
+    const py=await ensurePy(out);
+    py.runPython('import sys,io\nsys.stdout=io.StringIO()\nsys.stderr=sys.stdout');
+    py.runPython(code);
+    out.textContent = py.runPython('sys.stdout.getvalue()') || '(no output)';
+  }catch(e){ out.textContent='⚠ '+e; }
+}
+document.querySelectorAll('.code-runner').forEach(cr=>{
+  const ta=cr.querySelector('textarea'), out=cr.querySelector('.output'), lang=cr.dataset.lang||'js';
+  cr.querySelector('.run').onclick=()=> lang==='python' ? runPy(ta.value,out) : runJS(ta.value,out);
+  cr.querySelector('.copy').onclick=()=>{ navigator.clipboard?.writeText(ta.value);
+    const b=cr.querySelector('.copy'), t=b.textContent; b.textContent='Copied'; setTimeout(()=>b.textContent=t,1000); };
+});
+
+/* ================= shared canvas helpers ================= */
+function css(v){ return getComputedStyle(document.body).getPropertyValue(v).trim(); }
+function setupCanvas(cv, w, h){
+  const dpr = window.devicePixelRatio || 1;
+  cv.width = w*dpr; cv.height = h*dpr;
+  const ctx = cv.getContext('2d');
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+  return ctx;
+}
+function roundRect(ctx,x,y,w,h,r){
+  ctx.beginPath();
+  ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r);
+  ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath();
+}
+
+/* ================= VIZ 1 — three worlds ================= */
+(function(){
+  const W=720,H=330, cv=document.getElementById('viz'); if(!cv) return;
+  const ctx=setupCanvas(cv,W,H);
+  const cap=document.getElementById('vizCap'), no=document.getElementById('vizNo');
+  const cols=[{x:20,w:200,t:'CONFIG  (main.tf)'},{x:260,w:200,t:'STATE  (.tfstate)'},{x:500,w:200,t:'REALITY  (the cloud)'}];
+
+  // tone: idle | add | chg | del | drift
+  const S = [
+    { cap:'You write two resources in <b>main.tf</b>. Nothing is applied yet: state is empty, the cloud is empty. Terraform has never run.',
+      badge:null,
+      c:[['aws_instance.web','t3.micro','idle'],['aws_s3_bucket.logs','rex-logs-2026','idle']], s:[], r:[] },
+    { cap:'<b>terraform plan</b> — diff config against state. Neither address exists in state, so both are planned for creation.',
+      badge:'+2  ~0  -0', arrow:[1,0],
+      c:[['aws_instance.web','t3.micro','add'],['aws_s3_bucket.logs','rex-logs-2026','add']], s:[], r:[] },
+    { cap:'<b>terraform apply</b> — the provider calls the cloud API. The API returns real IDs (<b>i-0a1b</b>), and Terraform writes them into state. That mapping is the whole reason state exists.',
+      badge:'2 added', arrow:[0,2],
+      c:[['aws_instance.web','t3.micro','idle'],['aws_s3_bucket.logs','rex-logs-2026','idle']],
+      s:[['aws_instance.web','i-0a1b · t3.micro','add'],['aws_s3_bucket.logs','rex-logs-2026','add']],
+      r:[['i-0a1b','t3.micro','add'],['rex-logs-2026','bucket','add']] },
+    { cap:'You edit main.tf: <b>instance_type = "t3.small"</b>. Only the config moved. State and the cloud still say t3.micro.',
+      badge:null,
+      c:[['aws_instance.web','t3.small','chg'],['aws_s3_bucket.logs','rex-logs-2026','idle']],
+      s:[['aws_instance.web','i-0a1b · t3.micro','idle'],['aws_s3_bucket.logs','rex-logs-2026','idle']],
+      r:[['i-0a1b','t3.micro','idle'],['rex-logs-2026','bucket','idle']] },
+    { cap:'<b>plan → apply</b> — one attribute differs, and it is mutable, so it is an in-place update (<b>~</b>), not a replacement. State is rewritten to match.',
+      badge:'+0  ~1  -0', arrow:[0,2],
+      c:[['aws_instance.web','t3.small','idle'],['aws_s3_bucket.logs','rex-logs-2026','idle']],
+      s:[['aws_instance.web','i-0a1b · t3.small','chg'],['aws_s3_bucket.logs','rex-logs-2026','idle']],
+      r:[['i-0a1b','t3.small','chg'],['rex-logs-2026','bucket','idle']] },
+    { cap:'A colleague resizes the box to <b>t3.large</b> in the AWS console. Your repo is untouched. Your state is now a lie — and nothing tells you.',
+      badge:'DRIFT',
+      c:[['aws_instance.web','t3.small','idle'],['aws_s3_bucket.logs','rex-logs-2026','idle']],
+      s:[['aws_instance.web','i-0a1b · t3.small','drift'],['aws_s3_bucket.logs','rex-logs-2026','idle']],
+      r:[['i-0a1b','t3.large','drift'],['rex-logs-2026','bucket','idle']] },
+    { cap:'<b>plan</b> — the refresh phase re-reads the API first, so state learns the truth (t3.large). Then the diff against config (t3.small) plans to <b>revert the console change</b>. Config always wins.',
+      badge:'+0  ~1  -0', arrow:[2,1],
+      c:[['aws_instance.web','t3.small','chg'],['aws_s3_bucket.logs','rex-logs-2026','idle']],
+      s:[['aws_instance.web','i-0a1b · t3.large','chg'],['aws_s3_bucket.logs','rex-logs-2026','idle']],
+      r:[['i-0a1b','t3.large','idle'],['rex-logs-2026','bucket','idle']] },
+    { cap:'Now someone deletes <b>terraform.tfstate</b>. Config unchanged, cloud unchanged — but the name→ID map is gone. Terraform concludes it owns nothing and offers to build a <b>duplicate</b> of everything. This is why state lives in a versioned, locked bucket.',
+      badge:'+2  ~0  -0  ⚠',
+      c:[['aws_instance.web','t3.small','add'],['aws_s3_bucket.logs','rex-logs-2026','add']],
+      s:[], r:[['i-0a1b','t3.large','idle'],['rex-logs-2026','bucket','idle']] },
+  ];
+
+  let i=0, timer=null;
+  function tone(t){
+    if(t==='add')   return css('--ok');
+    if(t==='chg')   return css('--accent');
+    if(t==='del'||t==='drift') return css('--bad');
+    return css('--muted');
+  }
+  function draw(){
+    const st=S[i];
+    ctx.clearRect(0,0,W,H);
+    ctx.fillStyle=css('--bg'); ctx.fillRect(0,0,W,H);
+
+    // columns
+    cols.forEach((c,ci)=>{
+      ctx.strokeStyle=css('--line'); ctx.lineWidth=1;
+      roundRect(ctx,c.x,34,c.w,H-46,10); ctx.stroke();
+      ctx.fillStyle=css('--muted'); ctx.font='600 10.5px ui-monospace, SF Mono, Menlo, monospace';
+      ctx.fillText(c.t, c.x+2, 24);
+    });
+
+    // arrow between columns
+    if(st.arrow){
+      const [a,b]=st.arrow;
+      const ax=cols[a].x+cols[a].w, bx=cols[b].x;
+      const dir = b>a ? 1 : -1;
+      const x1 = dir>0 ? ax+6 : cols[a].x-6, x2 = dir>0 ? bx-6 : cols[b].x+cols[b].w+6;
+      ctx.strokeStyle=css('--accent'); ctx.lineWidth=1.5; ctx.setLineDash([4,3]);
+      ctx.beginPath(); ctx.moveTo(x1,H-22); ctx.lineTo(x2,H-22); ctx.stroke(); ctx.setLineDash([]);
+      ctx.beginPath(); ctx.moveTo(x2,H-22); ctx.lineTo(x2-6*dir,H-26); ctx.lineTo(x2-6*dir,H-18); ctx.fillStyle=css('--accent'); ctx.fill();
+    }
+
+    // boxes
+    const worlds=[st.c,st.s,st.r];
+    worlds.forEach((items,ci)=>{
+      const c=cols[ci];
+      if(!items.length){
+        ctx.fillStyle=css('--muted'); ctx.font='italic 12px system-ui, sans-serif';
+        ctx.fillText('(empty)', c.x+14, 70);
+        return;
+      }
+      items.forEach((it,k)=>{
+        const [name,sub,tn]=it, y=48+k*58, col=tone(tn);
+        ctx.fillStyle = tn==='idle' ? css('--panel') : col+'22';
+        ctx.strokeStyle = tn==='idle' ? css('--line') : col; ctx.lineWidth = tn==='idle' ? 1 : 1.6;
+        if(tn==='drift'){ ctx.setLineDash([3,3]); }
+        roundRect(ctx,c.x+10,y,c.w-20,44,8); ctx.fill(); ctx.stroke(); ctx.setLineDash([]);
+        ctx.fillStyle=css('--ink'); ctx.font='600 10.5px ui-monospace, SF Mono, Menlo, monospace';
+        ctx.fillText(name, c.x+20, y+18);
+        ctx.fillStyle=col; ctx.font='10.5px ui-monospace, SF Mono, Menlo, monospace';
+        ctx.fillText(sub, c.x+20, y+33);
+      });
+    });
+
+    // badge
+    if(st.badge){
+      ctx.font='700 11px ui-monospace, SF Mono, Menlo, monospace';
+      const w=ctx.measureText(st.badge).width+18;
+      const bad = st.badge.indexOf('⚠')>=0 || st.badge==='DRIFT';
+      ctx.fillStyle = bad ? css('--bad') : css('--accent');
+      roundRect(ctx,W-w-8,6,w,20,10); ctx.fill();
+      ctx.fillStyle='#fff'; ctx.fillText(st.badge, W-w+1, 20);
+    }
+
+    cap.innerHTML=st.cap;
+    no.textContent='step '+(i+1)+' / '+S.length;
+  }
+  window.__redraw = draw;
+  function step(){ i=(i+1)%S.length; draw(); }
+  function stop(){ if(timer){clearInterval(timer);timer=null;} document.getElementById('vizPlay').textContent='▶ Play'; }
+  document.getElementById('vizPlay').onclick=()=>{
+    if(timer){ stop(); return; }
+    document.getElementById('vizPlay').textContent='⏸ Pause';
+    timer=setInterval(()=>{ if(i===S.length-1){ stop(); } else step(); }, 4200);
+  };
+  document.getElementById('vizStep').onclick=()=>{ stop(); step(); };
+  document.getElementById('vizReset').onclick=()=>{ stop(); i=0; draw(); };
+  draw();
+})();
+
+/* ================= VIZ 2 — dependency graph ================= */
+(function(){
+  const W=720,H=310, cv=document.getElementById('viz2'); if(!cv) return;
+  const ctx=setupCanvas(cv,W,H);
+  const cap=document.getElementById('viz2Cap'), no=document.getElementById('viz2No');
+
+  const N={
+    vpc:   {x:20,  y:70,  t:'aws_vpc',            n:'.main'},
+    logs:  {x:20,  y:250, t:'aws_s3_bucket',      n:'.logs'},
+    sa:    {x:210, y:25,  t:'aws_subnet',         n:'.a'},
+    sb:    {x:210, y:95,  t:'aws_subnet',         n:'.b'},
+    sg:    {x:210, y:165, t:'aws_security_group', n:'.web'},
+    inst:  {x:400, y:95,  t:'aws_instance',       n:'.app'},
+    eip:   {x:570, y:95,  t:'aws_eip',            n:'.app'},
+  };
+  const BW=140, BH=40;
+  const E=[['vpc','sa'],['vpc','sb'],['vpc','sg'],['sa','inst'],['sg','inst'],['inst','eip']];
+  const WAVES=[['vpc','logs'],['sa','sb','sg'],['inst'],['eip']];
+
+  const S=[
+    {cap:'The graph. You never wrote a single edge — each one comes from a <b>reference</b> like <code>subnet_id = aws_subnet.a.id</code>. <b>aws_s3_bucket.logs</b> references nothing, so it hangs free.', done:0, mode:'create'},
+    {cap:'<b>Wave 0.</b> Everything with no unmet dependencies goes first, in parallel: the VPC and the bucket. Up to <code>-parallelism=10</code> at a time.', done:1, mode:'create'},
+    {cap:'<b>Wave 1.</b> The VPC now has an id, so both subnets and the security group unblock at once — three concurrent API calls.', done:2, mode:'create'},
+    {cap:'<b>Wave 2.</b> The instance needs <em>both</em> subnet.a and the security group. It waits for the slowest of them. This is why wall-clock time ≈ number of waves × slowest-in-wave, not total resource count.', done:3, mode:'create'},
+    {cap:'<b>Wave 3.</b> The Elastic IP attaches last. Apply complete — 7 resources in 4 waves.', done:4, mode:'create'},
+    {cap:'<b>terraform destroy</b> walks the same graph <b>backwards</b>. The EIP must be released before the instance it points at can be terminated.', done:4, mode:'destroy', killed:1},
+    {cap:'Then the instance — nothing depends on it any more.', done:4, mode:'destroy', killed:2},
+    {cap:'Then the subnets and the security group. The VPC still cannot go: three things live inside it.', done:4, mode:'destroy', killed:3},
+    {cap:'Finally the VPC and the bucket. Reverse topological order is why <code>destroy</code> almost always works, and why a resource created outside Terraform inside your VPC will make it hang.', done:4, mode:'destroy', killed:4},
+  ];
+
+  let i=0, timer=null;
+  function stateOf(key, st){
+    if(st.mode==='create'){
+      for(let w=0; w<st.done; w++) if(WAVES[w].includes(key)) return 'done';
+      if(st.done<WAVES.length && WAVES[st.done] && WAVES[st.done].includes(key)) return 'active';
+      return 'pending';
+    } else {
+      for(let w=0; w<st.killed-1; w++) if(WAVES[WAVES.length-1-w].includes(key)) return 'gone';
+      if(WAVES[WAVES.length-st.killed].includes(key)) return 'killing';
+      return 'done';
+    }
+  }
+  function colFor(s){
+    if(s==='done')    return css('--ok');
+    if(s==='active')  return css('--accent');
+    if(s==='killing') return css('--bad');
+    if(s==='gone')    return css('--muted');
+    return css('--muted');
+  }
+  function draw(){
+    const st=S[i];
+    ctx.clearRect(0,0,W,H); ctx.fillStyle=css('--bg'); ctx.fillRect(0,0,W,H);
+
+    // edges
+    E.forEach(([a,b])=>{
+      const A=N[a], B=N[b];
+      const x1=A.x+BW, y1=A.y+BH/2, x2=B.x, y2=B.y+BH/2;
+      const sa=stateOf(a,st), sb=stateOf(b,st);
+      const live = (sa==='done'||sa==='active') && (sb==='done'||sb==='active');
+      ctx.strokeStyle = live ? css('--accent')+'99' : css('--line');
+      ctx.lineWidth = live ? 1.6 : 1;
+      ctx.beginPath();
+      ctx.moveTo(x1,y1); ctx.bezierCurveTo(x1+30,y1, x2-30,y2, x2-5,y2); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(x2,y2); ctx.lineTo(x2-6,y2-3.5); ctx.lineTo(x2-6,y2+3.5);
+      ctx.fillStyle = live ? css('--accent') : css('--line'); ctx.fill();
+    });
+
+    // nodes
+    Object.entries(N).forEach(([k,p])=>{
+      const s=stateOf(k,st), c=colFor(s);
+      ctx.globalAlpha = s==='gone' ? .28 : 1;
+      ctx.fillStyle = (s==='pending') ? css('--panel') : c+'22';
+      ctx.strokeStyle = (s==='pending') ? css('--line') : c;
+      ctx.lineWidth = (s==='active'||s==='killing') ? 2 : 1;
+      roundRect(ctx,p.x,p.y,BW,BH,8); ctx.fill(); ctx.stroke();
+      ctx.fillStyle = css('--ink'); ctx.font='10px ui-monospace, SF Mono, Menlo, monospace';
+      ctx.fillText(p.t, p.x+10, p.y+17);
+      ctx.fillStyle = (s==='pending') ? css('--muted') : c;
+      ctx.font='600 10px ui-monospace, SF Mono, Menlo, monospace';
+      ctx.fillText(p.n, p.x+10, p.y+31);
+      ctx.globalAlpha=1;
+    });
+
+    // legend
+    const label = st.mode==='create' ? 'apply →' : '← destroy';
+    ctx.font='700 11px ui-monospace, SF Mono, Menlo, monospace';
+    const w=ctx.measureText(label).width+18;
+    ctx.fillStyle = st.mode==='create' ? css('--ok') : css('--bad');
+    roundRect(ctx,W-w-8,8,w,20,10); ctx.fill();
+    ctx.fillStyle='#fff'; ctx.fillText(label, W-w+1, 22);
+
+    cap.innerHTML=st.cap;
+    no.textContent='step '+(i+1)+' / '+S.length;
+  }
+  const prevRedraw = window.__redraw;
+  window.__redraw = ()=>{ if(prevRedraw) prevRedraw(); draw(); };
+  function step(){ i=(i+1)%S.length; draw(); }
+  function stop(){ if(timer){clearInterval(timer);timer=null;} document.getElementById('viz2Play').textContent='▶ Play'; }
+  document.getElementById('viz2Play').onclick=()=>{
+    if(timer){ stop(); return; }
+    document.getElementById('viz2Play').textContent='⏸ Pause';
+    timer=setInterval(()=>{ if(i===S.length-1){ stop(); } else step(); }, 4000);
+  };
+  document.getElementById('viz2Step').onclick=()=>{ stop(); step(); };
+  document.getElementById('viz2Reset').onclick=()=>{ stop(); i=0; draw(); };
+  draw();
+})();
+</script>
+</body>
+</html>
