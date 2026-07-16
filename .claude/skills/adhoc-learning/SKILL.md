@@ -139,11 +139,32 @@ that's illegible on a phone is a signal to simplify it). Check the reading colum
 
 ---
 
-## Step 4 — Save and present
+## Step 4 — Save and register
 
-Save to `./src/embeds`, and updates the learning section in `./astro-theme-config.ts` according,
-Give a one or two sentence summary of what's inside — no long
-post-amble. Offer to adjust depth, add sections, or spin off a follow-up module.
+Two files, no config edit:
+
+1. **Save the module** to `./src/embeds/<slug>.html` (self-contained single file).
+2. **Register it** by writing a frontmatter stub to `./src/content/learning/<slug>.md`
+   — the learning items are an Astro content collection, one file per item, not a
+   config array. The filename (`<slug>`) becomes the `/learning/<slug>` URL. Body is
+   empty; only frontmatter is needed:
+
+   ```md
+   ---
+   title: 'Human-readable title'
+   description: 'One short line shown under the title (also searched).'
+   tags: ['Topic', 'Interview']
+   embed: '<slug>.html'
+   ---
+   ```
+
+   Use `embed:` for a local module in `src/embeds/` (the usual case). For an external
+   site instead, drop `embed` and use `url: 'https://…'`. One of the two is required;
+   the schema in `src/content.config.ts` enforces it. Keep the `<slug>` identical across
+   the `.html` filename, the `.md` filename, and the `embed` field.
+
+Then give a one or two sentence summary of what's inside — no long post-amble. Offer to
+adjust depth, add sections, or spin off a follow-up module.
 
 ---
 

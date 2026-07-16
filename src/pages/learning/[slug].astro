@@ -1,14 +1,15 @@
 ---
 import '../../styles/pages/learning-item.css';
+import { getCollection } from 'astro:content';
 import config from '../../../astro-theme-config';
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import { withBase } from '../../utils/paths';
 
-export function getStaticPaths() {
-  const items = config.learning.items ?? [];
-  return items.map((item) => ({
-    params: { slug: item.slug },
-    props: { item },
+export async function getStaticPaths() {
+  const entries = await getCollection('learning');
+  return entries.map((entry) => ({
+    params: { slug: entry.id },
+    props: { item: { slug: entry.id, ...entry.data } },
   }));
 }
 

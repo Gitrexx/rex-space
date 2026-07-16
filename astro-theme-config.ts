@@ -3,23 +3,6 @@ type NavItem = {
   href: string;
 };
 
-type LearningItem = {
-  slug: string;
-  title: string;
-  description: string;
-  /** External site to embed as an iframe. Optional when `embed` is set. */
-  url?: string;
-  /**
-   * Filename of a self-contained HTML file in `src/embeds/`, rendered inside
-   * the isolated frame via `srcdoc` instead of an external `url`. Takes
-   * precedence over `url` for the embed; `url` (if also set) still powers the
-   * "Open ↗" action.
-   */
-  embed?: string;
-  /** Optional topic tags — shown as chips on the card and driving the tag filter. */
-  tags?: string[];
-};
-
 type ProjectItem = {
   slug: string;
   title: string;
@@ -252,66 +235,20 @@ const config = {
   },
 
   /**
-   * The `/learning` page — a searchable card directory. Each item is a small
-   * standalone site I keep elsewhere (usually a GitHub Pages repo) and embed as
-   * an iframe on its own detail page at `/learning/<slug>`. Add a new object to
-   * `items` to surface another topic — cards are listed alphabetically by title
-   * and can be narrowed with the tag filter.
-   *
-   * Per item:
-   *   slug        stable id → the URL path segment `/learning/<slug>` (kebab-case)
-   *   title       shown on the card and above the frame
-   *   description one short line under the title (also searched)
-   *   tags        optional topic tags — chips on the card + the tag filter (also searched)
-   *   url         the embedded site (must allow framing — GitHub Pages does)
-   *   embed       filename of a self-contained HTML file in `src/embeds/`,
-   *               rendered in the isolated frame instead of `url`
+   * The `/learning` page — a searchable card directory. This block holds only
+   * the page copy (eyebrow / title / intro). The items themselves are a content
+   * collection: one file per item under `src/content/learning/`, validated by
+   * the `learning` schema in `src/content.config.ts` and loaded via
+   * `getCollection('learning')`. To add a topic, drop a new frontmatter stub in
+   * that folder (the filename is the `/learning/<slug>` path segment) — no edit
+   * to this file is needed. Each item embeds either an external `url` or an
+   * `embed` HTML file from `src/embeds/` on its own detail page.
    */
   learning: {
     eyebrow: 'Learning',
     title: 'What I am learning',
     intro:
       'Living notebooks I keep as small standalone sites and embed here. Open a topic to read it embedded on its own page, or launch it in its own tab.',
-    items: [
-      {
-        slug: 'investment',
-        title: 'Daily Learning — Investment',
-        description: '100+ Topics daily notes on investment, from theory to practice',
-        tags: ['Finance'],
-        url: 'https://gitrexx.github.io/daily-learning-investment/',
-      },
-      {
-        slug: 'rag',
-        title: 'RAG Interview Prep',
-        description: 'All about RAG techniques and roadmap, with interactive learning content, by Fable 5',
-        tags: ['RAG', 'Interview'],
-        embed: 'rag_interview_prep_fable.html',
-      },
-      {
-        slug: 'a-star-algorithm',
-        title: 'A* Pathfinding Interview',
-        description:
-          'How A* actually works, why the heuristic decides everything, with a live grid you can break',
-        tags: ['Algorithms', 'Interview'],
-        embed: 'a-star-algorithm.html',
-      },
-      {
-        slug: 'terraform',
-        title: 'Terraform Fundamentals',
-        description:
-          'Learning terraform fundamentals, What Why How, and hands on',
-        tags: ['Terraform'],
-        embed: 'terraform-fundamentals.html',
-      },
-      {
-        slug: 'crewai',
-        title: 'CrewAI Multi-Agent Framework',
-        description:
-          'What CrewAI is, how Crews and Flows work, when to use it and how it compares — with a live process simulator and runnable cells',
-        tags: ['AI Agents', 'Hands-on'],
-        embed: 'crewai-multi-agent.html',
-      },
-    ] as LearningItem[],
   },
 
   /**

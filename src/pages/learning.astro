@@ -1,11 +1,17 @@
 ---
 import '../styles/pages/learning.css';
+import { getCollection } from 'astro:content';
 import config from '../../astro-theme-config';
 import BaseLayout from '../layouts/BaseLayout.astro';
 import { withBase } from '../utils/paths';
 
 const { learning } = config;
-const items = learning.items ?? [];
+// Learning items are a content collection (one file per item), not a config
+// array. The filename is the item's `id`, used as the `/learning/<slug>` path.
+const items = (await getCollection('learning')).map((entry) => ({
+  slug: entry.id,
+  ...entry.data,
+}));
 const hasItems = items.length > 0;
 
 // One flat list, sorted alphabetically by title — no tag sections.
