@@ -14,10 +14,15 @@
 
   Widgets included:
     1. Depth toggle (Skim / Full)  -> wrap extra depth in <div class="deep-dive">
-    2. Visual explainer            -> <div class="viz"> + a small JS animation
+    2. Visual explainer            -> <div class="viz"><div class="cscroll"><canvas></div>
     3. Runnable code               -> <div class="code-runner" data-lang="js|python">
     4. Self-check quiz             -> <div class="quiz">
   Plus: sticky TOC w/ scroll-spy, reading-progress bar, light/dark toggle, callouts.
+
+  MOBILE: the design is responsive — keep it that way. Wrap every <canvas> in
+  <div class="cscroll"> and let tables use the built-in mobile scroll rule; do NOT
+  let a diagram or a wide table force horizontal PAGE scroll. See the "responsive /
+  mobile" CSS block near the end of <style>. Sanity-check at ~375px wide.
 -->
 <style>
   :root{
@@ -88,7 +93,8 @@
   /* viz */
   .viz{border:1px solid var(--line);border-radius:14px;background:var(--panel);
     padding:16px;margin:1.6em 0;box-shadow:var(--shadow)}
-  .viz canvas{width:100%;height:auto;display:block;border-radius:8px;background:var(--bg)}
+  .viz .cscroll{overflow-x:auto;-webkit-overflow-scrolling:touch;border-radius:8px}
+  .viz canvas{width:100%;height:auto;display:block;border-radius:8px;background:var(--bg);max-width:var(--cw,720px)}
   .viz .vbar{display:flex;gap:8px;margin-top:12px;align-items:center;flex-wrap:wrap}
   .viz .cap{font-size:13px;color:var(--muted);margin-top:8px}
 
@@ -123,6 +129,27 @@
   a.ref{color:var(--accent)}
   footer{grid-column:1/-1;border-top:1px solid var(--line);margin-top:20px;padding-top:24px;
     color:var(--muted);font-size:14px}
+
+  /* ---------- responsive / mobile ----------
+     Keep these. They are what make the module usable on a phone:
+     - wide labeled canvas diagrams scroll inside their .cscroll box instead of
+       shrinking their labels to nothing (wrap every <canvas> in <div class="cscroll">);
+     - any <table> scrolls within its own box instead of forcing horizontal PAGE scroll;
+     - type / padding step down on small screens.
+     If a canvas is wider than 720px, set --cw on it, e.g. style="--cw:900px". */
+  @media(max-width:680px){
+    .viz canvas{width:var(--cw,720px)}
+  }
+  @media(max-width:640px){
+    body{font-size:16px}
+    .wrap{padding:0 18px 90px}
+    header{padding:30px 0 20px;margin-bottom:26px}
+    h1{font-size:27px;line-height:1.2}
+    h2{font-size:21px}
+    h3{font-size:17px}
+    .why{font-size:16px}
+    main table{display:block;width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch}
+  }
 </style>
 </head>
 <body>
@@ -165,9 +192,11 @@
         <p>{{Derivation / formal detail / complexity analysis / edge cases.}}</p>
       </div>
 
-      <!-- VISUAL EXPLAINER (replace the demo animation in JS with a topic-specific one) -->
+      <!-- VISUAL EXPLAINER (replace the demo animation in JS with a topic-specific one).
+           Keep the <canvas> wrapped in <div class="cscroll"> so a wide diagram scrolls on
+           mobile instead of shrinking its labels to nothing. -->
       <div class="viz">
-        <canvas id="viz" width="720" height="300"></canvas>
+        <div class="cscroll"><canvas id="viz" width="720" height="300"></canvas></div>
         <div class="vbar">
           <button class="btn" id="vizPlay">▶ Play</button>
           <button class="btn" id="vizStep">Step</button>

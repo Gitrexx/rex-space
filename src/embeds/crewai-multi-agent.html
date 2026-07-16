@@ -66,7 +66,8 @@
 
   .viz{border:1px solid var(--line);border-radius:14px;background:var(--panel);
     padding:16px;margin:1.6em 0;box-shadow:var(--shadow)}
-  .viz canvas{width:100%;height:auto;display:block;border-radius:8px;background:var(--bg)}
+  .viz .cscroll{overflow-x:auto;-webkit-overflow-scrolling:touch;border-radius:8px}
+  .viz canvas{width:100%;height:auto;display:block;border-radius:8px;background:var(--bg);max-width:var(--cw,720px)}
   .viz .vbar{display:flex;gap:8px;margin-top:12px;align-items:center;flex-wrap:wrap}
   .viz .cap{font-size:13px;color:var(--muted);margin-top:8px}
 
@@ -110,6 +111,23 @@
   a.ref{color:var(--accent)}
   footer{grid-column:1/-1;border-top:1px solid var(--line);margin-top:20px;padding-top:24px;
     color:var(--muted);font-size:14px}
+
+  /* ---------- responsive / mobile ---------- */
+  @media(max-width:680px){
+    /* wide labeled diagrams stay legible and scroll inside their box rather than shrinking to nothing */
+    .viz canvas{width:var(--cw,720px)}
+  }
+  @media(max-width:640px){
+    body{font-size:16px}
+    .wrap{padding:0 18px 90px}
+    header{padding:30px 0 20px;margin-bottom:26px}
+    h1{font-size:27px;line-height:1.2}
+    h2{font-size:21px}
+    h3{font-size:17px}
+    .why{font-size:16px}
+    /* any table scrolls within its own box instead of forcing horizontal page scroll */
+    main table{display:block;width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch}
+  }
 </style>
 </head>
 <body>
@@ -260,7 +278,7 @@ print(result.token_usage)   # UsageMetrics: prompt/completion/total tokens</pre>
         between agents, and how the manager sits in the middle in hierarchical mode.</p>
 
       <div class="viz">
-        <canvas id="viz" width="720" height="300"></canvas>
+        <div class="cscroll"><canvas id="viz" width="720" height="300"></canvas></div>
         <div class="vbar">
           <button class="btn active" id="vizMode">Process: Sequential</button>
           <button class="btn" id="vizPlay">▶ Play</button>

@@ -126,6 +126,15 @@ clean, distinctive typography (not a generic bootstrap look — see the template
 design system); accurate; and comprehensive enough that they wouldn't need to go
 elsewhere for the fundamentals.
 
+**Responsive / mobile:** the module must read well on a phone, not just a laptop —
+these pages get embedded and opened on mobile. The template already handles this;
+don't undo it. Two things to keep right: (a) wrap every `<canvas>` in
+`<div class="cscroll">` so a wide labeled diagram scrolls inside its own box rather
+than shrinking its labels to nothing; (b) never let a table or diagram force
+horizontal *page* scroll — the template's mobile CSS makes tables scroll within
+their own box, so lean on it rather than adding fixed-width layout. Give the reading
+column a quick look at ~375px wide before you ship.
+
 ---
 
 ## Step 4 — Save and present
