@@ -126,6 +126,17 @@ clean, distinctive typography (not a generic bootstrap look — see the template
 design system); accurate; and comprehensive enough that they wouldn't need to go
 elsewhere for the fundamentals.
 
+**Responsive / mobile:** the module must read well on a phone, not just a laptop —
+these pages get embedded and opened on mobile, and the **page must never scroll
+sideways**. The template already handles this; don't undo it. The mechanism:
+`main{min-width:0}` plus the `max-width:820px` block drop `main` into the single
+column and make wide **code blocks and tables scroll inside their own box** (the
+page stays put). So: keep code in `<pre>` / `<div class="code-runner">` (they scroll
+internally), don't give layout fixed pixel widths, and design canvas diagrams to
+still read when scaled down (they're `width:100%` and shrink to fit — a dense diagram
+that's illegible on a phone is a signal to simplify it). Check the reading column at
+~375px wide before you ship.
+
 ---
 
 ## Step 4 — Save and present
