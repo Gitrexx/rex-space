@@ -303,6 +303,14 @@ const config = {
         tags: ['Terraform'],
         embed: 'terraform-fundamentals.html',
       },
+      {
+        slug: 'crewai',
+        title: 'CrewAI Multi-Agent Framework',
+        description:
+          'What CrewAI is, how Crews and Flows work, when to use it and how it compares — with a live process simulator and runnable cells',
+        tags: ['AI Agents', 'Hands-on'],
+        embed: 'crewai-multi-agent.html',
+      },
     ] as LearningItem[],
   },
 
