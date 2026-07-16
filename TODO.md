@@ -1,0 +1,3 @@
+- create skill for daily-learning-xxxx
+- use it to create daily learniny backend engineering
+- plug it in to rex-spac
