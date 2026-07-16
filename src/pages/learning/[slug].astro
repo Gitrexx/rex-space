@@ -164,7 +164,8 @@ const embedHtml = resolveEmbed(item.embed);
         frame.setAttribute('srcdoc', current);
       } else if (frame.src) {
         // Reassigning src reliably reloads the frame, even to the same URL.
-        frame.src = frame.src;
+        const currentSrc = frame.src;
+        frame.src = currentSrc;
       }
     };
 
