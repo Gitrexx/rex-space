@@ -358,6 +358,16 @@ const spy=new IntersectionObserver(es=>{es.forEach(e=>{if(e.isIntersecting){
   toc.querySelectorAll('a').forEach(a=>a.classList.toggle('active',a.dataset.for===e.target.id));}});},{rootMargin:'-20% 0px -70% 0px'});
 secs.forEach(s=>spy.observe(s));
 
+/* in-page fragment links (srcdoc-safe): when embedded via <iframe srcdoc> the
+   document base URL is the PARENT page, so a bare "#id" link would navigate the
+   frame to <parent>#id and reload the host page inside itself. Scroll here. */
+document.addEventListener('click',e=>{
+  const a=e.target.closest?.('a[href^="#"]'); if(!a) return;
+  const id=decodeURIComponent(a.getAttribute('href').slice(1)); if(!id) return;
+  const el=document.getElementById(id); if(!el) return;
+  e.preventDefault(); el.scrollIntoView({behavior:'smooth',block:'start'});
+});
+
 const prog=document.getElementById('progress');
 addEventListener('scroll',()=>{const h=document.documentElement,max=h.scrollHeight-h.clientHeight;
   prog.style.width=(max>0?(h.scrollTop/max*100):0)+'%';},{passive:true});

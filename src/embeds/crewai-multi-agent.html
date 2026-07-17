@@ -689,6 +689,17 @@ const spy=new IntersectionObserver(es=>{
 },{rootMargin:'-20% 0px -70% 0px'});
 secs.forEach(s=>spy.observe(s));
 
+/* ---------- in-page fragment links (srcdoc-safe) ---------- */
+/* When embedded via <iframe srcdoc>, the document base URL is the PARENT page,
+   so a bare "#id" link would navigate the frame to <parent>#id and reload the
+   whole host page inside itself. Intercept fragment links and scroll here. */
+document.addEventListener('click',e=>{
+  const a=e.target.closest?.('a[href^="#"]'); if(!a) return;
+  const id=decodeURIComponent(a.getAttribute('href').slice(1)); if(!id) return;
+  const el=document.getElementById(id); if(!el) return;
+  e.preventDefault(); el.scrollIntoView({behavior:'smooth',block:'start'});
+});
+
 /* ---------- progress bar ---------- */
 const prog=document.getElementById('progress');
 addEventListener('scroll',()=>{
