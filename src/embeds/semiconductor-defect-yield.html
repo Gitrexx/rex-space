@@ -1,0 +1,845 @@
+<!doctype html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>半导体制造流程与缺陷 · 良率分析 — Wafer Fab Process, Defect & Yield</title>
+<style>
+  :root{
+    --bg:#faf7f2; --panel:#fffdf9; --ink:#26221d; --muted:#6b6357; --line:#e6ded1;
+    --accent:#b4531f; --accent-soft:#f3e2d5; --ok:#1f7a4d; --bad:#b03030;
+    --code-bg:#2a2620; --code-ink:#f3ece0; --shadow:0 1px 2px rgba(0,0,0,.05),0 6px 20px rgba(60,45,25,.06);
+    --sans:'Inter','PingFang SC','Microsoft YaHei',system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+    --serif:'Charter','Georgia',Cambria,'Songti SC','Times New Roman',serif;
+    --mono:'SF Mono',ui-monospace,'JetBrains Mono',Menlo,Consolas,monospace;
+  }
+  html[data-theme="dark"]{
+    --bg:#17150f; --panel:#201d16; --ink:#efe8db; --muted:#a79d8c; --line:#332e24;
+    --accent:#e08a52; --accent-soft:#3a2c20; --code-bg:#0f0d09; --code-ink:#f3ece0;
+    --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 24px rgba(0,0,0,.35);
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);
+    line-height:1.75;font-size:17px;-webkit-font-smoothing:antialiased}
+  .progress{position:fixed;top:0;left:0;height:3px;width:0;background:var(--accent);z-index:50;transition:width .1s}
+  .wrap{display:grid;grid-template-columns:240px minmax(0,760px);gap:48px;max-width:1080px;
+    margin:0 auto;padding:0 28px 120px}
+  @media(max-width:820px){.wrap{grid-template-columns:1fr;gap:0}.toc{display:none}
+    main{grid-column:1}
+    main table{display:block;width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch}
+    pre,.code-runner{max-width:100%}}
+
+  header{grid-column:1/-1;padding:44px 0 24px;border-bottom:1px solid var(--line);margin-bottom:36px}
+  .eyebrow{font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:var(--accent);font-weight:600}
+  h1{font-family:var(--serif);font-size:34px;line-height:1.2;margin:.25em 0 .15em;font-weight:650}
+  .why{color:var(--muted);font-size:18px;max-width:62ch;margin:.4em 0 0}
+  .controls{display:flex;gap:10px;margin-top:22px;flex-wrap:wrap}
+  .btn{font:inherit;font-size:14px;padding:7px 14px;border:1px solid var(--line);background:var(--panel);
+    color:var(--ink);border-radius:999px;cursor:pointer;box-shadow:var(--shadow);transition:.15s}
+  .btn:hover{border-color:var(--accent)}
+  .btn.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+
+  .toc{position:sticky;top:24px;align-self:start;font-size:14px;max-height:90vh;overflow:auto}
+  .toc a{display:block;color:var(--muted);text-decoration:none;padding:4px 0 4px 12px;
+    border-left:2px solid transparent;transition:.15s}
+  .toc a:hover{color:var(--ink)}
+  .toc a.active{color:var(--accent);border-left-color:var(--accent);font-weight:600}
+
+  main{grid-column:2;min-width:0}
+  section{margin:0 0 52px;scroll-margin-top:24px}
+  h2{font-family:var(--serif);font-size:26px;margin:0 0 .5em;font-weight:640}
+  h3{font-size:19px;margin:1.7em 0 .4em}
+  p{margin:0 0 1em} code{font-family:var(--mono);font-size:.86em;background:var(--accent-soft);
+    padding:.12em .4em;border-radius:4px}
+  ul,ol{padding-left:1.3em} li{margin:.25em 0}
+  .en{color:var(--muted);font-style:normal}
+  table{border-collapse:collapse;width:100%;font-size:14.5px;margin:1.2em 0}
+  th,td{border:1px solid var(--line);padding:8px 11px;text-align:left;vertical-align:top}
+  th{background:var(--accent-soft);font-weight:650;color:var(--ink)}
+  td code{background:transparent;padding:0;color:var(--accent);font-size:.92em}
+
+  .deep-dive{border-left:3px solid var(--accent-soft);padding:2px 0 2px 18px;margin:1em 0;transition:.2s}
+  html.skim .deep-dive{display:none}
+  .depth-note{font-size:13px;color:var(--muted);font-style:italic}
+  html:not(.skim) .skim-only{display:none}
+
+  .callout{border:1px solid var(--line);border-radius:12px;padding:16px 18px;margin:1.4em 0;
+    background:var(--panel);box-shadow:var(--shadow)}
+  .callout .tag{font-size:12px;font-weight:700;letter-spacing:.05em;text-transform:uppercase}
+  .callout.insight{border-color:#c7a34d55}.callout.insight .tag{color:#a9791b}
+  .callout.pitfall{border-color:#b0303055}.callout.pitfall .tag{color:var(--bad)}
+  .callout p:last-child{margin-bottom:0}
+
+  .viz{border:1px solid var(--line);border-radius:14px;background:var(--panel);
+    padding:16px;margin:1.6em 0;box-shadow:var(--shadow)}
+  .viz canvas{width:100%;height:auto;display:block;border-radius:8px;background:var(--bg)}
+  .viz .vbar{display:flex;gap:8px;margin-top:12px;align-items:center;flex-wrap:wrap}
+  .viz .cap{font-size:13.5px;color:var(--muted);margin-top:10px}
+  .stage-info{margin-top:12px;padding:12px 14px;border-radius:10px;background:var(--accent-soft);
+    font-size:14.5px;line-height:1.6}
+  .stage-info b{color:var(--accent)}
+  .chips{display:flex;gap:7px;flex-wrap:wrap;margin-top:4px}
+  .chip{font-size:12.5px;padding:5px 11px;border:1px solid var(--line);border-radius:999px;
+    background:var(--panel);cursor:pointer;transition:.12s;color:var(--ink)}
+  .chip:hover{border-color:var(--accent)}
+  .chip.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+  .wafer-layout{display:grid;grid-template-columns:minmax(0,300px) 1fr;gap:16px;align-items:start}
+  @media(max-width:560px){.wafer-layout{grid-template-columns:1fr}}
+
+  .code-runner{margin:1.6em 0;border-radius:12px;overflow:hidden;border:1px solid var(--line);box-shadow:var(--shadow)}
+  .code-runner .cr-head{display:flex;justify-content:space-between;align-items:center;
+    background:var(--code-bg);padding:8px 12px}
+  .cr-head .lang{color:#9c9384;font-size:12px;font-family:var(--mono);text-transform:uppercase;letter-spacing:.08em}
+  .cr-head .cr-btns{display:flex;gap:6px}
+  .cr-btns button{font:inherit;font-size:12px;font-family:var(--mono);color:var(--code-ink);
+    background:#ffffff18;border:1px solid #ffffff22;border-radius:6px;padding:4px 10px;cursor:pointer}
+  .cr-btns button:hover{background:#ffffff30}
+  .code-runner textarea{width:100%;border:0;resize:vertical;min-height:120px;padding:14px;
+    background:var(--code-bg);color:var(--code-ink);font-family:var(--mono);font-size:13.5px;line-height:1.55;outline:none}
+  .code-runner .output{margin:0;padding:12px 14px;background:#00000030;color:var(--code-ink);
+    font-family:var(--mono);font-size:13px;white-space:pre-wrap;min-height:20px;border-top:1px solid #ffffff14}
+
+  .quiz{border:1px solid var(--line);border-radius:14px;padding:18px 20px;margin:1.6em 0;
+    background:var(--panel);box-shadow:var(--shadow)}
+  .quiz .q{font-weight:600;margin:0 0 12px}
+  .quiz .options{list-style:none;padding:0;margin:0;display:grid;gap:8px}
+  .quiz .options li{border:1px solid var(--line);border-radius:9px;padding:10px 14px;cursor:pointer;transition:.12s}
+  .quiz .options li:hover{border-color:var(--accent)}
+  .quiz .options li.correct{border-color:var(--ok);background:#1f7a4d18}
+  .quiz .options li.wrong{border-color:var(--bad);background:#b0303018}
+  .quiz .options li.locked{cursor:default;opacity:.85}
+  .quiz .explain{display:none;margin-top:14px;padding-top:12px;border-top:1px dashed var(--line);
+    color:var(--muted);font-size:15px}
+  .quiz.answered .explain{display:block}
+
+  a.ref{color:var(--accent)}
+  footer{grid-column:1/-1;border-top:1px solid var(--line);margin-top:20px;padding-top:24px;
+    color:var(--muted);font-size:14px}
+
+  @media(max-width:640px){
+    body{font-size:16px}
+    .wrap{padding:0 18px 90px}
+    header{padding:30px 0 20px;margin-bottom:26px}
+    h1{font-size:24px;line-height:1.25}
+    h2{font-size:21px}
+    h3{font-size:17px}
+    .why{font-size:16px}
+  }
+</style>
+</head>
+<body>
+<div class="progress" id="progress"></div>
+<div class="wrap">
+
+  <header>
+    <div class="eyebrow">半导体制造 · Defect &amp; Yield 入门</div>
+    <h1>半导体制造流程与缺陷 · 良率分析<br><span style="font-size:.6em;color:var(--muted);font-family:var(--sans);font-weight:500">Wafer Fab Process · Defect · Yield — Line Engineer 上手指南</span></h1>
+    <p class="why">你是 Defect team 的 Line Engineer。当一批 wafer 良率（<span class="en">yield</span>）掉下来，你要能看懂：这个 defect 是从哪个 process 引入的？该找哪个部门？这份材料把整个晶圆制造流程、每一步会带进什么缺陷、以及如何从 low yield 反推到源头，一次讲清楚。中文讲解，专有名词都附英文——因为你上工用的是英文。</p>
+    <div class="controls">
+      <button class="btn active" id="depthBtn" data-mode="full">模式：详细 Full</button>
+      <button class="btn" id="themeBtn">◐ 深浅色</button>
+      <span class="depth-note" id="depthNote">详细模式——deep-dive 展开中（切到「精简」只看主干）</span>
+    </div>
+  </header>
+
+  <nav class="toc" id="toc" aria-label="目录"></nav>
+
+  <main>
+
+    <!-- ============ 1. 核心心智模型 ============ -->
+    <section id="intuition">
+      <h2>一个核心心智模型</h2>
+      <p>把晶圆制造想成<b>一层一层盖楼</b>：在一片硅片（<span class="en">wafer</span>）上，重复几百次「铺一层材料 → 印图案 → 刻出结构 → 洗干净」的循环，最后叠出上百亿颗晶体管。每片 wafer 上切成很多个芯片（<span class="en">die</span>），每个 die 就是一颗最终卖出去的芯片。</p>
+      <p><b>Defect（缺陷）</b>就是在盖楼过程里混进来的、不该有的东西或不该有的形状：一颗掉下来的微粒（<span class="en">particle</span>）、一道刮伤（<span class="en">scratch</span>）、一处没洗掉的残留（<span class="en">residue</span>）、一个该断开却连上的桥接（<span class="en">bridge</span>）。有些 defect 会让 die 直接失效（<span class="en">killer defect</span>），有些无伤大雅（<span class="en">nuisance defect</span>）。</p>
+      <div class="callout insight"><span class="tag">最该记住的一句</span>
+        <p>每个 defect 都有<b>来源（source / root cause）</b>和<b>特征（signature）</b>。你作为 Defect team 的工作，本质就是：<b>看 signature，反推 source</b>——从 wafer 上缺陷的样子、位置、分布，倒推出是哪个 process、哪台机台、哪个部门出了问题。这份材料的每一节，都是在给你补齐这条「特征 → 来源」的推理链。</p></div>
+      <p>为什么 Line Engineer 也得懂整条 process？因为良率是<b>全流程的连乘</b>：任何一层出问题，最终 die 都可能报废。你要能在几百道工序里定位到那一道，就必须对每一段「做什么、会坏在哪」都有画面感。</p>
+    </section>
+
+    <!-- ============ 2. 制造总览 ============ -->
+    <section id="overview">
+      <h2>晶圆制造总览：从沙子到芯片</h2>
+      <p>先建立几个天天要用的名词：</p>
+      <table>
+        <thead><tr><th>中文</th><th>英文 / 术语</th><th>是什么</th></tr></thead>
+        <tbody>
+          <tr><td>晶圆</td><td><code>Wafer</code></td><td>一片圆形的硅（Si）基板，通常 300mm（12 吋）。所有工序都在它表面进行。</td></tr>
+          <tr><td>芯片 / 晶粒</td><td><code>Die</code> / Chip</td><td>wafer 上切割前的一个个小方格，每个是一颗完整芯片。</td></tr>
+          <tr><td>批次</td><td><code>Lot</code></td><td>一起流动的一组 wafer（常见 25 片装在一个 <span class="en">FOUP</span> 里）。追问题常以 lot 为单位。</td></tr>
+          <tr><td>光罩 / 掩膜</td><td><code>Mask</code> / Reticle</td><td>刻着电路图案的「印章」，光刻时把图案投影到 wafer 上。</td></tr>
+          <tr><td>晶圆厂</td><td><code>Fab</code></td><td>做前段制造（wafer 加工）的工厂，就是 UMC 的核心。</td></tr>
+          <tr><td>机台 / 腔体</td><td><code>Tool</code> / Chamber</td><td>执行某道工序的设备；一台机常有多个 chamber，问题常锁定到「某台某腔」。</td></tr>
+          <tr><td>制程配方</td><td><code>Recipe</code></td><td>一道工序的参数设定（温度、时间、气体流量…）。recipe 错也会造成系统性缺陷。</td></tr>
+        </tbody>
+      </table>
+
+      <h3>三大阶段：FEOL → MEOL → BEOL</h3>
+      <p>整条流程按「盖到哪一层」分成三段，追 defect 时第一步往往就是先判断它属于哪一段：</p>
+      <table>
+        <thead><tr><th>阶段</th><th>全称</th><th>盖什么</th><th>典型工序</th></tr></thead>
+        <tbody>
+          <tr><td><b>前段</b></td><td><code>FEOL</code><br>Front-End-of-Line</td><td>做出「元件本体」——晶体管（transistor）、二极管等，直接刻在硅里。</td><td>氧化、离子注入、Gate 形成、扩散/退火、浅沟槽隔离（STI）</td></tr>
+          <tr><td><b>中段</b></td><td><code>MEOL</code><br>Middle-End-of-Line</td><td>做「接点」——把 FEOL 的元件接出来（contact / local interconnect）。</td><td>Contact 蚀刻、钨（W）填充、接触层 CMP</td></tr>
+          <tr><td><b>后段</b></td><td><code>BEOL</code><br>Back-End-of-Line</td><td>盖「金属大楼」——多层金属线（metal）+ 介电层（dielectric），把元件连成电路。</td><td>金属沉积、金属/介电层蚀刻、Via、Damascene、金属 CMP</td></tr>
+        </tbody>
+      </table>
+      <div class="callout insight"><span class="tag">快速判读</span>
+        <p>看到<b>短路 / 桥接（bridge）、金属线断裂（open）</b>之类，先想 <b>BEOL（后段金属）</b>；看到<b>漏电、临界电压偏移、结（junction）异常</b>，先想 <b>FEOL（前段元件）</b>。这一步「归段」能立刻把嫌疑部门砍掉一大半。</p></div>
+
+      <div class="deep-dive">
+        <p class="depth-note">Deep dive — 一层金属是怎么盖出来的（Damascene）</p>
+        <p>先进制程的 BEOL 金属线多用<b>镶嵌工艺（Damascene）</b>而不是「铺金属再刻」：先在介电层（dielectric）里<b>刻出沟槽（trench）和 via</b>，再<b>填铜（Cu electroplating）</b>，最后用 <b>CMP</b> 把多余的铜磨平、只留沟槽里的铜线。所以在 BEOL，很多致命缺陷来自这三步的交界：填不满 → 空洞（void，造成 open）；磨过头 → 碟陷（dishing）；磨不够 → 铜残留（Cu residue，造成 bridge/short）。记住这个「刻槽→填铜→磨平」三拍子，后面看 signature 会更有画面。</p>
+      </div>
+
+      <div class="quiz">
+        <p class="q">测验 1：CP（探针）测出很多 die 相邻的两条金属线短路（bridge / short）。你第一时间该往哪个阶段查？</p>
+        <ul class="options">
+          <li>FEOL——因为晶体管本体在那里做</li>
+          <li data-correct="true">BEOL——金属互连层在后段，短路多半是金属/介电层蚀刻或金属 CMP 没磨干净</li>
+          <li>MEOL——接触层不会造成短路</li>
+        </ul>
+        <div class="explain">金属线之间的桥接是典型的 <b>BEOL</b> 问题：金属蚀刻残留、金属 CMP 铜残留、或介电层填充不良都会让本该分开的两条线连上。FEOL 的问题更多表现为电性异常（漏电、Vt 偏移）而非金属短路。先「归段」能省下大量排查时间。</div>
+      </div>
+    </section>
+
+    <!-- ============ 3. 单元制程 + 缺陷来源 ============ -->
+    <section id="unit">
+      <h2>单元制程（Unit Process）与它会带进的缺陷</h2>
+      <p>整条流程由少数几种「单元制程」反复组合而成。把每一种「做什么 + 会坏在哪」记熟，你就有了缺陷来源的地图。下面按<b>「铺 → 印 → 刻 → 掺 → 洗 → 平」</b>来记。</p>
+
+      <h3>① 薄膜沉积 <span class="en">Thin-Film Deposition</span></h3>
+      <p>在 wafer 上「铺一层材料」——氧化层、氮化层、金属、介电层。主要方式：<code>CVD</code>（化学气相沉积）、<code>PVD</code>（物理气相沉积 / 溅镀）、<code>ALD</code>（原子层沉积，一次一原子层，最精准）。</p>
+      <ul>
+        <li><b>会带进的 defect：</b>颗粒（particle，腔体剥落/气体带入）、厚度不均（造成后续厚薄不一）、针孔（pinhole）、薄膜内部空洞（void）、附着不良（peeling / 剥落）。</li>
+        <li><b>归属线索：</b>Thin Films / CVD / PVD 部门；particle 常呈「单腔集中」——同一 chamber 的 wafer 特别脏。</li>
+      </ul>
+
+      <h3>② 光刻 / 微影 <span class="en">Photolithography（Photo / Litho）</span></h3>
+      <p>把光罩（mask）上的电路图案「印」到 wafer 上：涂光阻（photoresist）→ 曝光（expose，透过 mask 打光）→ 显影（develop，洗掉被光改变的光阻）。这是整条线最关键、最贵、也最容易出系统性缺陷的一步。</p>
+      <ul>
+        <li><b>会带进的 defect：</b>套刻偏移（overlay，层与层没对准）、关键尺寸偏差（<span class="en">CD, Critical Dimension</span>）、光阻残留/缺损、显影不良、以及最有辨识度的——<b>光罩缺陷造成的「重复性缺陷」（repeating defect）</b>：mask 脏一点，每一个曝光单元（shot / field）的同一位置都会复制一个缺陷。</li>
+        <li><b>归属线索：</b>Photo 部门；<b>「每个 shot 同位置重复出现」几乎等号 = 光罩 / reticle 问题</b>——这是你最该条件反射的一条。</li>
+      </ul>
+
+      <h3>③ 蚀刻 <span class="en">Etch</span></h3>
+      <p>把没有被光阻保护的地方「刻掉」，留下想要的结构。干法（plasma / 电浆）为主，湿法（wet etch，用化学液）为辅。</p>
+      <ul>
+        <li><b>会带进的 defect：</b>蚀刻残留（etch residue，没刻干净 → 短路）、过蚀刻（over-etch，刻太多 → 断路/open）、聚合物残留（polymer）、微沟槽（micro-trench）、以及被 particle 挡住而<b>没刻掉的桥接（bridge）</b>。</li>
+        <li><b>归属线索：</b>Etch 部门；残留造成 bridge、过蚀造成 open。</li>
+      </ul>
+
+      <h3>④ 离子注入 <span class="en">Ion Implantation</span> · 扩散/退火 <span class="en">Diffusion / Anneal</span></h3>
+      <p>往硅里「掺杂」——打入杂质离子改变导电性（做出 source/drain、well），再高温退火（anneal）修复晶格、激活杂质。属于 FEOL。</p>
+      <ul>
+        <li><b>会带进的 defect：</b>剂量/能量偏差（造成电性偏移，属 parametric）、注入不均、退火温度不均造成的边缘环状分布（下面 signature 会讲）。</li>
+        <li><b>归属线索：</b>Implant / Diffusion（Furnace）部门；这类缺陷常常「看不见」——不是颗粒，而是电性异常，要靠 WAT/CP 电性数据抓。</li>
+      </ul>
+
+      <h3>⑤ 清洗 <span class="en">Clean / Wet Process</span></h3>
+      <p>每道关键工序前后都要洗——洗掉 particle、残留、金属污染。是缺陷的「清道夫」，但洗不好也会自己带进缺陷。</p>
+      <ul>
+        <li><b>会带进的 defect：</b>清洗不足（残留 particle/金属污染）、清洗过度或化学品带入的新 particle、水痕（watermark）、刮伤。</li>
+        <li><b>归属线索：</b>Wet / Clean 部门；金属污染（metal contamination）造成的良率损失常是它。</li>
+      </ul>
+
+      <h3>⑥ 化学机械研磨 <span class="en">CMP, Chemical-Mechanical Planarization</span></h3>
+      <p>用研磨液（slurry）+ 抛光垫（pad）把表面「磨平」，让下一层能盖在平整面上（先进制程层数多，不磨平会盖歪）。</p>
+      <ul>
+        <li><b>会带进的 defect：</b>刮伤（scratch，slurry 里的大颗粒或 pad 划出）、碟陷（dishing）、侵蚀（erosion）、金属残留（磨不够 → bridge）、slurry 残留 particle。</li>
+        <li><b>归属线索：</b>CMP 部门；<b>刮伤（尤其是弧形/直线状的划痕）几乎就是 CMP 或搬运（handling）</b>。</li>
+      </ul>
+
+      <div class="callout insight"><span class="tag">一句话对照</span>
+        <p><b>Bridge/短路</b>→ 残留没洗/没刻/没磨掉（Etch、CMP、Clean）；<b>Open/断路</b>→ 该连的没连上（填不满 void、过蚀、断线）；<b>重复性缺陷</b>→ 光罩（Photo）；<b>刮伤</b>→ CMP / 搬运；<b>电性偏移</b>→ Implant / Diffusion / Photo（CD）。</p>
+      </div>
+
+      <div class="quiz">
+        <p class="q">测验 2：SEM 复检发现某缺陷在<b>每一个曝光单元（shot）的完全相同位置</b>都出现一个。最可能的根因是？</p>
+        <ul class="options">
+          <li>随机掉落的 particle——多找几片就没了</li>
+          <li>CMP 刮伤——研磨造成</li>
+          <li data-correct="true">光罩 / reticle 上有缺陷——每次曝光都把它复制到同一相对位置</li>
+        </ul>
+        <div class="explain">曝光是「一个 shot 一个 shot」把光罩图案重复印满整片 wafer。如果缺陷在<b>每个 shot 的同一相对位置</b>重复（hard repeater），说明它被「印」了很多次——来源就是那个被复制的东西：<b>光罩（mask/reticle）</b>。随机 particle 不会这么规律，CMP 刮伤是连续线状而非规律点阵。这是 Photo 部门的问题。</div>
+      </div>
+    </section>
+
+    <!-- ============ 4. Viz 1: 横截面制程动画 ============ -->
+    <section id="how-layer">
+      <h2>看一层是怎么盖出来的——以及缺陷怎么毁掉它</h2>
+      <p>下面这个横截面动画走一遍「盖一层金属线」的完整循环：<b>沉积 → 涂光阻 → 曝光显影 → 蚀刻 → 去光阻</b>。用「Step 单步」一拍一拍看清每一步在做什么。然后按<b>「注入缺陷」</b>让一颗 particle 在沉积后掉进本该刻开的缝里，看它如何一路演变成<b>桥接短路（bridge / short）</b>——这就是一个 killer defect 的诞生过程。</p>
+
+      <div class="viz">
+        <canvas id="vizProcess" width="720" height="300"></canvas>
+        <div class="vbar">
+          <button class="btn" id="pPlay">▶ 播放</button>
+          <button class="btn" id="pStep">Step 单步</button>
+          <button class="btn" id="pReset">↺ 重置</button>
+          <button class="btn" id="pDefect">＋ 注入缺陷</button>
+        </div>
+        <div class="stage-info" id="pInfo"></div>
+        <p class="cap">灰 = 硅基板（Si）·蓝 = 金属/薄膜·绿 = 光阻（photoresist）·红 = 缺陷。目标是刻出「两条分开的金属线」；缺陷让中间该刻开的缝被挡住，最后两条线连在一起 = 短路。</p>
+      </div>
+
+      <div class="deep-dive">
+        <p class="depth-note">Deep dive — 为什么一颗小 particle 能变成致命短路</p>
+        <p>关键在<b>蚀刻是「有保护就留、没保护就刻」</b>。光阻是「计划中的保护」，而 particle 是「计划外的保护」——它盖住了本该被刻掉的金属，蚀刻刻不到那里，去光阻后那块金属就留下来，把两条本应分开的线桥接成短路。所以在沉积/曝光阶段一颗看似无害的颗粒，会被下游的蚀刻「翻译」成一个电性致命缺陷。这也是为什么 Defect team 要往<b>上游</b>追：缺陷「现形」的那一步（蚀刻后被 inline 检测抓到），常常不是它「被引入」的那一步（沉积时掉的颗粒）。</p>
+      </div>
+    </section>
+
+    <!-- ============ 5. Defect 分类与检测 ============ -->
+    <section id="inspect">
+      <h2>缺陷的分类与检测流程</h2>
+      <h3>常见 defect 类型（要能叫出英文名）</h3>
+      <table>
+        <thead><tr><th>类型</th><th>英文</th><th>长什么样 / 后果</th></tr></thead>
+        <tbody>
+          <tr><td>颗粒</td><td><code>Particle</code></td><td>掉落的微粒，最常见；可能挡蚀刻→bridge，或挡后续图案。</td></tr>
+          <tr><td>刮伤</td><td><code>Scratch</code></td><td>线状/弧状划痕，多来自 CMP 或搬运。</td></tr>
+          <tr><td>残留</td><td><code>Residue</code></td><td>没洗/刻/磨干净的材料，常造成 bridge/short。</td></tr>
+          <tr><td>桥接</td><td><code>Bridge / Short</code></td><td>该分开却连上——电性短路。</td></tr>
+          <tr><td>断路</td><td><code>Open</code></td><td>该连却断——线断、via 没填满（void）。</td></tr>
+          <tr><td>空洞</td><td><code>Void</code></td><td>金属/介电层内部空腔，造成 open 或可靠度问题。</td></tr>
+          <tr><td>图案缺陷</td><td><code>Pattern defect</code></td><td>缺角、变形、桥连——光刻/蚀刻造成的形状错误。</td></tr>
+          <tr><td>污染</td><td><code>Contamination</code></td><td>金属或有机污染，常来自 Clean/环境。</td></tr>
+        </tbody>
+      </table>
+
+      <h3>检测与复检流程（inline flow）</h3>
+      <ol>
+        <li><b>线上检测 <span class="en">Inline Inspection</span></b>——在关键工序后用光学/电子束机台扫描 wafer，找出缺陷坐标，产出<b>缺陷图（defect map）</b>。抓的是「哪里有异常」，还不知道是什么。</li>
+        <li><b>自动缺陷分类 <span class="en">ADC, Automatic Defect Classification</span></b>——机器自动把缺陷归类（particle / scratch / pattern…），快速分堆。</li>
+        <li><b>电镜复检 <span class="en">SEM Review</span></b>——挑代表性缺陷用扫描电镜放大看清楚，确认到底是什么、多大、在哪一层。这一步「确诊」。</li>
+        <li><b>量测 <span class="en">Metrology</span></b>——量厚度、CD、overlay 等尺寸参数（不是找缺陷，是量「有没有做准」）。</li>
+      </ol>
+      <div class="callout insight"><span class="tag">Inline defect vs. 电性 fail</span>
+        <p>Inline 检测看到的是<b>「物理缺陷」</b>（看得见的颗粒/刮伤）；而 CP/WAT 测到的是<b>「电性失效」</b>（die 能不能用）。你的核心推理是把两者<b>叠在一起</b>：inline defect map 上的缺陷位置，是否对得上 wafer bin map 上 fail 的 die？对得上 → 这类缺陷是 killer；对不上 → 可能是 nuisance，或者 fail 另有其因（电性/参数）。</p>
+      </div>
+    </section>
+
+    <!-- ============ 6. Viz 2: Wafer Map Signature 探索 ============ -->
+    <section id="signature">
+      <h2>读 Wafer Map：从空间特征反推来源</h2>
+      <p>这是你每天最常做的动作。把整片 wafer 上 fail 的 die（或缺陷）画出来，就是 <b>wafer map / wafer bin map</b>。fail 的空间<b>分布形状（signature）</b>本身就在告诉你根因来自哪个 process。点下面的 signature，看它长什么样、以及最可能的来源：</p>
+
+      <div class="viz">
+        <div class="chips" id="sigChips"></div>
+        <div class="wafer-layout" style="margin-top:14px">
+          <canvas id="vizWafer" width="320" height="320"></canvas>
+          <div class="stage-info" id="sigInfo" style="margin-top:0"></div>
+        </div>
+        <p class="cap">红 = fail die。同样是低良率，形状不同、嫌疑部门完全不同——这就是「看 signature 反推 source」的核心技能。</p>
+      </div>
+
+      <div class="deep-dive">
+        <p class="depth-note">Deep dive — 中心/边缘/环状为什么对应特定制程</p>
+        <p>很多 signature 直接反映<b>工艺的物理对称性</b>。晶圆加工里大量步骤是「旋转对称」的：旋涂光阻（spin coating）、CMP（wafer 转 + pad 转）、腔体内气流/温度分布、电镀（plating）。所以当某个参数在<b>半径方向</b>不均匀，缺陷就会呈现<b>中心（center）</b>或<b>同心环 / 边缘环（edge-ring / donut）</b>：中心通常对应旋涂/研磨/气流的中心区，边缘环常对应温度控制（RTP/furnace 边缘散热快）、edge bead、夹持（chuck/clamp）接触或电镀边缘效应。而<b>直线/弧线 = 机械接触（刮伤、搬运）</b>；<b>规律点阵 = 光罩重复</b>；<b>无规律 = 随机 baseline particle</b>。把「形状 ↔ 物理对称性」连起来，你几乎不用查表也能猜个八九不离十。</p>
+      </div>
+
+      <div class="quiz">
+        <p class="q">测验 3：wafer bin map 上，fail 的 die 集中在<b>整圈最外缘一环</b>（edge-ring），中间干净。下面哪个方向最不该优先怀疑？</p>
+        <ul class="options">
+          <li>退火/RTP 温度控制——边缘散热快、温度不均</li>
+          <li>电镀 / 蚀刻的边缘均匀性（edge effect）</li>
+          <li data-correct="true">光罩（reticle）缺陷——它造成的是每个 shot 同位置的规律重复，不是整圈边缘环</li>
+        </ul>
+        <div class="explain">边缘环（edge-ring）是典型的<b>径向/边缘均匀性</b>问题：温度（RTP/furnace 边缘）、电镀/蚀刻的边缘效应、晶圆夹持接触都会造成。光罩缺陷的 signature 是<b>规律的重复点阵（每个 shot 同位置）</b>，空间上和「整圈边缘」完全不同，所以最不该优先怀疑它。形状对不上，就先排除。</div>
+      </div>
+    </section>
+
+    <!-- ============ 7. 良率 Yield ============ -->
+    <section id="yield">
+      <h2>良率（Yield）：定义、分类、模型</h2>
+      <p><b>良率（yield）</b>= 好的 die 数 ÷ 总 die 数。它在不同阶段有不同的量法，追问题时要说清是哪个：</p>
+      <table>
+        <thead><tr><th>名称</th><th>英文</th><th>含义</th></tr></thead>
+        <tbody>
+          <tr><td>线上良率</td><td><code>Line Yield</code></td><td>wafer 在产线上没被报废（scrap）的比例——你 Line Engineer 天天盯的。</td></tr>
+          <tr><td>晶圆测试良率</td><td><code>CP / Wafer Sort Yield</code></td><td>探针测试（Circuit Probe）后，好 die 的比例。缺陷良率损失主要看这里。</td></tr>
+          <tr><td>成品良率</td><td><code>Final Test Yield</code></td><td>封装后最终测试的良率。</td></tr>
+        </tbody>
+      </table>
+
+      <h3>良率损失的三种类型（先分类再排查）</h3>
+      <ul>
+        <li><b>随机缺陷损失 <span class="en">Random defect</span></b>——零星散落的 particle 等造成，分布随机，靠降低整体缺陷密度（D0）来改善。</li>
+        <li><b>系统性损失 <span class="en">Systematic</span></b>——有固定 signature（中心/边缘/重复/某腔），对应某个具体根因，抓到就能一次修好一大片。<b>这是你最有价值的猎物。</b></li>
+        <li><b>参数 / 电性损失 <span class="en">Parametric</span></b>——不是「缺陷」，是尺寸/电性偏了（CD、Vt、厚度），die 长得对但性能不达标。要靠 WAT/SPC 数据抓，不是靠 defect map。</li>
+      </ul>
+
+      <h3>良率模型：为什么大芯片天生良率低</h3>
+      <p>最经典的 <b>Poisson 良率模型</b>：<code>Y = exp(−D0 × A)</code>。其中 <code>D0</code> 是缺陷密度（每 cm² 的致命缺陷数），<code>A</code> 是单个 die 的面积。直觉：<b>die 越大、缺陷密度越高，踩到致命缺陷的概率越大，良率越低</b>。这解释了为什么大芯片（GPU、CPU）良率远低于小芯片。</p>
+      <div class="deep-dive">
+        <p class="depth-note">Deep dive — 为什么真实 fab 用负二项式（缺陷会聚集）</p>
+        <p>Poisson 假设缺陷「完全随机、互相独立」，但真实缺陷会<b>成堆聚集（clustering）</b>——一次 chamber 事件在局部撒一片。聚集会让实际良率<b>高于</b> Poisson 预测（坏 die 挤在一起，浪费的「好区域」变少）。所以业界常用<b>负二项式模型（Negative Binomial）</b>：<code>Y = (1 + D0·A/α)^(−α)</code>，其中 <code>α</code> 是聚集系数（cluster factor）：α 越小 = 越聚集；α → ∞ 时退化回 Poisson。下面的代码可以自己调参数看差异。（还有 Murphy、Seeds 等模型，思路都是在 Poisson 上修正缺陷分布。）</p>
+      </div>
+
+      <p>动手试试——改 <code>D0</code>、<code>alpha</code>，看不同 die 大小的良率怎么变：</p>
+      <div class="code-runner" data-lang="python">
+        <div class="cr-head"><span class="lang">python · 良率模型</span>
+          <div class="cr-btns"><button class="run">▶ 运行</button><button class="copy">复制</button></div></div>
+        <textarea spellcheck="false"># 第一次运行会下载 Python 运行时（几秒），之后就很快
+import math
+
+def poisson_yield(D0, area):
+    "Poisson: 缺陷随机独立"
+    return math.exp(-D0 * area)
+
+def negbinom_yield(D0, area, alpha=2.0):
+    "负二项式: alpha 越小=缺陷越聚集, 良率越高"
+    return (1 + D0 * area / alpha) ** (-alpha)
+
+D0 = 0.30   # 致命缺陷密度 (defects / cm^2)
+print(f"D0 = {D0} /cm^2\n")
+print(f"{'die面积cm^2':>12} | {'Poisson':>9} | {'负二项α=2':>10}")
+print("-" * 38)
+for area in [0.05, 0.1, 0.25, 0.5, 1.0, 2.0]:
+    yp = poisson_yield(D0, area)
+    yn = negbinom_yield(D0, area, alpha=2.0)
+    print(f"{area:>12} | {yp:>8.1%} | {yn:>9.1%}")
+
+# 预期: die 越大良率越低; 同一面积下负二项(聚集)良率更高
+# 例如 area=1.0 -> Poisson≈74.1%, 负二项≈77.0%</textarea>
+        <pre class="output"></pre>
+      </div>
+
+      <div class="quiz">
+        <p class="q">测验 4：同一条产线、同样的缺陷密度 D0，A 产品 die 面积是 B 产品的 4 倍。谁的 CP 良率更高？</p>
+        <ul class="options">
+          <li>A（大 die）——面积大能容忍更多缺陷</li>
+          <li data-correct="true">B（小 die）——die 越小，单颗踩到致命缺陷的概率越低</li>
+          <li>一样——D0 相同良率就相同</li>
+        </ul>
+        <div class="explain">由 <code>Y = exp(−D0·A)</code>，良率随面积 A 指数下降。die 越小，A 越小，Y 越高。所以同样的缺陷水平下，<b>小 die 良率更高</b>——这也是为什么评估某缺陷的影响时，不能只看缺陷数，还要看 die 大小和缺陷「杀伤率」。良率和 D0、A 两个都相关，「D0 相同就一样」忽略了面积。</div>
+      </div>
+    </section>
+
+    <!-- ============ 8. 反推根因 ============ -->
+    <section id="rootcause">
+      <h2>从 Low Yield 反推：你的核心工作流</h2>
+      <p>良率掉了，怎么一步步查到「哪个 process、哪台机、哪个部门」？这是 Defect team 的看家本领。标准套路：</p>
+      <ol>
+        <li><b>发现异常 <span class="en">Detect / Excursion</span></b>——SPC 报警、良率跌破 baseline、或 inline 缺陷数暴增（excursion）。先确认是真掉了，不是量测噪声。</li>
+        <li><b>看 signature</b>——调出 wafer bin map，判断空间形状（中心/边缘/重复/聚集/随机）。形状先帮你砍掉一半嫌疑部门。</li>
+        <li><b>叠图关联 <span class="en">Overlay</span></b>——把 inline defect map 叠到 bin map 上：缺陷位置 ↔ fail die 位置对得上吗？对得上 → 找到 killer 缺陷类型；对不上 → 往电性/参数方向。</li>
+        <li><b>共通性分析 <span class="en">Commonality Analysis</span></b>——把出问题的 wafer/lot 拉出来，比对它们的<b>共同经历</b>：同一台机？同一个 chamber？同一段时间？同一 recipe？<b>坏的都走过、好的都没走过</b>的那台机/那一步，就是最大嫌疑。</li>
+        <li><b>SEM 确诊 + 锁定制程</b>——对代表缺陷做 SEM review 看清楚是什么、在哪一层，结合共通性锁定到<b>具体工序 + 机台</b>——那就是负责的部门。</li>
+        <li><b>纠正 <span class="en">Corrective Action</span></b>——通知对应部门（保养机台 PM、修 recipe、隔离 quarantine、清 chamber、换光罩…），追踪良率是否恢复。</li>
+      </ol>
+
+      <p>下面这段（JavaScript，直接跑不用下载）演示<b>共通性分析</b>的核心：把「好/坏 wafer 各走过哪台机」摊开，算每台机在坏 wafer 里的占比 vs 好 wafer 里的占比，差距最大的就是头号嫌疑：</p>
+      <div class="code-runner" data-lang="js">
+        <div class="cr-head"><span class="lang">javascript · 共通性分析</span>
+          <div class="cr-btns"><button class="run">▶ 运行</button><button class="copy">复制</button></div></div>
+        <textarea spellcheck="false">// 每片 wafer 在「金属蚀刻」这一步走了哪台机 (toolA/B/C)，以及它是好(pass)还是坏(fail)
+const wafers = [
+  {tool:'EtchB', fail:true},  {tool:'EtchB', fail:true},
+  {tool:'EtchB', fail:true},  {tool:'EtchA', fail:false},
+  {tool:'EtchA', fail:false}, {tool:'EtchC', fail:false},
+  {tool:'EtchB', fail:true},  {tool:'EtchA', fail:false},
+  {tool:'EtchC', fail:false}, {tool:'EtchB', fail:false},
+];
+const fails = wafers.filter(w=>w.fail), passes = wafers.filter(w=>!w.fail);
+const tools = [...new Set(wafers.map(w=>w.tool))];
+console.log('tool   | 坏wafer占比 | 好wafer占比 | 差距(嫌疑度)');
+console.log('-------|------------|------------|------------');
+tools.map(t=>{
+  const inFail = fails.filter(w=>w.tool===t).length / fails.length;
+  const inPass = passes.filter(w=>w.tool===t).length / passes.length;
+  return {t, diff: inFail - inPass, inFail, inPass};
+}).sort((a,b)=>b.diff-a.diff).forEach(r=>{
+  console.log(`${r.t.padEnd(6)} | ${(r.inFail*100).toFixed(0).padStart(9)}% | ` +
+    `${(r.inPass*100).toFixed(0).padStart(9)}% | ${(r.diff*100).toFixed(0).padStart(6)}%`);
+});
+// 预期: EtchB 在坏wafer里占比远高于好wafer -> 头号嫌疑机台, 通知 Etch 部门查这台机</textarea>
+        <pre class="output"></pre>
+      </div>
+
+      <div class="callout insight"><span class="tag">共通性的灵魂</span>
+        <p>好的嫌疑机台满足两个条件：<b>坏 wafer 大多走过它</b>，而且<b>好 wafer 大多没走过它</b>。只看「坏的都走过 EtchB」不够——如果好的也都走过 EtchB，那它只是产能大、不是元凶。一定要两边对比（fail 占比 − pass 占比）。这也是上面代码算「差距」而不只算「坏里占比」的原因。</p>
+      </div>
+
+      <h3>fab 里的部门地图（知道去找谁）</h3>
+      <table>
+        <thead><tr><th>部门</th><th>英文</th><th>你会因为什么去找他们</th></tr></thead>
+        <tbody>
+          <tr><td>微影</td><td><code>Photo / Litho</code></td><td>重复性缺陷、overlay 偏移、CD 不对、光阻问题、光罩缺陷</td></tr>
+          <tr><td>蚀刻</td><td><code>Etch</code></td><td>蚀刻残留（bridge）、过蚀（open）、聚合物残留</td></tr>
+          <tr><td>薄膜</td><td><code>Thin Films (CVD/PVD)</code></td><td>颗粒、厚度不均、剥落、针孔</td></tr>
+          <tr><td>扩散/炉管</td><td><code>Diffusion / Furnace</code></td><td>温度不均的边缘环、退火异常</td></tr>
+          <tr><td>离子注入</td><td><code>Implant</code></td><td>剂量/能量偏差造成的电性异常</td></tr>
+          <tr><td>研磨</td><td><code>CMP</code></td><td>刮伤、碟陷、金属残留、slurry particle</td></tr>
+          <tr><td>湿制程/清洗</td><td><code>Wet / Clean</code></td><td>金属污染、清洗残留、水痕</td></tr>
+          <tr><td>设备工程</td><td><code>Equipment (EE)</code></td><td>机台本身故障、需要 PM 保养</td></tr>
+          <tr><td>制程整合</td><td><code>PIE / Integration</code></td><td>跨制程的系统性问题、recipe 调整</td></tr>
+        </tbody>
+      </table>
+
+      <div class="quiz">
+        <p class="q">测验 5：某关键层 inline 缺陷数（defect count）翻倍上升，但 CP 良率<b>几乎没变</b>。最合理的解释是？</p>
+        <ul class="options">
+          <li>检测机台坏了，数据不可信，直接忽略</li>
+          <li data-correct="true">新增的多半是 nuisance（无害）缺陷，kill ratio 低，没落在关键结构上</li>
+          <li>良率一定会跟着掉，只是还没反映出来</li>
+        </ul>
+        <div class="explain">不是每个缺陷都会杀死 die——这就是<b>杀伤率（kill ratio）</b>的概念。缺陷数涨但良率不动，通常说明新增的是 <b>nuisance defect</b>（落在无关区域、或太小不致命），kill ratio 低。当然仍要 SEM 确认它们是什么、会不会影响可靠度，但「缺陷数 ≠ 良率损失」是核心认知。直接忽略数据是错的（要确认），「良率一定会掉」也把 count 和 yield 划了等号。</div>
+      </div>
+    </section>
+
+    <!-- ============ 9. Pitfalls ============ -->
+    <section id="pitfalls">
+      <h2>新手最容易踩的坑</h2>
+      <div class="callout pitfall"><span class="tag">坑 1 · 缺陷数 = 良率损失</span>
+        <p>Inline defect count 高不代表良率一定差。要看<b>kill ratio</b>（杀伤率）和<b>位置</b>——落在关键结构上的少数缺陷，比落在空白区的一堆缺陷杀伤力大得多。永远把 defect map 和 bin map 叠起来看。</p></div>
+      <div class="callout pitfall"><span class="tag">坑 2 · 缺陷「现形处」就是「引入处」</span>
+        <p>Inline 检测抓到缺陷的那一步，往往<b>不是</b>它被引入的那一步（如动画所示：沉积时掉的颗粒，蚀刻后才现形为短路）。要往<b>上游</b>追根因，别停在检测点。</p></div>
+      <div class="callout pitfall"><span class="tag">坑 3 · 不分类型就乱查</span>
+        <p>随机（random）、系统性（systematic）、参数（parametric）三类损失的查法完全不同。参数问题（CD/Vt 偏移）用 defect map 永远查不到——要看 WAT/SPC 电性数据。先分类，再选工具。</p></div>
+      <div class="callout pitfall"><span class="tag">坑 4 · 忽略边缘 die 天生较低</span>
+        <p>Wafer 最外圈的 die 因边缘效应良率天生偏低，常在 edge exclusion 范围内。别把「正常的边缘偏低」误报成 excursion——要和 baseline 比，不是和「满片完美」比。</p></div>
+      <div class="callout pitfall"><span class="tag">坑 5 · 共通性只看坏的</span>
+        <p>「坏 wafer 都走过 X 机台」不足以定罪——如果好 wafer 也都走过 X，它只是产能大。一定要做 <b>fail vs pass 对比</b>，找「坏的走过、好的没走过」的那台。</p></div>
+    </section>
+
+    <!-- ============ 10. Cheat sheet ============ -->
+    <section id="cheatsheet">
+      <h2>速查表（可收藏反复看）</h2>
+
+      <h3>缺陷现象 → 最可能来源</h3>
+      <table>
+        <thead><tr><th>你看到的</th><th>先怀疑</th><th>部门</th></tr></thead>
+        <tbody>
+          <tr><td>金属线短路 / bridge</td><td>蚀刻残留、CMP 铜残留、显影不良</td><td>Etch / CMP / Photo</td></tr>
+          <tr><td>金属线断路 / open · void</td><td>过蚀、填充不满、断线</td><td>Etch / Thin Films</td></tr>
+          <tr><td>每个 shot 同位置重复</td><td>光罩 / reticle 缺陷</td><td>Photo</td></tr>
+          <tr><td>线状 / 弧状刮伤</td><td>CMP、搬运 handling</td><td>CMP / EE</td></tr>
+          <tr><td>整圈边缘环 (edge-ring)</td><td>温度不均、电镀/蚀刻边缘效应、夹持</td><td>Furnace / Etch / Plating</td></tr>
+          <tr><td>中心区聚集 (center)</td><td>旋涂/CMP/气流中心不均</td><td>Photo / CMP / Thin Films</td></tr>
+          <tr><td>单一局部聚集 (cluster)</td><td>单腔事件、particle burst</td><td>对应工序的那台/那腔</td></tr>
+          <tr><td>电性偏移无可见缺陷</td><td>CD / 剂量 / 厚度偏差 (parametric)</td><td>Photo / Implant / 量测</td></tr>
+        </tbody>
+      </table>
+
+      <h3>反推 SOP（贴在脑子里）</h3>
+      <p><b>报警 → 看 signature（砍嫌疑）→ defect map 叠 bin map（找 killer）→ 共通性 fail vs pass（锁机台）→ SEM 确诊（定制程）→ 通知部门 + 追踪恢复。</b></p>
+
+      <h3>常用缩写 · 中英对照</h3>
+      <table>
+        <thead><tr><th>缩写</th><th>全称</th><th>中文</th></tr></thead>
+        <tbody>
+          <tr><td><code>FEOL/MEOL/BEOL</code></td><td>Front/Middle/Back-End-of-Line</td><td>前段 / 中段 / 后段制程</td></tr>
+          <tr><td><code>CVD/PVD/ALD</code></td><td>Chemical/Physical/Atomic-Layer Deposition</td><td>化学/物理/原子层 沉积</td></tr>
+          <tr><td><code>CMP</code></td><td>Chemical-Mechanical Planarization</td><td>化学机械研磨</td></tr>
+          <tr><td><code>CD</code></td><td>Critical Dimension</td><td>关键尺寸</td></tr>
+          <tr><td><code>Overlay</code></td><td>Overlay</td><td>套刻 / 层间对准</td></tr>
+          <tr><td><code>ADC</code></td><td>Automatic Defect Classification</td><td>自动缺陷分类</td></tr>
+          <tr><td><code>SEM</code></td><td>Scanning Electron Microscope</td><td>扫描电镜（复检用）</td></tr>
+          <tr><td><code>CP</code></td><td>Circuit Probe / Wafer Sort</td><td>晶圆探针测试</td></tr>
+          <tr><td><code>WAT</code></td><td>Wafer Acceptance Test</td><td>晶圆电性验收测试</td></tr>
+          <tr><td><code>SPC</code></td><td>Statistical Process Control</td><td>统计制程控制</td></tr>
+          <tr><td><code>D0</code></td><td>Defect Density</td><td>缺陷密度（每 cm²）</td></tr>
+          <tr><td><code>Kill ratio</code></td><td>Kill Ratio</td><td>缺陷杀伤率</td></tr>
+          <tr><td><code>Excursion</code></td><td>Excursion</td><td>异常偏离 / 突发劣化</td></tr>
+          <tr><td><code>PM</code></td><td>Preventive Maintenance</td><td>预防性保养</td></tr>
+          <tr><td><code>Nuisance</code></td><td>Nuisance defect</td><td>无害 / 干扰性缺陷</td></tr>
+          <tr><td><code>Signature</code></td><td>Defect signature</td><td>缺陷（空间）特征</td></tr>
+          <tr><td><code>Commonality</code></td><td>Commonality analysis</td><td>共通性分析</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- ============ 11. Further reading ============ -->
+    <section id="reading">
+      <h2>延伸阅读</h2>
+      <ul>
+        <li><a class="ref" href="https://en.wikipedia.org/wiki/Semiconductor_device_fabrication" target="_blank" rel="noopener">Wikipedia — Semiconductor device fabrication</a>——整条制造流程的免费总览，术语对照好用。</li>
+        <li><a class="ref" href="https://en.wikipedia.org/wiki/Front_end_of_line" target="_blank" rel="noopener">Wikipedia — Front / Back End of Line</a>——FEOL / MEOL / BEOL 的清楚划分。</li>
+        <li><a class="ref" href="https://semiengineering.com/knowledge_centers/manufacturing/" target="_blank" rel="noopener">Semiconductor Engineering — Manufacturing 专栏</a>——业界工程视角的良率、缺陷、检测文章，贴近实战。</li>
+        <li><a class="ref" href="https://anysilicon.com/semipedia/" target="_blank" rel="noopener">AnySilicon Semipedia</a>——简明术语百科，查名词很快。</li>
+        <li><a class="ref" href="https://blog.minitab.com/en/blog/enhance-circuit-yields-wafer-map" target="_blank" rel="noopener">Minitab — Enhance IC Yields with a Wafer Map</a>——wafer map 如何用于良率分析的入门介绍。</li>
+        <li>教科书：<i>G. May &amp; C. Spanos, “Fundamentals of Semiconductor Manufacturing and Process Control”</i>——良率模型、SPC、缺陷的经典系统讲解（要深入时看）。</li>
+      </ul>
+      <p style="color:var(--muted);font-size:14px">注：UMC 内部的 defect code、bin 定义、tool 命名和 SOP 会和这里的通用术语有出入——以你们厂内的规范和资深同事的口径为准。这份材料给你的是「通用底层直觉」，方便你更快看懂厂内的专有做法。</p>
+    </section>
+
+    <footer>为按需学习而生 · 用任意浏览器打开 · 代码格可自由编辑重跑。祝老婆大人早日成为 Defect team 的定海神针 🔧</footer>
+  </main>
+</div>
+
+<script>
+/* ---------- theme ---------- */
+const root=document.documentElement;
+document.getElementById('themeBtn').onclick=()=>{
+  root.dataset.theme = root.dataset.theme==='dark' ? '' : 'dark';
+  if(window.__redrawViz) window.__redrawViz();
+};
+
+/* ---------- depth toggle ---------- */
+const depthBtn=document.getElementById('depthBtn'), depthNote=document.getElementById('depthNote');
+depthBtn.onclick=()=>{
+  const skim=root.classList.toggle('skim');
+  depthBtn.textContent = skim ? '模式：精简 Skim' : '模式：详细 Full';
+  depthBtn.dataset.mode = skim ? 'skim' : 'full';
+  depthNote.textContent = skim ? '精简模式——只看主干，deep-dive 已隐藏' : '详细模式——deep-dive 展开中（切到「精简」只看主干）';
+};
+
+/* ---------- build TOC + scroll-spy ---------- */
+const toc=document.getElementById('toc'), secs=[...document.querySelectorAll('main section[id]')];
+const tocNames={intuition:'核心心智模型',overview:'制造总览',unit:'单元制程与缺陷',
+  'how-layer':'一层怎么盖出来',inspect:'缺陷分类与检测',signature:'读 Wafer Map',
+  yield:'良率 Yield',rootcause:'反推根因',pitfalls:'常见坑',cheatsheet:'速查表',reading:'延伸阅读'};
+secs.forEach(s=>{
+  if(!s.querySelector('h2')) return;
+  const a=document.createElement('a'); a.href='#'+s.id;
+  a.textContent=tocNames[s.id]||s.querySelector('h2').textContent; a.dataset.for=s.id;
+  toc.appendChild(a);
+});
+const spy=new IntersectionObserver(es=>{
+  es.forEach(e=>{ if(e.isIntersecting){
+    toc.querySelectorAll('a').forEach(a=>a.classList.toggle('active',a.dataset.for===e.target.id));
+  }});
+},{rootMargin:'-20% 0px -70% 0px'});
+secs.forEach(s=>spy.observe(s));
+
+/* ---------- in-page fragment links (srcdoc-safe) ---------- */
+document.addEventListener('click',e=>{
+  const a=e.target.closest?.('a[href^="#"]'); if(!a) return;
+  const id=decodeURIComponent(a.getAttribute('href').slice(1)); if(!id) return;
+  const el=document.getElementById(id); if(!el) return;
+  e.preventDefault(); el.scrollIntoView({behavior:'smooth',block:'start'});
+});
+
+/* ---------- progress bar ---------- */
+const prog=document.getElementById('progress');
+addEventListener('scroll',()=>{
+  const h=document.documentElement, max=h.scrollHeight-h.clientHeight;
+  prog.style.width=(max>0?(h.scrollTop/max*100):0)+'%';
+},{passive:true});
+
+/* ---------- quizzes ---------- */
+document.querySelectorAll('.quiz').forEach(q=>{
+  const opts=q.querySelectorAll('.options li');
+  opts.forEach(li=>li.onclick=()=>{
+    if(q.classList.contains('answered')) return;
+    q.classList.add('answered');
+    opts.forEach(o=>{o.classList.add('locked');
+      if(o.dataset.correct) o.classList.add('correct');});
+    if(!li.dataset.correct) li.classList.add('wrong');
+  });
+});
+
+/* ---------- code runners ---------- */
+function fmt(v){ if(typeof v==='object'){try{return JSON.stringify(v);}catch(e){return String(v);}} return String(v); }
+function runJS(code,out){
+  const logs=[]; const c={log:(...a)=>logs.push(a.map(fmt).join(' ')),
+    error:(...a)=>logs.push('⚠ '+a.map(fmt).join(' ')), warn:(...a)=>logs.push(a.map(fmt).join(' '))};
+  try{ const r=new Function('console',code)(c); if(r!==undefined) logs.push(fmt(r)); }
+  catch(e){ logs.push('⚠ '+e); }
+  out.textContent = logs.join('\n') || '(no output)';
+}
+let pyodide=null;
+function ensurePy(out){
+  if(pyodide) return pyodide;
+  out.textContent='正在加载 Python 运行时…（首次需联网，几秒）';
+  pyodide=new Promise((res,rej)=>{
+    const s=document.createElement('script');
+    s.src='https://cdn.jsdelivr.net/pyodide/v0.26.2/full/pyodide.js';
+    s.onload=async()=>{ try{ res(await loadPyodide()); }catch(e){ rej(e); } };
+    s.onerror=()=>rej(new Error('无法加载 Pyodide（需要联网）。'));
+    document.head.appendChild(s);
+  });
+  return pyodide;
+}
+async function runPy(code,out){
+  try{
+    const py=await ensurePy(out);
+    py.runPython('import sys,io\nsys.stdout=io.StringIO()\nsys.stderr=sys.stdout');
+    py.runPython(code);
+    out.textContent = py.runPython('sys.stdout.getvalue()') || '(no output)';
+  }catch(e){ out.textContent='⚠ '+e; }
+}
+document.querySelectorAll('.code-runner').forEach(cr=>{
+  const ta=cr.querySelector('textarea'), out=cr.querySelector('.output'),
+        lang=cr.dataset.lang||'js';
+  cr.querySelector('.run').onclick=()=> lang==='python' ? runPy(ta.value,out) : runJS(ta.value,out);
+  cr.querySelector('.copy').onclick=()=>{ navigator.clipboard?.writeText(ta.value);
+    const b=cr.querySelector('.copy'), t=b.textContent; b.textContent='已复制'; setTimeout(()=>b.textContent=t,1000); };
+});
+
+/* ======================================================================
+   VIZ 1 — 横截面制程动画：盖一层金属线 + 注入缺陷
+   ====================================================================== */
+(function(){
+  const cv=document.getElementById('vizProcess'); if(!cv) return;
+  const ctx=cv.getContext('2d'); const info=document.getElementById('pInfo');
+  let stage=0, defect=false, raf=null;
+  // 目标: 两条金属线 x∈[110,300] 与 [420,610]; 中间缝 x∈[300,420]; 缺陷落在缝里 x≈360
+  const lineL=[110,300], lineR=[420,610], gap=[300,420], defX=360, defW=44;
+  const stages=[
+    {t:'0 · 起点：硅基板 Si substrate',
+     d:'一片干净的硅基板，准备在上面盖一层金属线。<b>负责：所有工序的载体</b>。'},
+    {t:'1 · 薄膜沉积 Deposition (CVD/PVD)',
+     d:'铺满一整层金属/薄膜。若此步掉了 particle，它就静静躺在膜上——<b>此刻还看不出问题</b>。归属：<b>Thin Films 部门</b>。'},
+    {t:'2 · 涂光阻 Photoresist coat',
+     d:'在金属上盖一层光阻（绿），作为下一步的「保护图案」。归属：<b>Photo 部门</b>。'},
+    {t:'3 · 曝光 + 显影 Expose & Develop',
+     d:'透过光罩打光，显影后光阻只留在「要保留金属」的两块上，中间缝的光阻被洗掉、露出金属。归属：<b>Photo（光罩若脏→重复缺陷）</b>。'},
+    {t:'4 · 蚀刻 Etch',
+     d:'刻掉「没有光阻保护」的金属——正常只该刻掉中间缝。<b>但 particle 也算一种「保护」</b>：它挡住的金属刻不掉。归属：<b>Etch 部门</b>。'},
+    {t:'5 · 去光阻 + 结果 Strip & Result',
+     d:'洗掉光阻，露出成品。正常＝两条分开的线；有缺陷＝中间残留金属把两条线<b style="color:#b03030">桥接成短路（bridge/short）</b>，这颗 die 报废。'},
+  ];
+
+  function col(v){return getComputedStyle(document.body).getPropertyValue(v).trim();}
+  function draw(){
+    const w=cv.width,h=cv.height;
+    ctx.clearRect(0,0,w,h);
+    const inkC=col('--ink'), lineC=col('--line'), accent=col('--accent'), muted=col('--muted');
+    // 基板
+    const subY=232;
+    ctx.fillStyle= root.dataset.theme==='dark' ? '#3a3630' : '#c7bdae';
+    ctx.fillRect(60,subY,w-120,44);
+    ctx.fillStyle=muted; ctx.font='13px sans-serif'; ctx.textAlign='left';
+    ctx.fillText('硅基板 Si substrate', 68, subY+28);
+
+    const metalTop=196, metalH=36; // 金属层 y 196..232
+    const blue = root.dataset.theme==='dark' ? '#4a76a8' : '#7ba7d0';
+    const green= root.dataset.theme==='dark' ? '#4e7d54' : '#8fc496';
+
+    function metalBlock(x0,x1){ ctx.fillStyle=blue; ctx.fillRect(x0,metalTop,x1-x0,metalH); }
+
+    if(stage>=1 && stage<=3){
+      // 整层金属
+      metalBlock(60, w-60);
+    }
+    if(stage===4){
+      // 蚀刻后: 只留两条线; 若缺陷, 缝里 particle 下方也留一块
+      metalBlock(lineL[0],lineL[1]); metalBlock(lineR[0],lineR[1]);
+      if(defect) metalBlock(defX-defW/2, defX+defW/2);
+    }
+    if(stage===5){
+      metalBlock(lineL[0],lineL[1]); metalBlock(lineR[0],lineR[1]);
+      if(defect){ metalBlock(defX-defW/2, defX+defW/2);
+        // 短路高亮
+        ctx.strokeStyle='#b03030'; ctx.lineWidth=3;
+        ctx.strokeRect(lineL[1]-4, metalTop-4, (lineR[0]-lineL[1])+8, metalH+8);
+        ctx.fillStyle='#b03030'; ctx.font='bold 13px sans-serif'; ctx.textAlign='center';
+        ctx.fillText('⚡ 桥接短路 Bridge / Short', (lineL[1]+lineR[0])/2, metalTop-14);
+      } else {
+        ctx.fillStyle=col('--ok'); ctx.font='bold 13px sans-serif'; ctx.textAlign='center';
+        ctx.fillText('✓ 两条线分开 — 良品', w/2, metalTop-14);
+      }
+    }
+    // 光阻
+    if(stage===2){ ctx.fillStyle=green; ctx.fillRect(60,metalTop-26,w-120,26); }
+    if(stage===3){ ctx.fillStyle=green;
+      ctx.fillRect(lineL[0],metalTop-26,lineL[1]-lineL[0],26);
+      ctx.fillRect(lineR[0],metalTop-26,lineR[1]-lineR[0],26);
+      // 曝光箭头
+      ctx.strokeStyle=accent; ctx.lineWidth=1.5;
+      for(let x=gap[0]+14;x<gap[1];x+=22){
+        ctx.beginPath(); ctx.moveTo(x,70); ctx.lineTo(x,metalTop-30); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(x-4,metalTop-38); ctx.lineTo(x,metalTop-30); ctx.lineTo(x+4,metalTop-38); ctx.stroke();
+      }
+      ctx.fillStyle=muted; ctx.font='12px sans-serif'; ctx.textAlign='center';
+      ctx.fillText('曝光 expose ↓', (gap[0]+gap[1])/2, 60);
+    }
+    // 缺陷粒子 (stage>=1 且注入)
+    if(defect && stage>=1){
+      let py = stage>=4 ? metalTop-8 : (stage>=2? metalTop-30 : metalTop-8);
+      ctx.fillStyle='#b03030';
+      ctx.beginPath(); ctx.arc(defX, stage>=4? metalTop+8 : metalTop-9, 9, 0, 7); ctx.fill();
+      if(stage<4){ ctx.fillStyle='#b03030'; ctx.font='bold 12px sans-serif'; ctx.textAlign='center';
+        ctx.fillText('particle', defX, metalTop-28); }
+    }
+    info.innerHTML='<b>'+stages[stage].t+'</b><br>'+stages[stage].d +
+      (defect? ' <span style="color:#b03030">[已注入缺陷]</span>':'');
+  }
+  window.__redrawViz=draw;
+  function next(){ stage=(stage+1)%stages.length; draw(); }
+  function loop(){ next(); if(stage===0){ stop(); return;} raf=setTimeout(()=>requestAnimationFrame(loop),1100); }
+  function stop(){ if(raf){clearTimeout(raf);raf=null;} document.getElementById('pPlay').textContent='▶ 播放'; }
+  document.getElementById('pPlay').onclick=e=>{
+    if(raf){ stop(); } else { e.target.textContent='⏸ 暂停'; raf=setTimeout(()=>requestAnimationFrame(loop),300); }
+  };
+  document.getElementById('pStep').onclick=()=>{ stop(); next(); };
+  document.getElementById('pReset').onclick=()=>{ stop(); stage=0; draw(); };
+  document.getElementById('pDefect').onclick=e=>{ defect=!defect;
+    e.target.classList.toggle('active',defect); e.target.textContent=defect?'✓ 已注入缺陷':'＋ 注入缺陷'; draw(); };
+  draw();
+})();
+
+/* ======================================================================
+   VIZ 2 — Wafer map signature 探索
+   ====================================================================== */
+(function(){
+  const cv=document.getElementById('vizWafer'); if(!cv) return;
+  const ctx=cv.getContext('2d'); const info=document.getElementById('sigInfo');
+  const chipBar=document.getElementById('sigChips');
+  const R=140, cx=160, cy=160, cell=13; // die grid
+  // 生成圆内的 die 网格
+  const dies=[];
+  for(let gy=-R;gy<=R;gy+=cell){ for(let gx=-R;gx<=R;gx+=cell){
+    const d=Math.hypot(gx+cell/2,gy+cell/2);
+    if(d<=R-2){ dies.push({x:cx+gx, y:cy+gy, gx:gx+cell/2, gy:gy+cell/2, d}); }
+  }}
+  const sigs={
+    center:{name:'中心 Center', bad:d=>d.d < R*0.34,
+      src:'旋涂 / CMP / 气流的<b>中心区</b>不均。', dept:'Photo · CMP · Thin Films'},
+    edgering:{name:'边缘环 Edge-Ring', bad:d=>d.d > R*0.80,
+      src:'<b>温度不均</b>（RTP/炉管边缘散热快）、电镀/蚀刻<b>边缘效应</b>、晶圆夹持接触。', dept:'Furnace · Etch · Plating'},
+    donut:{name:'同心环 Donut', bad:d=> d.d>R*0.42 && d.d<R*0.6,
+      src:'旋涂 / 显影 / CMP 的<b>径向</b>均匀性问题。', dept:'Photo · CMP'},
+    scratch:{name:'刮伤 Scratch', bad:d=> Math.abs(d.gx*0.7 + d.gy*0.7) < 10,
+      src:'机械划痕——<b>CMP 抛光垫/大颗粒</b>或<b>搬运 handling</b>。', dept:'CMP · Equipment'},
+    cluster:{name:'局部聚集 Cluster', bad:d=> Math.hypot(d.gx-55, d.gy+40) < R*0.28,
+      src:'<b>单一 chamber 事件</b> / particle burst——某台某腔突发。', dept:'对应工序的那台/那腔'},
+    repeat:{name:'重复点阵 Repeating', bad:d=> (Math.round((d.gx+R)/cell)%3===0 && Math.round((d.gy+R)/cell)%2===0),
+      src:'<b>光罩 / reticle 缺陷</b>——每个 shot 同位置被复制。', dept:'Photo（光罩）'},
+    random:{name:'随机 Random', bad:d=> d._r < 0.10,
+      src:'零星 baseline particle，<b>无系统性</b>——靠整体降低 D0 改善。', dept:'整体缺陷管控（非单一部门）'},
+  };
+  let cur='center';
+  dies.forEach(d=> d._r=Math.random());
+
+  function col(v){return getComputedStyle(document.body).getPropertyValue(v).trim();}
+  function draw(){
+    ctx.clearRect(0,0,cv.width,cv.height);
+    const badFn=sigs[cur].bad;
+    const goodC = root.dataset.theme==='dark' ? '#2c3038' : '#dfe6ee';
+    const badC='#c0392b';
+    let nbad=0;
+    dies.forEach(d=>{
+      const isBad=badFn(d);
+      if(isBad) nbad++;
+      ctx.fillStyle=isBad?badC:goodC;
+      ctx.fillRect(d.x-cell/2+1, d.y-cell/2+1, cell-2, cell-2);
+    });
+    // wafer 外框 + notch
+    ctx.strokeStyle=col('--muted'); ctx.lineWidth=2;
+    ctx.beginPath(); ctx.arc(cx,cy,R,0,7); ctx.stroke();
+    ctx.fillStyle=col('--muted');
+    ctx.beginPath(); ctx.moveTo(cx-7,cy+R); ctx.lineTo(cx+7,cy+R); ctx.lineTo(cx,cy+R-9); ctx.closePath(); ctx.fill();
+    const pct=(nbad/dies.length*100).toFixed(0);
+    info.innerHTML='<b>'+sigs[cur].name+'</b>（fail ≈ '+pct+'%）<br><br>'+
+      '<b style="color:var(--accent)">先怀疑：</b>'+sigs[cur].src+'<br><br>'+
+      '<b style="color:var(--accent)">找谁：</b>'+sigs[cur].dept;
+  }
+  window.__redrawVizW=draw;
+  // 原 redraw 也刷新这个
+  const prev=window.__redrawViz;
+  window.__redrawViz=function(){ if(prev)prev(); draw(); };
+  // chips
+  Object.keys(sigs).forEach((k,i)=>{
+    const b=document.createElement('button'); b.className='chip'+(i===0?' active':'');
+    b.textContent=sigs[k].name; b.onclick=()=>{
+      cur=k; chipBar.querySelectorAll('.chip').forEach(c=>c.classList.remove('active'));
+      b.classList.add('active'); draw();
+    };
+    chipBar.appendChild(b);
+  });
+  draw();
+})();
+</script>
+</body>
+</html>
