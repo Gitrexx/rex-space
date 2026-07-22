@@ -1,0 +1,817 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SGLang — Learning Module</title>
+<style>
+  :root{
+    --bg:#faf7f2; --panel:#fffdf9; --ink:#26221d; --muted:#6b6357; --line:#e6ded1;
+    --accent:#b4531f; --accent-soft:#f3e2d5; --ok:#1f7a4d; --bad:#b03030;
+    --code-bg:#2a2620; --code-ink:#f3ece0; --shadow:0 1px 2px rgba(0,0,0,.05),0 6px 20px rgba(60,45,25,.06);
+    --sans:'Inter',system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+    --serif:'Charter','Georgia',Cambria,'Times New Roman',serif;
+    --mono:'SF Mono',ui-monospace,'JetBrains Mono',Menlo,Consolas,monospace;
+  }
+  html[data-theme="dark"]{
+    --bg:#17150f; --panel:#201d16; --ink:#efe8db; --muted:#a79d8c; --line:#332e24;
+    --accent:#e08a52; --accent-soft:#3a2c20; --code-bg:#0f0d09; --code-ink:#f3ece0;
+    --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 24px rgba(0,0,0,.35);
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);
+    line-height:1.65;font-size:17px;-webkit-font-smoothing:antialiased}
+  .progress{position:fixed;top:0;left:0;height:3px;width:0;background:var(--accent);z-index:50;transition:width .1s}
+  .wrap{display:grid;grid-template-columns:240px minmax(0,760px);gap:48px;max-width:1080px;
+    margin:0 auto;padding:0 28px 120px}
+  @media(max-width:820px){.wrap{grid-template-columns:1fr;gap:0}.toc{display:none}}
+
+  header{grid-column:1/-1;padding:44px 0 24px;border-bottom:1px solid var(--line);margin-bottom:36px}
+  .eyebrow{font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:var(--accent);font-weight:600}
+  h1{font-family:var(--serif);font-size:38px;line-height:1.15;margin:.25em 0 .15em;font-weight:650}
+  .why{color:var(--muted);font-size:18px;max-width:62ch;margin:.4em 0 0}
+  .controls{display:flex;gap:10px;margin-top:22px;flex-wrap:wrap}
+  .btn{font:inherit;font-size:14px;padding:7px 14px;border:1px solid var(--line);background:var(--panel);
+    color:var(--ink);border-radius:999px;cursor:pointer;box-shadow:var(--shadow);transition:.15s}
+  .btn:hover{border-color:var(--accent)}
+  .btn.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+
+  .toc{position:sticky;top:24px;align-self:start;font-size:14px;max-height:90vh;overflow:auto}
+  .toc a{display:block;color:var(--muted);text-decoration:none;padding:4px 0 4px 12px;
+    border-left:2px solid transparent;transition:.15s}
+  .toc a:hover{color:var(--ink)}
+  .toc a.active{color:var(--accent);border-left-color:var(--accent);font-weight:600}
+
+  main{grid-column:2}
+  section{margin:0 0 52px;scroll-margin-top:24px}
+  h2{font-family:var(--serif);font-size:26px;margin:0 0 .5em;font-weight:640}
+  h3{font-size:19px;margin:1.6em 0 .4em}
+  p{margin:0 0 1em} code{font-family:var(--mono);font-size:.9em;background:var(--accent-soft);
+    padding:.1em .35em;border-radius:4px}
+  ul,ol{padding-left:1.2em} li{margin:.3em 0}
+  table{border-collapse:collapse;width:100%;font-size:15px;margin:1.2em 0}
+  th,td{border:1px solid var(--line);padding:8px 11px;text-align:left;vertical-align:top}
+  th{background:var(--accent-soft);font-weight:650}
+  .lede{font-size:18px}
+
+  .deep-dive{border-left:3px solid var(--accent-soft);padding:2px 0 2px 18px;margin:1em 0;transition:.2s}
+  html.skim .deep-dive{display:none}
+  .depth-note{font-size:13px;color:var(--muted);font-style:italic}
+  html:not(.skim) .skim-only{display:none}
+
+  .callout{border:1px solid var(--line);border-radius:12px;padding:16px 18px;margin:1.4em 0;
+    background:var(--panel);box-shadow:var(--shadow)}
+  .callout .tag{font-size:12px;font-weight:700;letter-spacing:.05em;text-transform:uppercase}
+  .callout.insight{border-color:#c7a34d55}.callout.insight .tag{color:#a9791b}
+  .callout.pitfall{border-color:#b0303055}.callout.pitfall .tag{color:var(--bad)}
+  .callout p:last-child{margin-bottom:0}
+  details{margin:1em 0;border:1px solid var(--line);border-radius:10px;padding:0 16px;background:var(--panel)}
+  details summary{cursor:pointer;padding:12px 0;font-weight:600}
+
+  .viz{border:1px solid var(--line);border-radius:14px;background:var(--panel);
+    padding:16px;margin:1.6em 0;box-shadow:var(--shadow)}
+  .viz canvas{width:100%;height:auto;display:block;border-radius:8px;background:var(--bg)}
+  .viz .vbar{display:flex;gap:8px;margin-top:12px;align-items:center;flex-wrap:wrap}
+  .viz .cap{font-size:13px;color:var(--muted);margin-top:8px}
+  #vizStats{font-family:var(--mono);font-size:12.5px;color:var(--ink)}
+
+  .code-runner{margin:1.6em 0;border-radius:12px;overflow:hidden;border:1px solid var(--line);box-shadow:var(--shadow)}
+  .code-runner .cr-head{display:flex;justify-content:space-between;align-items:center;
+    background:var(--code-bg);padding:8px 12px}
+  .cr-head .lang{color:#9c9384;font-size:12px;font-family:var(--mono);text-transform:uppercase;letter-spacing:.08em}
+  .cr-head .cr-btns{display:flex;gap:6px}
+  .cr-btns button{font:inherit;font-size:12px;font-family:var(--mono);color:var(--code-ink);
+    background:#ffffff18;border:1px solid #ffffff22;border-radius:6px;padding:4px 10px;cursor:pointer}
+  .cr-btns button:hover{background:#ffffff30}
+  .code-runner textarea{width:100%;border:0;resize:vertical;min-height:120px;padding:14px;
+    background:var(--code-bg);color:var(--code-ink);font-family:var(--mono);font-size:13.5px;line-height:1.55;outline:none}
+  .code-runner .output{margin:0;padding:12px 14px;background:#00000030;color:var(--code-ink);
+    font-family:var(--mono);font-size:13px;white-space:pre-wrap;min-height:20px;border-top:1px solid #ffffff14}
+
+  pre.static{background:var(--code-bg);color:var(--code-ink);font-family:var(--mono);font-size:13.5px;
+    line-height:1.55;padding:14px 16px;border-radius:12px;overflow:auto;box-shadow:var(--shadow);margin:1.4em 0}
+  pre.static .c{color:#9c9384}
+
+  .quiz{border:1px solid var(--line);border-radius:14px;padding:18px 20px;margin:1.6em 0;
+    background:var(--panel);box-shadow:var(--shadow)}
+  .quiz .q{font-weight:600;margin:0 0 12px}
+  .quiz .options{list-style:none;padding:0;margin:0;display:grid;gap:8px}
+  .quiz .options li{border:1px solid var(--line);border-radius:9px;padding:10px 14px;cursor:pointer;transition:.12s}
+  .quiz .options li:hover{border-color:var(--accent)}
+  .quiz .options li.correct{border-color:var(--ok);background:#1f7a4d18}
+  .quiz .options li.wrong{border-color:var(--bad);background:#b0303018}
+  .quiz .options li.locked{cursor:default;opacity:.85}
+  .quiz .explain{display:none;margin-top:14px;padding-top:12px;border-top:1px dashed var(--line);
+    color:var(--muted);font-size:15px}
+  .quiz.answered .explain{display:block}
+
+  a.ref{color:var(--accent)}
+  footer{grid-column:1/-1;border-top:1px solid var(--line);margin-top:20px;padding-top:24px;
+    color:var(--muted);font-size:14px}
+</style>
+</head>
+<body>
+<div class="progress" id="progress"></div>
+<div class="wrap">
+
+  <header>
+    <div class="eyebrow">LLM Serving · Inference Infrastructure</div>
+    <h1>SGLang</h1>
+    <p class="why">You're about to self-host an open model so the company gets fast, cheap answers to
+      everyday questions. SGLang is one of the two engines you'll seriously weigh (the other is vLLM).
+      This module is the engine itself — <em>what</em> it is, <em>why</em> the big labs run it, its honest
+      trade-offs, and <em>how</em> to stand up a server. Your prompts will share a big fixed system
+      prompt across thousands of small questions — which happens to be the exact workload SGLang was
+      built to make cheap.</p>
+    <div class="controls">
+      <button class="btn active" id="depthBtn" data-mode="full">Mode: Full detail</button>
+      <button class="btn" id="themeBtn">◐ Theme</button>
+      <span class="depth-note" id="depthNote">Full mode — deep-dive blocks visible</span>
+    </div>
+  </header>
+
+  <nav class="toc" id="toc" aria-label="Contents"></nav>
+
+  <main>
+
+    <!-- ============================================================= -->
+    <section id="mental-model">
+      <h2>The one idea</h2>
+      <p class="lede">SGLang is <strong>two things in one package</strong>: a high-performance
+        <strong>runtime</strong> that serves an LLM behind an OpenAI-compatible HTTP API, and a small
+        <strong>programming language</strong> for scripting multi-step LLM calls. The runtime is what
+        you'll use day one. Its signature trick is to treat the <strong>KV cache as a reusable tree</strong>
+        instead of throwing it away after every request.</p>
+      <div class="callout insight"><span class="tag">Key insight</span>
+        <p>Every generation builds a <em>KV cache</em> for the prompt tokens. Most serving stacks discard
+          it when the request ends. SGLang keeps recent caches in a <strong>radix tree</strong> keyed by
+          token prefix, so a new request that starts with an already-seen prefix (your shared system prompt,
+          few-shot block, or chat history) <strong>skips recomputing it</strong>. For a helpdesk bot where
+          10,000 questions all sit behind the same 800-token system prompt, that prefix is computed roughly
+          <em>once</em>, not 10,000 times.</p></div>
+      <p>Hold that picture — "reuse the shared prompt prefix" — and the rest of SGLang (its benchmarks, its
+        pros and cons, when to pick it over vLLM) falls out of it.</p>
+    </section>
+
+    <!-- ============================================================= -->
+    <section id="whatis">
+      <h2>What SGLang actually is</h2>
+      <p>The name is a portmanteau of <strong>S</strong>tructured <strong>G</strong>eneration
+        <strong>Lang</strong>uage. It started as a research project from the LMSYS / SGL team (the group
+        behind Chatbot Arena and Vicuna) and is now a widely used open-source serving stack
+        (<code>sgl-project/sglang</code>). Two layers:</p>
+      <ul>
+        <li><strong>The runtime (SRT).</strong> A GPU inference server. You point it at a Hugging Face model,
+          it loads the weights and exposes <code>/v1/chat/completions</code> and friends — a drop-in
+          OpenAI-compatible endpoint. This is the part that competes with vLLM, TGI, and TensorRT-LLM. It
+          bundles continuous batching, tensor/data parallelism, quantization, CUDA graphs, fast attention
+          kernels (FlashInfer), and <strong>RadixAttention</strong> prefix caching.</li>
+        <li><strong>The frontend language.</strong> A Python DSL (<code>sgl.function</code>,
+          <code>sgl.gen</code>, <code>sgl.select</code>, <code>fork</code>) for expressing programs that
+          interleave generation, control flow, constrained decoding, and <em>parallel</em> branches — and it
+          co-designs with the runtime so those branches automatically share cached prefixes. You can ignore
+          this layer entirely and just use the OpenAI API; it's there when your call patterns get fancy.</li>
+      </ul>
+      <p>For your use case — a server answering easy questions — you live almost entirely in the runtime and
+        talk to it with the standard OpenAI SDK. No lock-in: swap the base URL and your existing client code
+        works.</p>
+      <div class="deep-dive">
+        <p class="depth-note">Deep dive — the runtime's moving parts</p>
+        <p>Under the hood the server is a set of cooperating processes: a <strong>tokenizer</strong> process,
+          one or more <strong>scheduler + model-worker</strong> processes (one per tensor-parallel rank), and
+          a <strong>detokenizer</strong>. The scheduler owns the batch: it decides which requests run each
+          GPU step, manages the KV-cache memory pool, and maintains the radix tree. On top sits an HTTP
+          server (FastAPI-style) translating OpenAI requests into the internal
+          <code>/generate</code> protocol. Attention is executed by FlashInfer / Triton kernels; the model
+          definitions live in SGLang itself, which is why support for a brand-new architecture sometimes
+          lands here before it lands elsewhere.</p>
+      </div>
+    </section>
+
+    <!-- ============================================================= -->
+    <section id="radix">
+      <h2>The core trick: RadixAttention</h2>
+      <p>A <strong>radix tree</strong> (a compressed prefix tree / trie) is the data structure at the heart
+        of SGLang. Each edge holds a run of tokens; each path from the root spells out a prompt prefix; each
+        node holds the KV-cache blocks for that prefix. When a request arrives, the scheduler walks the tree
+        matching the request's tokens as far as it can. The matched portion is a <strong>cache hit</strong>
+        — its KV cache is reused for free. Only the unmatched suffix is actually computed, and its new KV
+        blocks are inserted as fresh nodes.</p>
+      <p>Watch it happen. Five requests arrive; the first four share a system prompt, three of them also
+        share a few-shot block, and request #5 is a repeat. Step through and watch green (reused) grow while
+        orange (freshly computed) shrinks.</p>
+
+      <div class="viz">
+        <canvas id="viz" width="720" height="300"></canvas>
+        <div class="vbar">
+          <button class="btn" id="vizPlay">▶ Play</button>
+          <button class="btn" id="vizStep">Step</button>
+          <button class="btn" id="vizReset">Reset</button>
+          <span class="cap" id="vizStats"></span>
+        </div>
+        <p class="cap"><span style="color:var(--ok)">■</span> reused from cache (a hit — no compute)
+          &nbsp; <span style="color:var(--accent)">■</span> freshly computed this request.
+          The radix tree branches at <code>system</code> when request #4 skips the few-shot block, and
+          request #5 is a full hit. Without prefix reuse, every request would recompute its whole prompt.</p>
+      </div>
+
+      <div class="deep-dive">
+        <p class="depth-note">Deep dive — eviction and cache-aware scheduling</p>
+        <p>GPU memory is finite, so the tree can't grow forever. SGLang evicts with an <strong>LRU policy on
+          leaf nodes</strong>: the least-recently-used leaf's KV blocks are freed first, and a node is never
+          evicted while a running request still references it (reference counting). Two subtleties make this
+          more than a passive cache:</p>
+        <ul>
+          <li><strong>Cache-aware scheduling.</strong> The scheduler can <em>order and group</em> requests to
+            maximize prefix sharing — batching together requests that hit the same tree nodes so the shared
+            prefix stays hot and isn't evicted between them.</li>
+          <li><strong>It composes with paging.</strong> RadixAttention decides <em>what</em> to reuse; a
+            paged KV memory pool decides <em>where</em> blocks physically live. They're orthogonal —
+            RadixAttention is the reuse policy layered on top of block-based KV storage.</li>
+        </ul>
+        <p>The payoff is largest exactly when prefixes repeat: multi-turn chat (history is a growing shared
+          prefix), few-shot prompting, agent loops, and self-consistency sampling where many branches share
+          one context. On the original benchmarks this drove <strong>up to ~5&ndash;6&times;</strong>
+          higher throughput than prior systems on prefix-heavy workloads.</p>
+      </div>
+
+      <div class="quiz">
+        <p class="q">What does RadixAttention actually reuse across requests?</p>
+        <ul class="options">
+          <li>The model's weights, so they load once</li>
+          <li data-correct="true">The KV cache for token prefixes the requests share</li>
+          <li>The final generated text, as a response cache</li>
+          <li>The tokenizer's vocabulary lookup table</li>
+        </ul>
+        <div class="explain">RadixAttention caches and reuses the <strong>KV cache</strong> (the attention
+          keys/values) for <strong>shared token prefixes</strong>. Weights are always loaded once regardless
+          — that's not the trick. And it is <em>not</em> a response cache: two requests with the same system
+          prompt but different questions still generate different, fresh answers; only the overlapping
+          <em>prefix computation</em> is shared. That's why it speeds things up without changing outputs.</div>
+      </div>
+    </section>
+
+    <!-- ============================================================= -->
+    <section id="why">
+      <h2>Why the industry runs it</h2>
+      <p>RadixAttention is the headline, but SGLang's adoption rests on a stack of throughput wins that all
+        aim at the same goal: <strong>keep the GPU busy, waste no compute</strong>.</p>
+      <ul>
+        <li><strong>RadixAttention prefix reuse</strong> — the big one for chat, few-shot, and agents (above).</li>
+        <li><strong>Continuous batching.</strong> New requests slot into the running batch the moment a
+          sequence finishes, instead of waiting for the whole batch — GPU utilization stays high (reported
+          &gt;90%) under mixed, streaming traffic.</li>
+        <li><strong>Zero-overhead scheduler</strong> (from v0.4). The CPU prepares the <em>next</em> batch
+          while the GPU is still crunching the current one — it runs "one batch ahead" so the GPU rarely
+          stalls waiting on Python. This alone added roughly ~1.1&times; throughput on top of everything else.</li>
+        <li><strong>Fast structured outputs.</strong> Integrated grammar-constrained decoding (via XGrammar)
+          enforces JSON-schema / regex / EBNF constraints with very low per-token overhead — reported up to
+          ~10&times; faster than earlier constrained-decoding paths. Handy when a service must emit strict JSON.</li>
+        <li><strong>Serious scale features.</strong> Tensor + data parallelism, FP8/INT4 quantization,
+          speculative decoding, and prefill/decode disaggregation for large fleets.</li>
+      </ul>
+      <div class="callout insight"><span class="tag">Who runs it</span>
+        <p>Per the project and 2025&ndash;2026 write-ups, SGLang is used in production at scale — reported to
+          power <strong>hundreds of thousands of GPUs</strong> across organizations including <strong>xAI,
+          NVIDIA, AMD, and LinkedIn</strong>, and it's a common reference server for launching new open models
+          (Llama, Qwen, DeepSeek, and others), sometimes on day one.</p></div>
+      <div class="deep-dive">
+        <p class="depth-note">Deep dive — why "day-one model support" matters to you</p>
+        <p>Because SGLang carries its own model implementations and moves fast, newly released open weights
+          frequently get an SGLang recipe immediately, with the vendor's own recommended launch flags. If
+          your company wants to adopt the latest open model quickly, that release cadence is a practical
+          reason to keep SGLang in the toolbox even if you standardize on something else for older models.</p>
+      </div>
+    </section>
+
+    <!-- ============================================================= -->
+    <section id="proscons">
+      <h2>Pros, cons, and SGLang vs vLLM</h2>
+      <p>You will inevitably compare SGLang to <strong>vLLM</strong> — they're the two dominant open engines
+        and they solve the same problem with different emphases. vLLM pioneered <strong>PagedAttention</strong>
+        (KV cache as OS-style paged blocks); SGLang layers <strong>RadixAttention</strong> (prefix reuse) on
+        top of block storage and pairs it with the co-designed frontend. Neither is strictly "faster" — it
+        depends on the workload.</p>
+
+      <table>
+        <thead><tr><th>Dimension</th><th>SGLang</th><th>vLLM</th></tr></thead>
+        <tbody>
+          <tr><td>Prefix-heavy workloads (chat history, shared system prompt, few-shot, agents)</td>
+            <td><strong>Strongest</strong> — RadixAttention reuse shines</td>
+            <td>Good (has prefix caching too), usually a step behind on these</td></tr>
+          <tr><td>Reported throughput, small models (7&ndash;8B, H100)</td>
+            <td>Reported edge (order of ~+30% in some benchmarks)</td>
+            <td>Close; workload-dependent</td></tr>
+          <tr><td>Throughput on very large models (70B+)</td>
+            <td>Roughly comparable — gap narrows to a few %</td>
+            <td>Roughly comparable</td></tr>
+          <tr><td>Structured / grammar-constrained output</td>
+            <td><strong>A strength</strong> (XGrammar, low overhead)</td>
+            <td>Supported; historically higher overhead</td></tr>
+          <tr><td>Hardware breadth</td>
+            <td>NVIDIA + AMD (ROCm); narrower</td>
+            <td><strong>Broadest</strong> — also TPU, Trainium/Inferentia, Gaudi, etc.</td></tr>
+          <tr><td>Ecosystem / community size / API maturity</td>
+            <td>Large and growing</td>
+            <td><strong>Largest</strong>, most integrations and docs</td></tr>
+          <tr><td>Multi-step / parallel LLM programs</td>
+            <td><strong>First-class</strong> frontend DSL</td>
+            <td>Not a focus (serving engine only)</td></tr>
+        </tbody>
+      </table>
+
+      <p><strong>Pick SGLang when:</strong> your traffic is prefix-heavy (a fixed system prompt across many
+        questions — your case), multi-turn chat, agents/tool-loops, heavy structured-output needs, or you're
+        chasing peak throughput on NVIDIA/AMD and want the newest models fast.</p>
+      <p><strong>Lean vLLM when:</strong> you need non-NVIDIA/AMD hardware (TPU/Trainium/Gaudi), you value the
+        biggest ecosystem and the most mature/stable APIs, or your prompts are mostly unique with little
+        shared prefix (the RadixAttention edge shrinks toward parity).</p>
+      <div class="callout insight"><span class="tag">Honest take</span>
+        <p>Benchmark deltas are real but <em>workload- and version-specific</em> — both projects ship
+          improvements monthly and leapfrog each other. Don't over-index on a single "X% faster" number from
+          a blog. For your helpdesk bot, the deciding factor is the <strong>shared-prefix win</strong>, which
+          is structural, not a benchmark artifact. Prototype on both with <em>your</em> prompts and model and
+          measure TTFT and tokens/sec before committing.</p></div>
+
+      <div class="quiz">
+        <p class="q">Your future workload is mostly one-off, all-unique prompts (each user pastes a large,
+          different document) with almost no shared prefix. What should you expect?</p>
+        <ul class="options">
+          <li>SGLang's RadixAttention still gives a huge speedup because it caches responses</li>
+          <li data-correct="true">SGLang's prefix-reuse advantage largely disappears; the two engines land close</li>
+          <li>vLLM cannot serve this workload at all</li>
+          <li>RadixAttention will slow SGLang down below vLLM</li>
+        </ul>
+        <div class="explain">RadixAttention only helps when requests <em>share a prefix</em>. All-unique
+          prompts have nothing to reuse, so its headline advantage evaporates and performance comes down to
+          the general engine (kernels, batching, scheduler) — where the two are close. It's not a response
+          cache, so it can't "recognize" unrelated documents. And the tree lookup is cheap: on a miss it
+          simply falls back to computing everything, so it won't drag SGLang <em>below</em> vLLM. Lesson:
+          match the engine's strength to your actual traffic shape.</div>
+      </div>
+    </section>
+
+    <!-- ============================================================= -->
+    <section id="handson">
+      <h2>Hands-on: stand up a server</h2>
+      <p>The whole path from zero to an OpenAI-compatible endpoint is three moves: install, launch, call.</p>
+
+      <h3>1 · Install</h3>
+      <pre class="static"><span class="c"># needs an NVIDIA (or AMD/ROCm) GPU, recent CUDA, Python 3.9+</span>
+pip install --upgrade pip
+pip install "sglang[all]"
+
+<span class="c"># or run the official Docker image (pins CUDA + kernels for you):</span>
+<span class="c"># docker run --gpus all -p 30000:30000 lmsysorg/sglang:latest ...</span></pre>
+      <p class="depth-note">Tip: pin a version (<code>"sglang[all]==&lt;x.y.z&gt;"</code>) in production and
+        check the model vendor's README for the exact recommended flags — this space moves fast.</p>
+
+      <h3>2 · Launch the server</h3>
+      <pre class="static">python -m sglang.launch_server \
+  --model-path Qwen/Qwen2.5-7B-Instruct \
+  --host 0.0.0.0 --port 30000
+<span class="c"># serves an OpenAI-compatible API at http://localhost:30000/v1</span>
+<span class="c"># RadixAttention prefix caching is ON by default — nothing to configure</span></pre>
+
+      <h3>3 · Call it (curl, then the OpenAI SDK)</h3>
+      <pre class="static">curl http://localhost:30000/v1/chat/completions \
+  -H "Content-Type: application/json" \
+  -d '{"model":"Qwen/Qwen2.5-7B-Instruct",
+       "messages":[{"role":"user","content":"What are our office hours?"}]}'</pre>
+      <pre class="static"><span class="c"># Python — your existing OpenAI client, just repoint base_url</span>
+from openai import OpenAI
+client = OpenAI(base_url="http://localhost:30000/v1", api_key="none")
+
+r = client.chat.completions.create(
+    model="Qwen/Qwen2.5-7B-Instruct",
+    messages=[
+        {"role":"system","content":"You are the ACME internal helpdesk."},
+        {"role":"user","content":"How do I reset my VPN password?"},
+    ])
+print(r.choices[0].message.content)</pre>
+      <p>That's it — a running fast-inference server. The system prompt above becomes a shared prefix the
+        moment your second request reuses it.</p>
+
+      <h3>Key launch flags you'll actually reach for</h3>
+      <table>
+        <thead><tr><th>Flag</th><th>What it does</th></tr></thead>
+        <tbody>
+          <tr><td><code>--model-path</code></td><td>HF model id or local path to serve</td></tr>
+          <tr><td><code>--tp-size N</code></td><td>Tensor-parallel across N GPUs (split one model over N cards for a big model)</td></tr>
+          <tr><td><code>--dp-size N</code></td><td>Data-parallel: N independent replicas for more throughput</td></tr>
+          <tr><td><code>--mem-fraction-static</code></td><td>Fraction of GPU memory for weights + KV pool. <strong>Lower it if you hit OOM.</strong></td></tr>
+          <tr><td><code>--context-length</code></td><td>Max sequence length (raise for long docs, at a memory cost)</td></tr>
+          <tr><td><code>--quantization</code></td><td><code>fp8</code> / <code>awq</code> / <code>gptq</code> — fit a bigger model on the same card</td></tr>
+          <tr><td><code>--api-key</code></td><td>Require a bearer token on the endpoint</td></tr>
+          <tr><td><code>--served-model-name</code></td><td>The <code>model</code> string clients send (alias the long HF id)</td></tr>
+        </tbody>
+      </table>
+      <div class="deep-dive">
+        <p class="depth-note">Deep dive — more flags &amp; the two knobs that matter for your box</p>
+        <ul>
+          <li><code>--disable-radix-cache</code> — turn prefix caching off (benchmarking, or a purely
+            unique-prompt workload). Usually leave it on.</li>
+          <li><code>--chunked-prefill-size</code> — split long prefills into chunks so a giant prompt doesn't
+            block decode for everyone (smoother tail latency).</li>
+          <li><code>--enable-torch-compile</code> — extra kernel fusion; longer startup, faster steady state.</li>
+          <li><code>--schedule-conservativeness</code>, <code>--max-running-requests</code> — cap
+            concurrency if you're seeing memory pressure.</li>
+        </ul>
+        <p>On a <strong>single modest GPU</strong>, the two levers that unstick most setups are
+          <code>--mem-fraction-static</code> (down) and <code>--context-length</code> (down) — both free KV
+          memory. Reach for quantization when the model simply won't fit.</p>
+      </div>
+
+      <h3>Try it — why the shared prefix is the whole game</h3>
+      <p>This runs right here. It estimates the prefill compute you save when every request rides behind one
+        shared system prompt — your exact "daily easy questions" pattern. Tweak the numbers and re-run.</p>
+      <div class="code-runner" data-lang="js">
+        <div class="cr-head"><span class="lang">javascript</span>
+          <div class="cr-btns"><button class="run">▶ Run</button><button class="copy">Copy</button></div></div>
+        <textarea spellcheck="false">// Prefill compute with vs. without RadixAttention prefix reuse.
+// Every request shares a system prompt + few-shot block; only the
+// short user question differs.
+
+const sharedPrefixTokens = 800;  // system prompt + few-shot, shared by all
+const uniqueTokens       = 40;   // the user's actual question
+const requests           = 10000;
+
+const noCache   = requests * (sharedPrefixTokens + uniqueTokens);
+const withCache = sharedPrefixTokens + requests * uniqueTokens; // prefix computed once
+const saved     = 1 - withCache / noCache;
+
+console.log("prefill tokens, no cache      :", noCache.toLocaleString());
+console.log("prefill tokens, RadixAttention:", withCache.toLocaleString());
+console.log("prefill compute saved         :", (saved * 100).toFixed(1) + "%");
+// expected: no cache 8,400,000 | with 400,800 | saved 95.2%
+// the saving asymptotes to 1 - 40/840 ≈ 95.2% as `requests` grows</textarea>
+        <pre class="output"></pre>
+      </div>
+
+      <p>And here's a tiny, real <strong>RadixAttention in miniature</strong> — a prefix trie that reports how
+        many prompt tokens are reused vs recomputed. This is the mechanism from the animation, in ~15 lines
+        you can edit and run (Python via Pyodide — first Run downloads the runtime).</p>
+      <div class="code-runner" data-lang="python">
+        <div class="cr-head"><span class="lang">python</span>
+          <div class="cr-btns"><button class="run">▶ Run</button><button class="copy">Copy</button></div></div>
+        <textarea spellcheck="false"># A toy radix/prefix cache: reuse the longest matching prefix, compute the rest.
+class RadixCache:
+    def __init__(self):
+        self.root = {}                       # token -> child node (a dict)
+    def insert(self, tokens):
+        node, matched = self.root, 0
+        for t in tokens:                     # walk as far as the tree already matches
+            if t in node:
+                node, matched = node[t], matched + 1
+            else:
+                break
+        for t in tokens[matched:]:           # graft on the new (uncached) suffix
+            node[t] = node = {}
+        return matched, len(tokens) - matched  # (reused, computed)
+
+SYS  = list("SYSTEM")      # shared system prompt  (6 "tokens")
+FEW  = list("+FEWSHOT")    # shared few-shot block  (8 "tokens")
+req  = lambda q: SYS + FEW + list(q)
+
+cache, reused, computed = RadixCache(), 0, 0
+for q in ["Apple", "Berry", "Cocoa", "Apple"]:   # 4 questions; last repeats #1
+    r, c = cache.insert(req(q))
+    reused += r; computed += c
+    print(f"req {q:>6}: reused {r:2d}  computed {c:2d}")
+
+total = reused + computed
+print(f"\ntotal prompt tokens : {total}")
+print(f"reused (cache hit)  : {reused}  ({reused/total:.0%})")
+print(f"recomputed          : {computed}  ({computed/total:.0%})")
+# expected: reused 47 (62%), recomputed 29 (38%) -- the shared SYSTEM+FEWSHOT
+# is paid for once; only the distinct question tails cost compute.</textarea>
+        <pre class="output"></pre>
+      </div>
+
+      <div class="deep-dive">
+        <p class="depth-note">Deep dive — the frontend language &amp; structured output</p>
+        <p>Beyond the OpenAI API, SGLang's DSL lets you script multi-step, branching LLM programs whose
+          branches automatically share cached prefixes. <code>sgl.select</code> and grammar constraints mask
+          the decode so output is guaranteed valid — useful for triage/classification:</p>
+        <pre class="static">import sglang as sgl
+
+@sgl.function
+def triage(s, ticket):
+    s += sgl.system("You are an IT helpdesk triage bot.")
+    s += sgl.user(ticket)
+    <span class="c"># constrained choice: decoding is masked to exactly these options</span>
+    s += sgl.assistant("Category: " + sgl.select(
+            "cat", choices=["password", "vpn", "hardware", "other"]))
+    s += sgl.user("Write a one-line reply.")
+    s += sgl.assistant(sgl.gen("reply", max_tokens=64, stop="\n"))
+
+sgl.set_default_backend(sgl.RuntimeEndpoint("http://localhost:30000"))
+out = triage.run(ticket="I'm locked out and forgot my password.")
+print(out["cat"], "->", out["reply"])   <span class="c"># e.g. password -> Use the self-serve reset portal…</span></pre>
+        <p><code>s.fork(n)</code> spawns <em>n</em> parallel branches that share the prompt's KV cache —
+          self-consistency or multi-draft sampling where the shared context is computed once. For strict
+          JSON without the DSL, pass a schema straight to the runtime:</p>
+        <pre class="static">import requests
+r = requests.post("http://localhost:30000/generate", json={
+    "text": "Give two colors as a JSON array:",
+    "sampling_params": {
+        "max_new_tokens": 64,
+        "json_schema": '{"type":"array","items":{"type":"string"}}'}})
+print(r.json()["text"])   <span class="c"># output is guaranteed to match the schema</span></pre>
+      </div>
+
+      <div class="quiz">
+        <p class="q">You launch on a single 24&nbsp;GB GPU and the server dies at startup with CUDA
+          out-of-memory. Which flag is the most direct first fix?</p>
+        <ul class="options">
+          <li><code>--tp-size 8</code></li>
+          <li data-correct="true">Lower <code>--mem-fraction-static</code></li>
+          <li>Raise <code>--context-length</code></li>
+          <li><code>--disable-radix-cache</code></li>
+        </ul>
+        <div class="explain"><code>--mem-fraction-static</code> controls how much GPU memory SGLang reserves
+          for the static pool (weights + KV cache); lowering it is the documented remedy for startup OOM
+          (reducing <code>--context-length</code> or using <code>--quantization</code> helps too).
+          <code>--tp-size 8</code> is wrong — you don't have 8 GPUs to split across. Raising
+          <code>--context-length</code> makes memory pressure <em>worse</em>. Disabling the radix cache frees
+          only a little and throws away SGLang's main advantage. Fix the memory knob, not the feature.</div>
+      </div>
+    </section>
+
+    <!-- ============================================================= -->
+    <section id="pitfalls">
+      <h2>Where people go wrong</h2>
+      <div class="callout pitfall"><span class="tag">Pitfall</span>
+        <p><strong>Expecting RadixAttention to cache <em>answers</em>.</strong> It caches prompt-prefix
+          <em>computation</em>, not responses. Two identical questions still each run a full generation; you
+          only save the shared-prefix prefill. If you want response-level caching, that's a separate layer you
+          add yourself.</p></div>
+      <div class="callout pitfall"><span class="tag">Pitfall</span>
+        <p><strong>Breaking your own prefix.</strong> The cache keys on the <em>exact</em> leading tokens. If
+          you jam a timestamp, a request id, or a per-user string at the <em>top</em> of every prompt, no two
+          requests share a prefix and the win vanishes. Keep the stable, shared content (system prompt,
+          few-shot) first; put anything variable at the end.</p></div>
+      <div class="callout pitfall"><span class="tag">Pitfall</span>
+        <p><strong>Reading a benchmark as destiny.</strong> "SGLang is 30% faster" is true for some model,
+          some hardware, some traffic, some version. Yours may differ. Measure TTFT and tokens/sec on your
+          own prompts before you standardize.</p></div>
+      <div class="callout pitfall"><span class="tag">Pitfall</span>
+        <p><strong>Under-provisioning KV memory, then blaming the model.</strong> Startup OOM and
+          mid-run evictions are usually a <code>--mem-fraction-static</code> / <code>--context-length</code>
+          tuning issue, not a bug. Right-size the KV pool for your concurrency and sequence lengths.</p></div>
+    </section>
+
+    <!-- ============================================================= -->
+    <section id="cheatsheet">
+      <h2>Cheat-sheet</h2>
+      <p><strong>What:</strong> open-source LLM serving runtime (OpenAI-compatible) + a Python DSL for
+        structured/parallel generation. <strong>Signature feature:</strong> RadixAttention — reuse the KV
+        cache of shared prompt prefixes via a radix tree (LRU-evicted, cache-aware scheduled).</p>
+      <p><strong>Why it's fast:</strong> prefix reuse · continuous batching · zero-overhead scheduler
+        (runs one batch ahead) · fast grammar-constrained JSON (XGrammar) · TP/DP · FP8/INT4 quantization.</p>
+      <pre class="static"><span class="c"># install → launch → call</span>
+pip install "sglang[all]"
+python -m sglang.launch_server --model-path &lt;hf-id&gt; --host 0.0.0.0 --port 30000
+curl localhost:30000/v1/chat/completions -H 'Content-Type: application/json' \
+  -d '{"model":"&lt;hf-id&gt;","messages":[{"role":"user","content":"hi"}]}'
+
+<span class="c"># common flags</span>
+--tp-size N            <span class="c"># split one big model over N GPUs</span>
+--dp-size N            <span class="c"># N replicas for throughput</span>
+--mem-fraction-static  <span class="c"># LOWER on OOM</span>
+--context-length       <span class="c"># max seq len (memory cost)</span>
+--quantization fp8     <span class="c"># fit a bigger model</span>
+--api-key / --served-model-name</pre>
+      <p><strong>Choose SGLang</strong> for prefix-heavy chat/agents, structured output, peak throughput on
+        NVIDIA/AMD, newest models fast. <strong>Choose vLLM</strong> for non-NVIDIA/AMD hardware, the broadest
+        ecosystem, or all-unique-prompt traffic. <strong>Best move:</strong> benchmark both on your prompts.</p>
+      <p><strong>Your helpdesk takeaway:</strong> put the fixed system prompt + few-shot first, keep RadixAttention on
+        (default), size the KV pool for your concurrency — and thousands of little questions ride behind a
+        prefix computed essentially once.</p>
+    </section>
+
+    <!-- ============================================================= -->
+    <section id="reading">
+      <h2>Further reading</h2>
+      <ul>
+        <li><a class="ref" href="https://github.com/sgl-project/sglang" target="_blank" rel="noopener">sgl-project/sglang (GitHub)</a>
+          — source, install matrix, and the current list of supported models &amp; flags. Start here.</li>
+        <li><a class="ref" href="https://docs.sglang.io" target="_blank" rel="noopener">SGLang documentation</a>
+          — quick start, full server-argument reference, and deployment guides.</li>
+        <li><a class="ref" href="https://lmsys.org/blog/2024-01-17-sglang/" target="_blank" rel="noopener">LMSYS: RadixAttention &amp; SGLang (launch blog)</a>
+          — the clearest explanation of the radix-tree KV reuse idea and the frontend language.</li>
+        <li><a class="ref" href="https://lmsys.org/blog/2024-12-04-sglang-v0-4/" target="_blank" rel="noopener">LMSYS: SGLang v0.4</a>
+          — zero-overhead scheduler, cache-aware load balancer, faster structured outputs.</li>
+        <li><a class="ref" href="https://arxiv.org/abs/2312.07104" target="_blank" rel="noopener">"SGLang: Efficient Execution of Structured LM Programs" (NeurIPS 2024)</a>
+          — the paper, if you want the formal RadixAttention treatment and benchmarks.</li>
+        <li><a class="ref" href="https://particula.tech/blog/sglang-vs-vllm-inference-engine-comparison" target="_blank" rel="noopener">SGLang vs vLLM (2026 comparison)</a>
+          — a recent side-by-side on architecture and when to use each; read it alongside vLLM's own docs.</li>
+      </ul>
+      <p class="depth-note">Benchmark figures cited here are from public 2025&ndash;2026 write-ups and vary
+        with model, hardware, and version — treat them as directional, verify on your own workload.</p>
+    </section>
+
+    <footer>Learning module · SGLang · open in any browser · edit the code cells freely and re-run.</footer>
+  </main>
+</div>
+
+<script>
+/* ---------- theme ---------- */
+const root=document.documentElement;
+document.getElementById('themeBtn').onclick=()=>{
+  root.dataset.theme = root.dataset.theme==='dark' ? '' : 'dark';
+};
+
+/* ---------- depth toggle ---------- */
+const depthBtn=document.getElementById('depthBtn'), depthNote=document.getElementById('depthNote');
+depthBtn.onclick=()=>{
+  const skim=root.classList.toggle('skim');
+  depthBtn.textContent = skim ? 'Mode: Skim' : 'Mode: Full detail';
+  depthBtn.dataset.mode = skim ? 'skim' : 'full';
+  depthNote.textContent = skim ? 'Skim mode — deep-dive blocks hidden' : 'Full mode — deep-dive blocks visible';
+};
+
+/* ---------- build TOC + scroll-spy ---------- */
+const toc=document.getElementById('toc'), secs=[...document.querySelectorAll('main section[id]')];
+secs.forEach(s=>{
+  const h=s.querySelector('h2'); if(!h) return;
+  const a=document.createElement('a'); a.href='#'+s.id; a.textContent=h.textContent; a.dataset.for=s.id;
+  toc.appendChild(a);
+});
+const spy=new IntersectionObserver(es=>{
+  es.forEach(e=>{ if(e.isIntersecting){
+    toc.querySelectorAll('a').forEach(a=>a.classList.toggle('active',a.dataset.for===e.target.id));
+  }});
+},{rootMargin:'-20% 0px -70% 0px'});
+secs.forEach(s=>spy.observe(s));
+
+/* ---------- progress bar ---------- */
+const prog=document.getElementById('progress');
+addEventListener('scroll',()=>{
+  const h=document.documentElement, max=h.scrollHeight-h.clientHeight;
+  prog.style.width=(max>0?(h.scrollTop/max*100):0)+'%';
+},{passive:true});
+
+/* ---------- quizzes ---------- */
+document.querySelectorAll('.quiz').forEach(q=>{
+  const opts=q.querySelectorAll('.options li');
+  opts.forEach(li=>li.onclick=()=>{
+    if(q.classList.contains('answered')) return;
+    q.classList.add('answered');
+    opts.forEach(o=>{o.classList.add('locked');
+      if(o.dataset.correct) o.classList.add('correct');});
+    if(!li.dataset.correct) li.classList.add('wrong');
+  });
+});
+
+/* ---------- code runners ---------- */
+function fmt(v){ if(typeof v==='object'){try{return JSON.stringify(v);}catch(e){return String(v);}} return String(v); }
+function runJS(code,out){
+  const logs=[]; const c={log:(...a)=>logs.push(a.map(fmt).join(' ')),
+    error:(...a)=>logs.push('⚠ '+a.map(fmt).join(' ')), warn:(...a)=>logs.push(a.map(fmt).join(' '))};
+  try{ const r=new Function('console',code)(c); if(r!==undefined) logs.push(fmt(r)); }
+  catch(e){ logs.push('⚠ '+e); }
+  out.textContent = logs.join('\n') || '(no output)';
+}
+let pyodide=null;
+function ensurePy(out){
+  if(pyodide) return pyodide;
+  out.textContent='Loading Python runtime…';
+  pyodide=new Promise((res,rej)=>{
+    const s=document.createElement('script');
+    s.src='https://cdn.jsdelivr.net/pyodide/v0.26.2/full/pyodide.js';
+    s.onload=async()=>{ try{ res(await loadPyodide()); }catch(e){ rej(e); } };
+    s.onerror=()=>rej(new Error('Could not load Pyodide (needs internet).'));
+    document.head.appendChild(s);
+  });
+  return pyodide;
+}
+async function runPy(code,out){
+  try{
+    const py=await ensurePy(out);
+    py.runPython('import sys,io\nsys.stdout=io.StringIO()\nsys.stderr=sys.stdout');
+    py.runPython(code);
+    out.textContent = py.runPython('sys.stdout.getvalue()') || '(no output)';
+  }catch(e){ out.textContent='⚠ '+e; }
+}
+document.querySelectorAll('.code-runner').forEach(cr=>{
+  const ta=cr.querySelector('textarea'), out=cr.querySelector('.output'),
+        lang=cr.dataset.lang||'js';
+  cr.querySelector('.run').onclick=()=> lang==='python' ? runPy(ta.value,out) : runJS(ta.value,out);
+  cr.querySelector('.copy').onclick=()=>{ navigator.clipboard?.writeText(ta.value);
+    const b=cr.querySelector('.copy'), t=b.textContent; b.textContent='Copied'; setTimeout(()=>b.textContent=t,1000); };
+});
+
+/* ---------- visual explainer: RadixAttention prefix-tree reuse ---------- */
+(function(){
+  const cv=document.getElementById('viz'); if(!cv) return;
+  const ctx=cv.getContext('2d');
+  const statsEl=document.getElementById('vizStats');
+
+  // node id -> geometry + label + token cost
+  const N={
+    root:{label:'root',       tok:0,  cx:44,  cy:150, parent:null},
+    sys :{label:'system·40',  tok:40, cx:170, cy:150, parent:'root'},
+    fs  :{label:'few-shot·60',tok:60, cx:340, cy:92,  parent:'sys'},
+    q4  :{label:'q:reset·30', tok:30, cx:340, cy:214, parent:'sys'},
+    q1  :{label:'q:hours·30', tok:30, cx:560, cy:52,  parent:'fs'},
+    q2  :{label:'q:VPN·30',   tok:30, cx:560, cy:110, parent:'fs'},
+    q3  :{label:'q:PTO·30',   tok:30, cx:560, cy:168, parent:'fs'},
+  };
+  const REQ=[
+    {name:'#1  system + few-shot + "hours?"',  path:['sys','fs','q1']},
+    {name:'#2  system + few-shot + "VPN?"',    path:['sys','fs','q2']},
+    {name:'#3  system + few-shot + "PTO?"',    path:['sys','fs','q3']},
+    {name:'#4  system + "reset pw"  (no shots)',path:['sys','q4']},
+    {name:'#5  repeat of #1  ("hours?")',      path:['sys','fs','q1']},
+  ];
+
+  let idx=0, reused=0, computed=0, title='', hi={reuse:new Set(),fresh:new Set(),path:new Set()}, timer=null;
+
+  function css(v){ return getComputedStyle(document.body).getPropertyValue(v).trim(); }
+  function rrect(x,y,w,h,r){ ctx.beginPath();
+    ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r);
+    ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath(); }
+
+  function draw(){
+    const W=cv.width,H=cv.height;
+    const ink=css('--ink'), line=css('--line'), panel=css('--panel'),
+          accent=css('--accent'), ok=css('--ok'), muted=css('--muted');
+    ctx.clearRect(0,0,W,H);
+
+    // title line
+    ctx.fillStyle=muted; ctx.font='13px ui-monospace,monospace'; ctx.textBaseline='top';
+    ctx.fillText(title||'Press Step or Play to send requests →', 12, 10);
+
+    // edges (only between created nodes)
+    Object.keys(N).forEach(id=>{
+      const n=N[id]; if(!n.created||!n.parent) return; const p=N[n.parent];
+      const active = hi.path.has(id);
+      ctx.strokeStyle = active ? accent : line;
+      ctx.lineWidth = active ? 2.4 : 1.4;
+      ctx.beginPath(); ctx.moveTo(p.cx+ (p.parent?52:22), p.cy); ctx.lineTo(n.cx-52, n.cy); ctx.stroke();
+    });
+
+    // nodes
+    ctx.textBaseline='middle'; ctx.textAlign='center';
+    Object.keys(N).forEach(id=>{
+      const n=N[id]; if(!n.created) return;
+      const isRoot=(id==='root');
+      const w=isRoot?44:104, h=isRoot?28:34, x=n.cx-w/2, y=n.cy-h/2;
+      let fill=panel, stroke=line, tcol=ink;
+      if(hi.reuse.has(id)){ fill=ok; stroke=ok; tcol='#fff'; }
+      else if(hi.fresh.has(id)){ fill=accent; stroke=accent; tcol='#fff'; }
+      rrect(x,y,w,h,9); ctx.fillStyle=fill; ctx.fill();
+      ctx.lineWidth=1.4; ctx.strokeStyle=stroke; ctx.stroke();
+      ctx.fillStyle=tcol; ctx.font=(isRoot?'12px':'12px')+' ui-monospace,monospace';
+      ctx.fillText(n.label, n.cx, n.cy+1);
+    });
+    ctx.textAlign='start';
+
+    // stats line under the canvas
+    const total=reused+computed;
+    const rate= total? Math.round(reused/total*100):0;
+    statsEl.innerHTML = total
+      ? `reused <b style="color:${ok}">${reused}</b> · computed <b style="color:${accent}">${computed}</b> · hit-rate <b>${rate}%</b>`
+      : 'no requests sent yet';
+  }
+
+  function resetAll(){
+    if(timer){clearInterval(timer); timer=null; document.getElementById('vizPlay').textContent='▶ Play';}
+    idx=0; reused=0; computed=0; title='';
+    hi={reuse:new Set(),fresh:new Set(),path:new Set()};
+    Object.values(N).forEach(n=>n.created=false); N.root.created=true;
+    draw();
+  }
+  function stepOnce(){
+    if(idx>=REQ.length){
+      if(timer){clearInterval(timer);timer=null;document.getElementById('vizPlay').textContent='▶ Play';}
+      title='All 5 requests done — green was reused, orange was recomputed.'; draw(); return;
+    }
+    const r=REQ[idx++];
+    hi={reuse:new Set(),fresh:new Set(),path:new Set(r.path)};
+    r.path.forEach(id=>{
+      const n=N[id];
+      if(n.created){ reused+=n.tok; hi.reuse.add(id); }
+      else { n.created=true; computed+=n.tok; hi.fresh.add(id); }
+    });
+    title='Request '+r.name;
+    draw();
+  }
+  document.getElementById('vizStep').onclick=()=>{
+    if(timer){clearInterval(timer);timer=null;document.getElementById('vizPlay').textContent='▶ Play';}
+    stepOnce();
+  };
+  document.getElementById('vizReset').onclick=resetAll;
+  document.getElementById('vizPlay').onclick=e=>{
+    if(timer){ clearInterval(timer); timer=null; e.target.textContent='▶ Play'; return; }
+    if(idx>=REQ.length) resetAll();
+    e.target.textContent='⏸ Pause';
+    stepOnce();
+    timer=setInterval(()=>{ if(idx>=REQ.length){clearInterval(timer);timer=null;e.target.textContent='▶ Play';} else stepOnce(); }, 1100);
+  };
+  resetAll();
+})();
+</script>
+</body>
+</html>
