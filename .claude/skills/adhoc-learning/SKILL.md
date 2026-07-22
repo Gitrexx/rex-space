@@ -88,6 +88,20 @@ interactive widgets already built and styled. Copy it to your working directory,
 then replace the demo content with real, topic-specific content. Keep the design
 system, the widget mechanics, and the JS plumbing; change the substance.
 
+**Follow the template strictly — don't drop or rewrite its JS blocks from memory.**
+Every `<script>` section in the template exists for a reason, including ones that
+look skippable at a glance. In particular, the **in-page fragment links
+(srcdoc-safe)** block is easy to omit when building from scratch instead of copying
+the file directly, and its absence is a silent bug: `/learning/<slug>` embeds this
+page in an `<iframe srcdoc>`, so the frame's document base URL is the *parent*
+page — a bare `<a href="#toc-id">` link without that interceptor navigates the
+whole host page instead of scrolling within the module. Copy the template
+byte-for-byte for these mechanical parts (theme toggle, depth toggle, TOC
+scroll-spy, fragment-link interception, progress bar, quiz handling, code
+runners) and only touch the HTML/CSS content and the per-topic visual-explainer
+animation. Before saving, diff your `<script>` section against the template's to
+confirm nothing was dropped.
+
 **Required interactive elements** (all four — the user asked for all of them):
 
 1. **Skim vs. deep-dive toggle** — a global mode switch. Skim mode shows the
