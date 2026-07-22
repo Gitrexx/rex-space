@@ -1,0 +1,912 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>vLLM — Learning Module</title>
+<style>
+  :root{
+    --bg:#faf7f2; --panel:#fffdf9; --ink:#26221d; --muted:#6b6357; --line:#e6ded1;
+    --accent:#b4531f; --accent-soft:#f3e2d5; --ok:#1f7a4d; --bad:#b03030;
+    --code-bg:#2a2620; --code-ink:#f3ece0; --shadow:0 1px 2px rgba(0,0,0,.05),0 6px 20px rgba(60,45,25,.06);
+    --sans:'Inter',system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+    --serif:'Charter','Georgia',Cambria,'Times New Roman',serif;
+    --mono:'SF Mono',ui-monospace,'JetBrains Mono',Menlo,Consolas,monospace;
+  }
+  html[data-theme="dark"]{
+    --bg:#17150f; --panel:#201d16; --ink:#efe8db; --muted:#a79d8c; --line:#332e24;
+    --accent:#e08a52; --accent-soft:#3a2c20; --code-bg:#0f0d09; --code-ink:#f3ece0;
+    --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 24px rgba(0,0,0,.35);
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);
+    line-height:1.65;font-size:17px;-webkit-font-smoothing:antialiased}
+  .progress{position:fixed;top:0;left:0;height:3px;width:0;background:var(--accent);z-index:50;transition:width .1s}
+  .wrap{display:grid;grid-template-columns:240px minmax(0,760px);gap:48px;max-width:1080px;
+    margin:0 auto;padding:0 28px 120px}
+  @media(max-width:820px){.wrap{grid-template-columns:1fr;gap:0}.toc{display:none}
+    main{grid-column:1}
+    main table{display:block;width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch}
+    pre.snippet,.code-runner{max-width:100%}}
+
+  header{grid-column:1/-1;padding:44px 0 24px;border-bottom:1px solid var(--line);margin-bottom:36px}
+  .eyebrow{font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:var(--accent);font-weight:600}
+  h1{font-family:var(--serif);font-size:38px;line-height:1.15;margin:.25em 0 .15em;font-weight:650}
+  .why{color:var(--muted);font-size:18px;max-width:62ch;margin:.4em 0 0}
+  .controls{display:flex;gap:10px;margin-top:22px;flex-wrap:wrap}
+  .btn{font:inherit;font-size:14px;padding:7px 14px;border:1px solid var(--line);background:var(--panel);
+    color:var(--ink);border-radius:999px;cursor:pointer;box-shadow:var(--shadow);transition:.15s}
+  .btn:hover{border-color:var(--accent)}
+  .btn.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+
+  .toc{position:sticky;top:24px;align-self:start;font-size:14px;max-height:90vh;overflow:auto}
+  .toc a{display:block;color:var(--muted);text-decoration:none;padding:4px 0 4px 12px;
+    border-left:2px solid transparent;transition:.15s}
+  .toc a:hover{color:var(--ink)}
+  .toc a.active{color:var(--accent);border-left-color:var(--accent);font-weight:600}
+
+  main{grid-column:2;min-width:0}
+  section{margin:0 0 52px;scroll-margin-top:24px}
+  h2{font-family:var(--serif);font-size:26px;margin:0 0 .5em;font-weight:640}
+  h3{font-size:19px;margin:1.6em 0 .4em}
+  p{margin:0 0 1em} code{font-family:var(--mono);font-size:.9em;background:var(--accent-soft);
+    padding:.1em .35em;border-radius:4px}
+  ul,ol{padding-left:1.2em} li{margin:.25em 0}
+  strong{font-weight:650}
+
+  .deep-dive{border-left:3px solid var(--accent-soft);padding:2px 0 2px 18px;margin:1em 0;transition:.2s}
+  html.skim .deep-dive{display:none}
+  .depth-note{font-size:13px;color:var(--muted);font-style:italic}
+  html:not(.skim) .skim-only{display:none}
+
+  .callout{border:1px solid var(--line);border-radius:12px;padding:16px 18px;margin:1.4em 0;
+    background:var(--panel);box-shadow:var(--shadow)}
+  .callout .tag{font-size:12px;font-weight:700;letter-spacing:.05em;text-transform:uppercase}
+  .callout.insight{border-color:#c7a34d55}.callout.insight .tag{color:#a9791b}
+  .callout.pitfall{border-color:#b0303055}.callout.pitfall .tag{color:var(--bad)}
+  .callout.aim{border-color:#1f7a4d55}.callout.aim .tag{color:var(--ok)}
+  .callout p:last-child{margin-bottom:0}
+  details{margin:1em 0;border:1px solid var(--line);border-radius:10px;padding:0 16px;background:var(--panel)}
+  details summary{cursor:pointer;padding:12px 0;font-weight:600}
+
+  .stats{display:flex;gap:14px;flex-wrap:wrap;margin:1.4em 0}
+  .stat{flex:1 1 150px;border:1px solid var(--line);border-radius:12px;padding:14px 16px;
+    background:var(--panel);box-shadow:var(--shadow)}
+  .stat b{display:block;font-family:var(--serif);font-size:27px;color:var(--accent);line-height:1.05}
+  .stat span{font-size:12.5px;color:var(--muted);display:block;margin-top:4px}
+
+  .viz{border:1px solid var(--line);border-radius:14px;background:var(--panel);
+    padding:16px;margin:1.6em 0;box-shadow:var(--shadow)}
+  .viz canvas{width:100%;height:auto;display:block;border-radius:8px;background:var(--bg)}
+  .viz .vbar{display:flex;gap:8px;margin-top:12px;align-items:center;flex-wrap:wrap}
+  .viz .readout{font-family:var(--mono);font-size:12.5px;color:var(--muted);margin-left:auto}
+  .viz .cap{font-size:13px;color:var(--muted);margin-top:8px}
+
+  .code-runner{margin:1.6em 0;border-radius:12px;overflow:hidden;border:1px solid var(--line);box-shadow:var(--shadow)}
+  .code-runner .cr-head{display:flex;justify-content:space-between;align-items:center;
+    background:var(--code-bg);padding:8px 12px}
+  .cr-head .lang{color:#9c9384;font-size:12px;font-family:var(--mono);text-transform:uppercase;letter-spacing:.08em}
+  .cr-head .cr-btns{display:flex;gap:6px}
+  .cr-btns button{font:inherit;font-size:12px;font-family:var(--mono);color:var(--code-ink);
+    background:#ffffff18;border:1px solid #ffffff22;border-radius:6px;padding:4px 10px;cursor:pointer}
+  .cr-btns button:hover{background:#ffffff30}
+  .code-runner textarea{width:100%;border:0;resize:vertical;min-height:120px;padding:14px;
+    background:var(--code-bg);color:var(--code-ink);font-family:var(--mono);font-size:13.5px;line-height:1.55;outline:none}
+  .code-runner .output{margin:0;padding:12px 14px;background:#00000030;color:var(--code-ink);
+    font-family:var(--mono);font-size:13px;white-space:pre-wrap;min-height:20px;border-top:1px solid #ffffff14}
+
+  pre.snippet{background:var(--code-bg);color:var(--code-ink);font-family:var(--mono);font-size:13px;
+    line-height:1.6;padding:14px 16px;border-radius:12px;overflow-x:auto;margin:1.2em 0;box-shadow:var(--shadow)}
+  pre.snippet .cmt{color:#9c9384}
+  .snip-label{font-size:12px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;
+    color:var(--muted);margin:1.4em 0 -.4em}
+
+  table{border-collapse:collapse;width:100%;font-size:14.5px;margin:1.2em 0}
+  th,td{border:1px solid var(--line);padding:8px 11px;text-align:left;vertical-align:top}
+  th{background:var(--accent-soft);font-weight:650}
+
+  .quiz{border:1px solid var(--line);border-radius:14px;padding:18px 20px;margin:1.6em 0;
+    background:var(--panel);box-shadow:var(--shadow)}
+  .quiz .q{font-weight:600;margin:0 0 12px}
+  .quiz .options{list-style:none;padding:0;margin:0;display:grid;gap:8px}
+  .quiz .options li{border:1px solid var(--line);border-radius:9px;padding:10px 14px;cursor:pointer;transition:.12s}
+  .quiz .options li:hover{border-color:var(--accent)}
+  .quiz .options li.correct{border-color:var(--ok);background:#1f7a4d18}
+  .quiz .options li.wrong{border-color:var(--bad);background:#b0303018}
+  .quiz .options li.locked{cursor:default}
+  .quiz .explain{display:none;margin-top:14px;padding-top:12px;border-top:1px dashed var(--line);
+    color:var(--muted);font-size:15px}
+  .quiz.answered .explain{display:block}
+
+  a.ref{color:var(--accent)}
+  footer{grid-column:1/-1;border-top:1px solid var(--line);margin-top:20px;padding-top:24px;
+    color:var(--muted);font-size:14px}
+</style>
+</head>
+<body>
+<div class="progress" id="progress"></div>
+<div class="wrap">
+
+  <header>
+    <div class="eyebrow">LLM Serving · Inference Engines</div>
+    <h1>vLLM</h1>
+    <p class="why">You're about to put an open-source model behind a company API for everyday
+      questions. vLLM is the piece that turns raw model weights into a service that stays fast
+      when the whole team hits it at once. Here's what it actually does, why it became the
+      default, where it isn't the right tool, and how to stand one up.</p>
+    <div class="controls">
+      <button class="btn active" id="depthBtn" data-mode="full">Mode: Full detail</button>
+      <button class="btn" id="themeBtn">◐ Theme</button>
+      <span class="depth-note" id="depthNote">Full mode — deep-dive blocks visible</span>
+    </div>
+  </header>
+
+  <nav class="toc" id="toc" aria-label="Contents"></nav>
+
+  <main>
+
+    <section id="idea">
+      <h2>The one idea</h2>
+      <p>A trained LLM is just a pile of weights. Getting one token out of it is a big matrix
+        multiply; getting <em>many users' tokens</em> out of it efficiently is a
+        <strong>memory-and-scheduling</strong> problem. vLLM is a specialised server that solves
+        exactly that problem, so a single GPU serves far more concurrent traffic than a naive
+        <code>model.generate()</code> loop ever could.</p>
+      <div class="callout insight"><span class="tag">Key insight</span>
+        <p>vLLM keeps the GPU as busy as physically possible by treating the KV cache like
+          operating-system virtual memory (<strong>PagedAttention</strong>) and by admitting and
+          retiring requests one token-step at a time (<strong>continuous batching</strong>).
+          Those two ideas are the whole reason it's fast. Everything else — the OpenAI-compatible
+          API, quantization, tensor parallelism — is convenience built on top.</p></div>
+      <p>It is an <strong>inference engine</strong>, not a framework. It sits <em>below</em> your
+        application: your app does retrieval, prompt construction, and orchestration; vLLM just
+        turns "here are some prompts" into "here are some tokens" as fast and as cheaply as the
+        hardware allows.</p>
+    </section>
+
+    <section id="what">
+      <h2>What vLLM actually is</h2>
+      <p>vLLM came out of UC Berkeley's Sky Computing Lab; the core idea was published as
+        <em>Efficient Memory Management for Large Language Model Serving with PagedAttention</em>
+        (SOSP 2023). It is now one of the most widely adopted open-source inference engines, with
+        a large community and vendor backing. You use it in one of two shapes:</p>
+      <ul>
+        <li><strong>Offline batched inference</strong> — a Python <code>LLM</code> object you call
+          <code>.generate()</code> on. Good for evals, bulk scoring, data pipelines.</li>
+        <li><strong>An online server</strong> — <code>vllm serve &lt;model&gt;</code> exposes an
+          <strong>OpenAI-compatible</strong> HTTP API (<code>/v1/chat/completions</code>,
+          <code>/v1/completions</code>, <code>/v1/embeddings</code>). This is what you want for a
+          company Q&amp;A endpoint: any code that already talks to the OpenAI SDK works by changing
+          one URL.</li>
+      </ul>
+      <p>Where it sits in your stack: <em>your app / RAG layer → vLLM (OpenAI-compatible) → GPU</em>.
+        vLLM owns the last hop and nothing above it.</p>
+      <div class="deep-dive">
+        <p class="depth-note">Deep dive — the engine, briefly</p>
+        <p>Under the hood vLLM has a <strong>scheduler</strong> (decides which requests run each
+          step and how KV memory is allocated), a <strong>KV cache manager</strong> (the paging
+          system), and a <strong>model runner</strong> (the actual GPU forward pass, using fused
+          attention kernels such as FlashAttention). The 2025 rewrite — the <strong>V1
+          engine</strong> — split the client-facing API loop and the GPU execution loop into
+          separate processes talking over ZMQ, added near-zero-overhead prefix caching, and made
+          the throughput-oriented defaults the standard path. As of the 0.11 release the legacy
+          "V0" engine was removed entirely, so today "vLLM" means "V1".</p>
+      </div>
+    </section>
+
+    <section id="pagedattention">
+      <h2>Why it's fast, part 1: PagedAttention</h2>
+      <p>Every token a model generates has to attend to every previous token, so the model caches
+        the per-token key/value tensors — the <strong>KV cache</strong>. The KV cache, not the
+        weights, is what limits how many requests you can run at once. On an 8B model in fp16 the
+        cache costs roughly <strong>128&nbsp;KB per token</strong>; a single 8k-token conversation
+        needs about <strong>1&nbsp;GB</strong> of it.</p>
+      <p>Naive servers pre-allocate one <em>contiguous</em> block per sequence sized to the
+        <em>maximum</em> length it might reach. Almost every request finishes far short of that
+        maximum, so most of the reserved memory sits empty — classic internal fragmentation.
+        Measured KV-cache waste in those systems runs <strong>60–80%</strong>.</p>
+      <div class="callout insight"><span class="tag">The trick</span>
+        <p>PagedAttention chops the KV cache into fixed-size <strong>blocks</strong> (like OS memory
+          pages) and hands them out on demand, non-contiguously, via a per-sequence
+          <strong>block table</strong>. A sequence only ever holds blocks for tokens it has
+          actually produced. Waste drops to <strong>under 4%</strong> — so the same GPU holds
+          many more sequences, which means bigger batches, which means more throughput.</p></div>
+
+      <div class="viz">
+        <canvas id="viz-mem" width="720" height="300"></canvas>
+        <div class="vbar">
+          <button class="btn active" id="memMode" data-mode="paged">Mode: Paged (vLLM)</button>
+          <button class="btn" id="memPlay">▶ Fill</button>
+          <button class="btn" id="memStep">Step</button>
+          <button class="btn" id="memReset">Reset</button>
+          <span class="readout" id="memReadout">admitted: 0</span>
+        </div>
+        <p class="cap">Same 96 KV blocks of GPU memory. Each request needs only a few blocks
+          (its real length), but <strong>naive</strong> mode reserves a full contiguous
+          <em>max-length</em> run up front — the faded cells are reserved-but-unused waste, and the
+          box fills after a handful of requests. Switch to <strong>paged</strong> and blocks are
+          handed out only as tokens arrive, so many more requests fit. Watch the "admitted" counter.</p>
+      </div>
+
+      <div class="deep-dive">
+        <p class="depth-note">Deep dive — the block table, and a free bonus</p>
+        <p>The block table maps a sequence's logical token positions to physical KV blocks. A
+          custom attention kernel gathers the scattered blocks at each step, so the model never
+          sees the fragmentation. Because blocks are the unit of sharing, two sequences with an
+          identical prefix (a shared system prompt, or the same retrieved document) can
+          <strong>point at the same physical blocks</strong> — that's <em>prefix caching</em>, and
+          it's why a fixed system prompt is nearly free after the first request. The same block
+          machinery also makes parallel sampling and beam search cheap: forked sequences share the
+          common blocks with copy-on-write.</p>
+      </div>
+
+      <div class="quiz" data-quiz>
+        <p class="q">PagedAttention makes vLLM faster primarily because it…</p>
+        <ul class="options">
+          <li>makes the attention matrix multiply run on faster CUDA cores</li>
+          <li data-correct="true">slashes wasted KV-cache memory, so more sequences fit at once and batches get bigger</li>
+          <li>compresses the model weights so the model loads faster</li>
+        </ul>
+        <div class="explain">Throughput here is a memory story, not a matmul story. PagedAttention
+          doesn't touch the arithmetic of attention — it removes the 60–80% of KV memory that naive
+          contiguous allocation wastes. More free KV memory ⇒ more concurrent sequences ⇒ larger
+          batches per GPU step ⇒ higher throughput. Weights are untouched.</div>
+      </div>
+    </section>
+
+    <section id="batching">
+      <h2>Why it's fast, part 2: continuous batching</h2>
+      <p>GPUs love big batches, but requests don't arrive in tidy batches and they don't finish
+        together — one user wants a 3-token yes/no, another wants a 400-token explanation.
+        <strong>Static batching</strong> groups requests, runs the whole group until the
+        <em>slowest</em> one finishes, and only then starts the next group. Every short request in
+        that group leaves its GPU lane idle for the rest of the group. Head-of-line blocking wastes
+        huge amounts of the GPU.</p>
+      <p><strong>Continuous batching</strong> (a.k.a. iteration-level scheduling) reschedules at
+        every single decoding step: the instant a sequence emits its stop token and frees its lane,
+        a waiting request drops straight in. No lane waits for the batch; the GPU stays saturated.</p>
+
+      <div class="viz">
+        <canvas id="viz-batch" width="720" height="300"></canvas>
+        <div class="vbar">
+          <button class="btn" id="batchPlay">▶ Play</button>
+          <button class="btn" id="batchStep">Step</button>
+          <button class="btn" id="batchReset">Reset</button>
+          <span class="readout" id="batchReadout">t = 0</span>
+        </div>
+        <p class="cap">The same 12 requests through 4 GPU lanes. <strong>Top (static):</strong> a
+          long generation pins the whole batch, and short requests leave hatched idle gaps until the
+          group ends. <strong>Bottom (continuous):</strong> a freed lane immediately pulls the next
+          request, so the wall clock is shorter and the GPU stays busy. Play to sweep time.</p>
+      </div>
+
+      <div class="deep-dive">
+        <p class="depth-note">Deep dive — where it comes from, and the compounding win</p>
+        <p>Iteration-level scheduling was introduced by <em>Orca</em> (OSDI 2022); vLLM combines it
+          with PagedAttention so that admitting a new request mid-flight is just "allocate a block,"
+          not "find a contiguous megabyte." The demo above uses a fixed set of 12 requests, so the
+          win looks modest. In production it compounds: new requests keep <em>arriving</em>, and
+          continuous batching folds each one into the running batch within a step, while paged
+          memory means the batch can grow large. That interaction is where the headline
+          "2–4× throughput, 85–92% GPU utilisation" comes from. vLLM also does <em>chunked
+          prefill</em> — slicing a long prompt's prefill into pieces so it interleaves with other
+          requests' decode steps instead of stalling them.</p>
+      </div>
+
+      <div class="quiz" data-quiz>
+        <p class="q">Compared with static batching, continuous batching changes mainly the…</p>
+        <ul class="options">
+          <li>number of GPUs each request runs on</li>
+          <li>precision of the model weights (fp16 → fp8)</li>
+          <li data-correct="true">granularity of scheduling — requests join and leave the running batch at each token step, not each batch</li>
+        </ul>
+        <div class="explain">Continuous batching is a scheduling change, nothing to do with GPU
+          count or numeric precision. Instead of "assemble a batch, run to completion, repeat," the
+          scheduler re-forms the batch every decoding iteration, so a finished request's lane is
+          reused immediately and a newly arrived request doesn't wait for the current group to end.
+          That's what keeps utilisation high under bursty, mixed-length traffic.</div>
+      </div>
+    </section>
+
+    <section id="why-industry">
+      <h2>Why the industry standardised on it</h2>
+      <div class="stats">
+        <div class="stat"><b>2–4×</b><span>throughput vs a naive serving loop on the same GPU</span></div>
+        <div class="stat"><b>&lt;4%</b><span>KV-cache waste (vs 60–80% naive)</span></div>
+        <div class="stat"><b>1 URL</b><span>to swap in — OpenAI-compatible API</span></div>
+        <div class="stat"><b>~all</b><span>popular open models supported, fast</span></div>
+      </div>
+      <p>Beyond the two core tricks, the reasons vLLM became the default choice for
+        self-hosting are practical:</p>
+      <ul>
+        <li><strong>OpenAI-compatible drop-in.</strong> Point your existing OpenAI client's
+          <code>base_url</code> at vLLM and keep every line of app code. Migrating off a hosted API
+          becomes a config change.</li>
+        <li><strong>Model coverage, fast.</strong> New open models (Llama, Qwen, Mistral, DeepSeek,
+          Gemma, Phi, …) usually get support within days. You're not locked to one family.</li>
+        <li><strong>Scales down and up.</strong> One command on one GPU; or tensor / pipeline /
+          data / expert parallelism across many GPUs and nodes for large models.</li>
+        <li><strong>The features you actually need in prod</strong> — quantization (AWQ, GPTQ, FP8,
+          INT8), automatic prefix caching, speculative decoding, structured/JSON output, multi-LoRA
+          serving, streaming, and Prometheus metrics.</li>
+        <li><strong>Open source, no per-token bill.</strong> You own the box and the model; cost is
+          hardware, not API metering.</li>
+      </ul>
+    </section>
+
+    <section id="try">
+      <h2>Try it: size the box, feel the win</h2>
+      <p>You can't run a GPU engine in a browser, so the two cells below <em>simulate</em> the two
+        ideas — and the first one is a genuinely useful sizing tool for your deployment. Real vLLM
+        commands follow underneath.</p>
+
+      <h3>How many users fits on one GPU? (Python)</h3>
+      <p>Concurrency is a KV-memory budget. This is why paging matters in dollars, not just theory —
+        edit the numbers for your model and GPU.</p>
+      <div class="code-runner" data-lang="python">
+        <div class="cr-head"><span class="lang">python · pyodide</span>
+          <div class="cr-btns"><button class="run">▶ Run</button><button class="copy">Copy</button></div></div>
+        <textarea spellcheck="false"># First Run downloads a small Python runtime (~few s), then it's instant.
+# Concurrency on one GPU is a memory question. PagedAttention is why the answer got ~10x bigger.
+
+# --- model (Meta Llama-3.1-8B defaults) ---
+layers, kv_heads, head_dim = 32, 8, 128      # GQA: 8 KV heads, not 32
+dtype_bytes = 2                              # fp16 / bf16 KV cache
+
+# --- deployment ---
+gpu_gb    = 40        # one A100-40GB
+weight_gb = 16        # 8B params * 2 bytes
+util      = 0.90      # --gpu-memory-utilization
+max_len   = 8192      # --max-model-len (the ceiling you ALLOW per request)
+avg_len   = 700       # tokens a typical Q&A request actually uses
+
+kv_per_token  = 2 * layers * kv_heads * head_dim * dtype_bytes   # x2 = K and V
+free_gb       = gpu_gb * util - weight_gb
+free_bytes    = free_gb * 1024**3
+
+naive_per_seq = kv_per_token * max_len       # reserve the WHOLE ceiling up front
+paged_per_seq = kv_per_token * avg_len       # allocate only the blocks you use
+
+naive = int(free_bytes // naive_per_seq)
+paged = int(free_bytes // paged_per_seq)
+
+print(f"KV cache: {kv_per_token/1024:.0f} KB / token  ->  {naive_per_seq/1024**3:.2f} GB to reserve max_len")
+print(f"Free for KV cache: {free_gb:.1f} GB")
+print(f"Concurrent requests ~ naive (reserve max): {naive}")
+print(f"Concurrent requests ~ vLLM  (paged):       {paged}   ({paged/max(naive,1):.1f}x more)")
+print()
+print("Lever: dropping max_model_len to what you really need frees KV budget for concurrency.")
+# expected:
+# KV cache: 128 KB / token  ->  1.00 GB to reserve max_len
+# Free for KV cache: 20.0 GB
+# Concurrent requests ~ naive (reserve max): 20
+# Concurrent requests ~ vLLM  (paged):       234   (11.7x more)</textarea>
+        <pre class="output"></pre>
+      </div>
+
+      <h3>Continuous vs static batching (JavaScript)</h3>
+      <p>Same requests, same 4 GPU slots — only the scheduling differs. Runs instantly, no download.</p>
+      <div class="code-runner" data-lang="js">
+        <div class="cr-head"><span class="lang">javascript</span>
+          <div class="cr-btns"><button class="run">▶ Run</button><button class="copy">Copy</button></div></div>
+        <textarea spellcheck="false">// Static waits for the whole batch; continuous refills a slot the moment it frees.
+function sim(lengths, B){
+  // STATIC: process in chunks of B; a chunk's time = its longest job
+  let sTime = 0, useful = lengths.reduce((a,b)=>a+b,0);
+  for(let i=0;i<lengths.length;i+=B){
+    const chunk = lengths.slice(i, i+B);
+    sTime += Math.max(...chunk);
+  }
+  // CONTINUOUS: B lanes, each pulls the next job the instant it goes idle
+  const lane = new Array(B).fill(0);
+  for(const len of lengths){
+    let m = 0; for(let l=1;l<B;l++) if(lane[l] < lane[m]) m = l;
+    lane[m] += len;
+  }
+  const cTime = Math.max(...lane);
+  const pct = (u,cap)=> (100*u/cap).toFixed(0) + '%';
+  console.log('requests', lengths.length, '| slots', B, '| output tokens', useful);
+  console.log('STATIC      ->', sTime, 'steps | GPU busy', pct(useful, B*sTime));
+  console.log('CONTINUOUS  ->', cTime, 'steps | GPU busy', pct(useful, B*cTime));
+  console.log('speedup     ->', (sTime/cTime).toFixed(2) + 'x  (same GPU, same model)');
+}
+// a realistic mix: mostly short answers, a couple of long generations
+sim([2,3,9,2, 3,2,2,8, 2,3,2,3], 4);
+// expected:
+// STATIC      -> 20 steps | GPU busy 51%
+// CONTINUOUS  -> 12 steps | GPU busy 85%
+// speedup     -> 1.67x  (same GPU, same model)</textarea>
+        <pre class="output"></pre>
+      </div>
+
+      <h3>The real thing</h3>
+      <p>These are the commands you'll actually run on the GPU box.</p>
+
+      <p class="snip-label">Install (GPU host, Python 3.10–3.12)</p>
+      <pre class="snippet"><span class="cmt"># uv is the fast path the docs now recommend; brings its own CUDA wheels</span>
+uv venv &amp;&amp; source .venv/bin/activate
+uv pip install vllm
+<span class="cmt"># or classic: pip install vllm</span></pre>
+
+      <p class="snip-label">Serve an OpenAI-compatible API</p>
+      <pre class="snippet">vllm serve meta-llama/Llama-3.1-8B-Instruct \
+  --port 8000 \
+  --api-key sk-company-secret \
+  --gpu-memory-utilization 0.90 \
+  --max-model-len 8192
+<span class="cmt"># exposes /v1/chat/completions, /v1/completions, /v1/models on :8000</span></pre>
+
+      <p class="snip-label">Bigger model on the same box — quantize + split across GPUs</p>
+      <pre class="snippet">vllm serve Qwen/Qwen2.5-32B-Instruct-AWQ \
+  --quantization awq \
+  --tensor-parallel-size 2        <span class="cmt"># shard the model over 2 GPUs</span></pre>
+
+      <p class="snip-label">Call it with the stock OpenAI client — the drop-in win</p>
+      <pre class="snippet">from openai import OpenAI
+client = OpenAI(base_url="http://localhost:8000/v1", api_key="sk-company-secret")
+
+resp = client.chat.completions.create(
+    model="meta-llama/Llama-3.1-8B-Instruct",
+    messages=[{"role": "user", "content": "How do I reset my VPN?"}],
+)
+print(resp.choices[0].message.content)</pre>
+
+      <p class="snip-label">…or straight curl</p>
+      <pre class="snippet">curl http://localhost:8000/v1/chat/completions \
+  -H "Authorization: Bearer sk-company-secret" \
+  -H "Content-Type: application/json" \
+  -d '{"model":"meta-llama/Llama-3.1-8B-Instruct",
+       "messages":[{"role":"user","content":"hello"}]}'</pre>
+
+      <p class="snip-label">Offline batched inference (evals, bulk scoring)</p>
+      <pre class="snippet">from vllm import LLM, SamplingParams
+
+llm = LLM(model="meta-llama/Llama-3.1-8B-Instruct")   <span class="cmt"># pulls weights from HF</span>
+params = SamplingParams(temperature=0.7, max_tokens=256)
+out = llm.generate(["Explain vLLM in one sentence."], params)
+print(out[0].outputs[0].text)</pre>
+    </section>
+
+    <section id="tradeoffs">
+      <h2>Pros, cons, and when to pick something else</h2>
+      <h3>Strengths</h3>
+      <ul>
+        <li>Best-in-class <strong>throughput per GPU</strong> under real, concurrent, mixed-length load.</li>
+        <li><strong>Memory efficiency</strong> from PagedAttention → more users per card.</li>
+        <li><strong>OpenAI-compatible</strong> — trivial to adopt, trivial to swap providers.</li>
+        <li>Broadest, fastest <strong>model support</strong>; rich production features.</li>
+      </ul>
+      <h3>Costs / limits</h3>
+      <ul>
+        <li><strong>GPU-centric.</strong> It targets NVIDIA (AMD/others exist but are less trodden).
+          It is not the tool for a laptop, a CPU-only box, or a single casual chat.</li>
+        <li><strong>Tuned for aggregate throughput, not single-request latency.</strong> For the
+          absolute lowest latency on one request, TensorRT-LLM can beat it.</li>
+        <li><strong>Operational surface.</strong> You own the GPU, the weights, the memory tuning,
+          and the upgrades — more knobs than a one-command tool.</li>
+        <li><strong>Fast-moving.</strong> Flags and defaults shift between releases (the V0→V1
+          migration is the big example). Pin a version in prod.</li>
+      </ul>
+
+      <table>
+        <thead><tr><th>Engine</th><th>Reach for it when…</th><th>Watch out</th></tr></thead>
+        <tbody>
+          <tr><td><strong>vLLM</strong></td><td>General-purpose, high-throughput serving of many
+            concurrent, mostly-unique requests; widest model support; you want the OpenAI API.</td>
+            <td>GPU-centric; many tuning knobs.</td></tr>
+          <tr><td><strong>SGLang</strong></td><td>Workloads dominated by <em>shared prefixes</em> —
+            chat with a big system prompt, RAG over the same docs, agents. RadixAttention often
+            edges out vLLM there.</td><td>Smaller ecosystem; also GPU-only.</td></tr>
+          <tr><td><strong>TensorRT-LLM</strong></td><td>Squeezing the last drop of throughput /
+            lowest latency on NVIDIA hardware you control.</td><td>Must compile models to an engine
+            format; least flexible; NVIDIA-only.</td></tr>
+          <tr><td><strong>Ollama / llama.cpp</strong></td><td>A laptop, a CPU box, or a single-user
+            demo; GGUF quant; five minutes from zero.</td><td>Not built for high-concurrency
+            production serving.</td></tr>
+          <tr><td><strong>TGI</strong> (HF)</td><td>—</td><td>In maintenance mode as of 2026; HF now
+            points new deployments at vLLM / SGLang. Don't start here.</td></tr>
+        </tbody>
+      </table>
+
+      <div class="callout aim"><span class="tag">For your case</span>
+        <p>A multi-user internal Q&amp;A API over an open model is squarely vLLM's home turf — make
+          it the default. Use <strong>Ollama</strong> only for poking at models on your own laptop.
+          If the workload later becomes RAG-heavy where every request shares the same large context,
+          benchmark <strong>SGLang</strong> against vLLM before committing — though vLLM's automatic
+          prefix caching already handles a fixed system prompt well.</p></div>
+
+      <div class="quiz" data-quiz>
+        <p class="q">A teammate wants to try a few models on their MacBook, no GPU, just to eyeball
+          answers. Best first tool?</p>
+        <ul class="options">
+          <li>vLLM — it's the standard, use it everywhere</li>
+          <li data-correct="true">Ollama / llama.cpp — single-user, runs on CPU/laptop, one command</li>
+          <li>TensorRT-LLM — compile the model for maximum speed</li>
+        </ul>
+        <div class="explain">vLLM's advantages — paged KV cache, continuous batching — only pay off
+          under GPU-backed concurrency. On a CPU laptop for one user they buy nothing and the setup
+          friction is real. Ollama (or llama.cpp) is the right first tool there. Knowing when
+          <em>not</em> to reach for vLLM is as important as knowing when to.</div>
+      </div>
+    </section>
+
+    <section id="pitfalls">
+      <h2>Where people go wrong</h2>
+      <div class="callout pitfall"><span class="tag">Pitfall · OOM at startup</span>
+        <p>vLLM budgets KV cache from <code>--max-model-len</code> up front. Setting it to the
+          model's full context (say 128k) when your prompts are ~1k <em>reserves</em> memory you'll
+          never use and can OOM or crush concurrency. Set <code>--max-model-len</code> to your real
+          ceiling, and tune <code>--gpu-memory-utilization</code> (0.90 is a sane start).</p></div>
+      <div class="callout pitfall"><span class="tag">Pitfall · base vs instruct</span>
+        <p>Serving a <em>base</em> checkpoint and getting rambling, non-answering output? Use the
+          <code>-Instruct</code>/<code>-Chat</code> variant and the <code>/v1/chat/completions</code>
+          endpoint so vLLM applies the model's chat template.</p></div>
+      <div class="callout pitfall"><span class="tag">Pitfall · benchmarking one request</span>
+        <p>Timing a single prompt and concluding "it's not that fast" measures the wrong thing.
+          vLLM optimises <em>aggregate</em> throughput. Load-test with concurrency that matches
+          production before you judge it — or compare it against TensorRT-LLM if single-request
+          latency is truly your KPI.</p></div>
+      <div class="callout pitfall"><span class="tag">Pitfall · quantization isn't free</span>
+        <p>AWQ/GPTQ/FP8 cut VRAM and can speed decode, letting you fit a bigger/faster model — but
+          they can shift output quality. Validate on your own eval set, don't assume parity.</p></div>
+      <div class="callout pitfall"><span class="tag">Pitfall · "vLLM is my RAG stack"</span>
+        <p>It isn't. vLLM is only the inference server. Retrieval, chunking, prompt assembly, and
+          orchestration live in <em>your</em> application above it. (Keeping that boundary clean is
+          exactly why swapping the model or the engine later stays cheap.)</p></div>
+    </section>
+
+    <section id="cheatsheet">
+      <h2>Cheat-sheet</h2>
+      <ul>
+        <li><strong>What:</strong> high-throughput LLM inference server. Two ideas —
+          <em>PagedAttention</em> (paged KV cache, &lt;4% waste) + <em>continuous batching</em>
+          (per-step scheduling). OpenAI-compatible.</li>
+        <li><strong>Stand up:</strong> <code>pip install vllm</code> →
+          <code>vllm serve &lt;hf-model&gt; --port 8000 --api-key ...</code> → point your OpenAI
+          client at <code>http://host:8000/v1</code>.</li>
+        <li><strong>Key flags:</strong> <code>--tensor-parallel-size N</code> ·
+          <code>--gpu-memory-utilization 0.9</code> · <code>--max-model-len</code> ·
+          <code>--quantization awq|gptq|fp8</code> · <code>--max-num-seqs</code> ·
+          <code>--api-key</code> · prefix caching is on by default.</li>
+        <li><strong>Sizing rule:</strong> <code>free_KV = gpu_mem·util − weights</code>;
+          <code>concurrency ≈ free_KV / (kv_per_token · avg_len)</code>;
+          <code>kv_per_token = 2·layers·kv_heads·head_dim·dtype_bytes</code>.</li>
+        <li><strong>Reach elsewhere:</strong> laptop/CPU/single-user → Ollama; shared-prefix
+          RAG/agents → try SGLang; last-drop latency on NVIDIA → TensorRT-LLM.</li>
+        <li><strong>Numbers:</strong> ~2–4× throughput vs naive; keeps a GPU ~85–92% busy under load.</li>
+      </ul>
+    </section>
+
+    <section id="reading">
+      <h2>Further reading</h2>
+      <ul>
+        <li><a class="ref" href="https://docs.vllm.ai/" target="_blank" rel="noopener">vLLM
+          documentation</a> — source of truth for flags, supported models, and the OpenAI server;
+          start with the quickstart and the "engine args" reference.</li>
+        <li><a class="ref" href="https://arxiv.org/abs/2309.06180" target="_blank" rel="noopener">PagedAttention
+          paper (Kwon et al., SOSP 2023)</a> — the memory idea and the measurements behind
+          "&lt;4% waste."</li>
+        <li><a class="ref" href="https://blog.vllm.ai/2025/01/27/v1-alpha-release.html" target="_blank" rel="noopener">vLLM
+          V1 blog</a> — why the engine was rewritten in 2025 and what the new architecture buys you.</li>
+        <li><a class="ref" href="https://www.anyscale.com/blog/continuous-batching-llm-inference" target="_blank" rel="noopener">Anyscale:
+          "How continuous batching enables 23× throughput"</a> — the clearest explainer of the
+          batching win.</li>
+        <li><a class="ref" href="https://github.com/vllm-project/vllm" target="_blank" rel="noopener">vllm-project/vllm
+          on GitHub</a> — releases and changelog; pin a version for production and read release
+          notes before upgrading.</li>
+      </ul>
+    </section>
+
+    <footer>An on-demand learning module · open in any browser · edit the code cells freely.
+      Details reflect vLLM as of mid-2026 (0.2x series, V1-only engine); a fast-moving project —
+      check the docs for current flags.</footer>
+  </main>
+</div>
+
+<script>
+/* ---------- theme ---------- */
+const root=document.documentElement;
+document.getElementById('themeBtn').onclick=()=>{
+  root.dataset.theme = root.dataset.theme==='dark' ? '' : 'dark';
+};
+
+/* ---------- depth toggle ---------- */
+const depthBtn=document.getElementById('depthBtn'), depthNote=document.getElementById('depthNote');
+depthBtn.onclick=()=>{
+  const skim=root.classList.toggle('skim');
+  depthBtn.textContent = skim ? 'Mode: Skim' : 'Mode: Full detail';
+  depthBtn.dataset.mode = skim ? 'skim' : 'full';
+  depthNote.textContent = skim ? 'Skim mode — deep-dive blocks hidden' : 'Full mode — deep-dive blocks visible';
+};
+
+/* ---------- build TOC + scroll-spy ---------- */
+const toc=document.getElementById('toc'), secs=[...document.querySelectorAll('main section[id]')];
+secs.forEach(s=>{
+  const h=s.querySelector('h2'); if(!h) return;
+  const a=document.createElement('a'); a.href='#'+s.id; a.textContent=h.textContent; a.dataset.for=s.id;
+  toc.appendChild(a);
+});
+const spy=new IntersectionObserver(es=>{
+  es.forEach(e=>{ if(e.isIntersecting){
+    toc.querySelectorAll('a').forEach(a=>a.classList.toggle('active',a.dataset.for===e.target.id));
+  }});
+},{rootMargin:'-20% 0px -70% 0px'});
+secs.forEach(s=>spy.observe(s));
+
+/* ---------- progress bar ---------- */
+const prog=document.getElementById('progress');
+addEventListener('scroll',()=>{
+  const h=document.documentElement, max=h.scrollHeight-h.clientHeight;
+  prog.style.width=(max>0?(h.scrollTop/max*100):0)+'%';
+},{passive:true});
+
+/* ---------- quizzes ---------- */
+document.querySelectorAll('.quiz').forEach(q=>{
+  const opts=q.querySelectorAll('.options li');
+  opts.forEach(li=>li.onclick=()=>{
+    if(q.classList.contains('answered')) return;
+    q.classList.add('answered');
+    opts.forEach(o=>{o.classList.add('locked');
+      if(o.dataset.correct) o.classList.add('correct');});
+    if(!li.dataset.correct) li.classList.add('wrong');
+  });
+});
+
+/* ---------- code runners ---------- */
+function fmt(v){ if(typeof v==='object'){try{return JSON.stringify(v);}catch(e){return String(v);}} return String(v); }
+function runJS(code,out){
+  const logs=[]; const c={log:(...a)=>logs.push(a.map(fmt).join(' ')),
+    error:(...a)=>logs.push('⚠ '+a.map(fmt).join(' ')), warn:(...a)=>logs.push(a.map(fmt).join(' '))};
+  try{ const r=new Function('console',code)(c); if(r!==undefined) logs.push(fmt(r)); }
+  catch(e){ logs.push('⚠ '+e); }
+  out.textContent = logs.join('\n') || '(no output)';
+}
+let pyodide=null;
+function ensurePy(out){
+  if(pyodide) return pyodide;
+  out.textContent='Loading Python runtime…';
+  pyodide=new Promise((res,rej)=>{
+    const s=document.createElement('script');
+    s.src='https://cdn.jsdelivr.net/pyodide/v0.26.2/full/pyodide.js';
+    s.onload=async()=>{ try{ res(await loadPyodide()); }catch(e){ rej(e); } };
+    s.onerror=()=>rej(new Error('Could not load Pyodide (needs internet).'));
+    document.head.appendChild(s);
+  });
+  return pyodide;
+}
+async function runPy(code,out){
+  try{
+    const py=await ensurePy(out);
+    py.runPython('import sys,io\nsys.stdout=io.StringIO()\nsys.stderr=sys.stdout');
+    py.runPython(code);
+    out.textContent = py.runPython('sys.stdout.getvalue()') || '(no output)';
+  }catch(e){ out.textContent='⚠ '+e; }
+}
+document.querySelectorAll('.code-runner').forEach(cr=>{
+  const ta=cr.querySelector('textarea'), out=cr.querySelector('.output'),
+        lang=cr.dataset.lang||'js';
+  cr.querySelector('.run').onclick=()=> lang==='python' ? runPy(ta.value,out) : runJS(ta.value,out);
+  cr.querySelector('.copy').onclick=()=>{ navigator.clipboard?.writeText(ta.value);
+    const b=cr.querySelector('.copy'), t=b.textContent; b.textContent='Copied'; setTimeout(()=>b.textContent=t,1000); };
+});
+
+/* ---------- shared drawing helpers ---------- */
+const PALETTE=['#b4531f','#1f7a4d','#2f6f9f','#8a5cc0','#c7a34d','#c0506f','#3a9c8f','#9c6b3a',
+               '#d07b34','#4a8f5a','#5a6fb0','#a65a8f','#7a9c3a','#c05050'];
+function rr(ctx,x,y,w,h,r){
+  r=Math.min(r,w/2,h/2); if(w<=0||h<=0) return;
+  ctx.beginPath();
+  ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r);
+  ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath();
+}
+
+/* ---------- VIZ 1: PagedAttention memory ---------- */
+(function(){
+  const cv=document.getElementById('viz-mem'); if(!cv) return;
+  const ctx=cv.getContext('2d');
+  const COLS=16, ROWS=6, N=COLS*ROWS;      // 96 KV blocks
+  const MAXLEN=8;                          // naive reserves 8 contiguous blocks / seq
+  let mode='paged', blocks, seqs, admitted, rejected, full, raf=null;
+
+  function targetLen(){ return 2+Math.floor(Math.random()*3); }  // 2..4 blocks actually used
+
+  function reset(){
+    blocks=new Array(N).fill(-1);          // -1 free, else seq id
+    seqs=[]; admitted=0; rejected=0; full=false;
+    stop(); draw(); report();
+  }
+  function firstFree(){ return blocks.indexOf(-1); }
+  function findRun(len){                    // contiguous run of `len` free blocks
+    let c=0;
+    for(let i=0;i<N;i++){
+      c = blocks[i]===-1 ? c+1 : 0;
+      if(c===len) return i-len+1;
+    }
+    return -1;
+  }
+  function admit(){
+    if(full) return false;
+    const id=seqs.length, target=targetLen();
+    if(mode==='paged'){
+      const f=firstFree();
+      if(f<0){ full=true; return false; }
+      blocks[f]=id; seqs.push({id,target,used:1,base:-1});
+    } else {
+      const base=findRun(MAXLEN);
+      if(base<0){ full=true; return false; }
+      for(let k=0;k<MAXLEN;k++) blocks[base+k]=id;   // reserve the whole run
+      seqs.push({id,target,used:1,base});
+    }
+    admitted++; return true;
+  }
+  function grow(){
+    // grow one not-yet-complete sequence by a block (paged only allocates on demand)
+    const s=seqs.find(s=>s.used<s.target);
+    if(!s) return false;
+    if(mode==='paged'){
+      const f=firstFree(); if(f<0){ full=true; return false; }
+      blocks[f]=s.id;
+    }
+    s.used++; return true;                  // naive already reserved the block
+  }
+  function step(){
+    if(full && !seqs.some(s=>s.used<s.target)){ report(); return; }
+    // alternate: mostly grow existing, sometimes admit new
+    if(seqs.some(s=>s.used<s.target) && Math.random()<0.5){ grow(); }
+    else if(!admit()){ if(!grow()){ /* stuck */ } }
+    draw(); report();
+  }
+  function report(){
+    const ro=document.getElementById('memReadout');
+    if(mode==='paged'){
+      ro.textContent=`paged · admitted: ${admitted}` + (full?'  · MEMORY FULL':'');
+    } else {
+      // count reserved-but-unused blocks (waste)
+      let waste=0; seqs.forEach(s=>waste+=MAXLEN-s.used);
+      ro.textContent=`naive · admitted: ${admitted} · wasted blocks: ${waste}` + (full?'  · FULL':'');
+    }
+  }
+  function draw(){
+    const W=cv.width,H=cv.height,cs=getComputedStyle(document.body);
+    ctx.clearRect(0,0,W,H);
+    const pad=10, gw=(W-2*pad)/COLS, gh=(H-2*pad)/ROWS, m=3;
+    for(let i=0;i<N;i++){
+      const col=i%COLS, row=(i/COLS)|0;
+      const x=pad+col*gw+m/2, y=pad+row*gh+m/2, w=gw-m, h=gh-m;
+      const id=blocks[i];
+      if(id<0){
+        ctx.fillStyle=cs.getPropertyValue('--bg');
+        rr(ctx,x,y,w,h,3); ctx.fill();
+        ctx.strokeStyle=cs.getPropertyValue('--line'); ctx.lineWidth=1;
+        rr(ctx,x,y,w,h,3); ctx.stroke();
+      } else {
+        const s=seqs[id];
+        // in naive, a reserved block beyond `used` is waste -> faded
+        const reserved = (id>=0 && s) ? false : false;
+        let wasteCell=false;
+        if(mode==='naive' && s){
+          const idxInRun=i-s.base;          // position within the reserved run
+          wasteCell = idxInRun>=s.used;
+        }
+        ctx.globalAlpha = wasteCell ? 0.22 : 1;
+        ctx.fillStyle=PALETTE[id%PALETTE.length];
+        rr(ctx,x,y,w,h,3); ctx.fill();
+        ctx.globalAlpha=1;
+      }
+    }
+  }
+  function loop(){ step(); if(!(full && !seqs.some(s=>s.used<s.target))) raf=requestAnimationFrame(()=>setTimeout(loop,180)); else stop(); }
+  function stop(){ if(raf){cancelAnimationFrame(raf);raf=null;} document.getElementById('memPlay').textContent='▶ Fill'; }
+
+  document.getElementById('memPlay').onclick=e=>{
+    if(raf){ stop(); }
+    else{ e.target.textContent='⏸ Pause'; loop(); }
+  };
+  document.getElementById('memStep').onclick=()=>{ stop(); step(); };
+  document.getElementById('memReset').onclick=()=>reset();
+  document.getElementById('memMode').onclick=e=>{
+    mode = mode==='paged' ? 'naive' : 'paged';
+    e.target.textContent = mode==='paged' ? 'Mode: Paged (vLLM)' : 'Mode: Naive (reserve max)';
+    e.target.classList.toggle('active', mode==='paged');
+    reset();
+  };
+  reset();
+})();
+
+/* ---------- VIZ 2: continuous vs static batching (gantt) ---------- */
+(function(){
+  const cv=document.getElementById('viz-batch'); if(!cv) return;
+  const ctx=cv.getContext('2d');
+  const B=4;
+  const LENS=[2,3,9,2, 3,2,2,8, 2,3,2,3];
+  const reqs=LENS.map((len,i)=>({len,color:PALETTE[i%PALETTE.length]}));
+
+  function buildStatic(){
+    const bars=[]; let t0=0;
+    for(let c=0;c<reqs.length;c+=B){
+      const chunk=reqs.slice(c,c+B);
+      const cmax=Math.max(...chunk.map(r=>r.len));
+      chunk.forEach((r,lane)=>bars.push({lane,x0:t0,xUse:t0+r.len,xEnd:t0+cmax,color:r.color}));
+      t0+=cmax;
+    }
+    return {bars,total:t0};
+  }
+  function buildCont(){
+    const cur=new Array(B).fill(0), bars=[];
+    reqs.forEach(r=>{
+      let m=0; for(let l=1;l<B;l++) if(cur[l]<cur[m]) m=l;
+      bars.push({lane:m,x0:cur[m],xUse:cur[m]+r.len,xEnd:cur[m]+r.len,color:r.color});
+      cur[m]+=r.len;
+    });
+    return {bars,total:Math.max(...cur)};
+  }
+  const S=buildStatic(), C=buildCont(), totalT=Math.max(S.total,C.total);
+  const useful=LENS.reduce((a,b)=>a+b,0);
+  const sUtil=Math.round(100*useful/(B*S.total)), cUtil=Math.round(100*useful/(B*C.total));
+  let t=0, raf=null;
+
+  function draw(){
+    const W=cv.width,H=cv.height,cs=getComputedStyle(document.body);
+    ctx.clearRect(0,0,W,H);
+    const padL=90,padR=16,padT=26,laneH=13,laneGap=5,groupGap=30;
+    const plotW=W-padL-padR;
+    const sx=x=>padL+(x/totalT)*plotW;
+    const regionH=B*(laneH+laneGap);
+    const yS=padT, yC=padT+regionH+groupGap+16;
+    const ink=cs.getPropertyValue('--ink'), muted=cs.getPropertyValue('--muted'),
+          line=cs.getPropertyValue('--line'), bad=cs.getPropertyValue('--bad');
+    ctx.font='600 12px '+getComputedStyle(document.body).fontFamily;
+    ctx.fillStyle=ink;
+    ctx.fillText('Static batching', 4, yS-9);
+    ctx.fillText('Continuous (vLLM)', 4, yC-9);
+
+    function drawSet(set,y0,hatchIdle){
+      // lane backgrounds
+      for(let l=0;l<B;l++){
+        const y=y0+l*(laneH+laneGap);
+        ctx.fillStyle=cs.getPropertyValue('--bg');
+        rr(ctx,padL,y,plotW,laneH,3); ctx.fill();
+        ctx.strokeStyle=line; ctx.lineWidth=1; rr(ctx,padL,y,plotW,laneH,3); ctx.stroke();
+      }
+      set.bars.forEach(b=>{
+        if(t<=b.x0) return;
+        const y=y0+b.lane*(laneH+laneGap);
+        const xa=sx(b.x0), xu=sx(Math.min(b.xUse,t));
+        ctx.fillStyle=b.color; rr(ctx,xa,y,Math.max(0,xu-xa),laneH,3); ctx.fill();
+        if(hatchIdle && b.xEnd>b.xUse && t>b.xUse){
+          const xi0=sx(b.xUse), xi1=sx(Math.min(b.xEnd,t));
+          ctx.save(); ctx.globalAlpha=.20; ctx.fillStyle=bad;
+          rr(ctx,xi0,y,Math.max(0,xi1-xi0),laneH,3); ctx.fill(); ctx.restore();
+        }
+      });
+    }
+    drawSet(S,yS,true);
+    drawSet(C,yC,false);
+
+    // playhead
+    const px=sx(Math.min(t,totalT));
+    ctx.strokeStyle=cs.getPropertyValue('--accent'); ctx.lineWidth=1.5;
+    ctx.beginPath(); ctx.moveTo(px,yS-4); ctx.lineTo(px,yC+regionH+2); ctx.stroke();
+
+    // finish markers / labels
+    ctx.font='11px '+getComputedStyle(document.body).fontFamily;
+    ctx.fillStyle=muted;
+    if(t>=S.total) ctx.fillText(`done: ${S.total} steps · ${sUtil}% busy`, sx(S.total)-4>W-150?W-150:sx(S.total)+4, yS+regionH+2);
+    if(t>=C.total) ctx.fillText(`done: ${C.total} steps · ${cUtil}% busy`, sx(C.total)+4>W-150?W-150:sx(C.total)+4, yC+regionH+2);
+  }
+  function report(){ document.getElementById('batchReadout').textContent=`t = ${Math.min(t,totalT)} / ${totalT}`; }
+  function step(){ if(t<totalT){ t++; } draw(); report(); if(t>=totalT) stop(); }
+  function stop(){ if(raf){cancelAnimationFrame(raf);raf=null;} document.getElementById('batchPlay').textContent='▶ Play'; }
+  function loop(){ step(); if(t<totalT) raf=requestAnimationFrame(()=>setTimeout(loop,140)); }
+
+  document.getElementById('batchPlay').onclick=e=>{
+    if(raf){ stop(); } else if(t>=totalT){ t=0; e.target.textContent='⏸ Pause'; loop(); }
+    else { e.target.textContent='⏸ Pause'; loop(); }
+  };
+  document.getElementById('batchStep').onclick=()=>{ stop(); step(); };
+  document.getElementById('batchReset').onclick=()=>{ stop(); t=0; draw(); report(); };
+  draw(); report();
+})();
+</script>
+</body>
+</html>
