@@ -1,0 +1,999 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LangGraph — Learning Module</title>
+<style>
+  :root{
+    --bg:#f6f8f9; --panel:#ffffff; --ink:#1b2430; --muted:#5d6b7a; --line:#e0e6ec;
+    --accent:#1f6f8b; --accent-soft:#e0eef3; --ok:#1f7a4d; --bad:#b03030; --warn:#a9791b;
+    --code-bg:#141b22; --code-ink:#e9eef3; --shadow:0 1px 2px rgba(20,40,60,.05),0 8px 24px rgba(20,40,60,.06);
+    --sans:'Inter',system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+    --serif:'Charter','Georgia',Cambria,'Times New Roman',serif;
+    --mono:'SF Mono',ui-monospace,'JetBrains Mono',Menlo,Consolas,monospace;
+  }
+  html[data-theme="dark"]{
+    --bg:#0e1418; --panel:#161e25; --ink:#e6edf3; --muted:#9aa8b4; --line:#26313b;
+    --accent:#5cc0d8; --accent-soft:#153039; --code-bg:#0a0f13; --code-ink:#e9eef3;
+    --shadow:0 1px 2px rgba(0,0,0,.3),0 10px 28px rgba(0,0,0,.4);
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);
+    line-height:1.65;font-size:17px;-webkit-font-smoothing:antialiased}
+  .progress{position:fixed;top:0;left:0;height:3px;width:0;background:var(--accent);z-index:50;transition:width .1s}
+  .wrap{display:grid;grid-template-columns:240px minmax(0,780px);gap:48px;max-width:1100px;
+    margin:0 auto;padding:0 28px 120px}
+  @media(max-width:860px){.wrap{grid-template-columns:1fr;gap:0}.toc{display:none}
+    main{grid-column:1}
+    main table{display:block;width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch}
+    pre.snippet,.code-runner{max-width:100%}}
+
+  header{grid-column:1/-1;padding:44px 0 24px;border-bottom:1px solid var(--line);margin-bottom:36px}
+  .eyebrow{font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:var(--accent);font-weight:600}
+  h1{font-family:var(--serif);font-size:40px;line-height:1.12;margin:.25em 0 .15em;font-weight:650}
+  .why{color:var(--muted);font-size:18px;max-width:64ch;margin:.4em 0 0}
+  .controls{display:flex;gap:10px;margin-top:22px;flex-wrap:wrap;align-items:center}
+  .btn{font:inherit;font-size:14px;padding:7px 14px;border:1px solid var(--line);background:var(--panel);
+    color:var(--ink);border-radius:999px;cursor:pointer;box-shadow:var(--shadow);transition:.15s}
+  .btn:hover{border-color:var(--accent)}
+  .btn.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+
+  .toc{position:sticky;top:24px;align-self:start;font-size:14px;max-height:92vh;overflow:auto}
+  .toc a{display:block;color:var(--muted);text-decoration:none;padding:4px 0 4px 12px;
+    border-left:2px solid transparent;transition:.15s}
+  .toc a:hover{color:var(--ink)}
+  .toc a.active{color:var(--accent);border-left-color:var(--accent);font-weight:600}
+
+  main{grid-column:2;min-width:0}
+  section{margin:0 0 54px;scroll-margin-top:24px}
+  h2{font-family:var(--serif);font-size:27px;margin:0 0 .5em;font-weight:640}
+  h3{font-size:19px;margin:1.7em 0 .4em}
+  p{margin:0 0 1em} code{font-family:var(--mono);font-size:.88em;background:var(--accent-soft);
+    padding:.1em .35em;border-radius:4px}
+  ul,ol{padding-left:1.2em} li{margin:.3em 0}
+  strong{font-weight:650}
+
+  .deep-dive{border-left:3px solid var(--accent-soft);padding:2px 0 2px 18px;margin:1em 0;transition:.2s}
+  html.skim .deep-dive{display:none}
+  .depth-note{font-size:13px;color:var(--muted);font-style:italic}
+  html:not(.skim) .skim-only{display:none}
+
+  .callout{border:1px solid var(--line);border-radius:12px;padding:16px 18px;margin:1.4em 0;
+    background:var(--panel);box-shadow:var(--shadow)}
+  .callout .tag{font-size:12px;font-weight:700;letter-spacing:.05em;text-transform:uppercase}
+  .callout.insight{border-color:#c7a34d55}.callout.insight .tag{color:var(--warn)}
+  .callout.pitfall{border-color:#b0303055}.callout.pitfall .tag{color:var(--bad)}
+  .callout.note{border-color:var(--accent)}.callout.note .tag{color:var(--accent)}
+  .callout p:last-child{margin-bottom:0}
+  details{margin:1em 0;border:1px solid var(--line);border-radius:10px;padding:0 16px;background:var(--panel)}
+  details summary{cursor:pointer;padding:12px 0;font-weight:600}
+
+  .viz{border:1px solid var(--line);border-radius:14px;background:var(--panel);
+    padding:16px;margin:1.6em 0;box-shadow:var(--shadow)}
+  .viz canvas{width:100%;height:auto;display:block;border-radius:8px;background:var(--bg)}
+  .viz .vbar{display:flex;gap:8px;margin-top:12px;align-items:center;flex-wrap:wrap}
+  .viz .cap{font-size:13px;color:var(--muted);margin-top:8px}
+  .lg-state{margin-top:12px;background:var(--code-bg);color:var(--code-ink);border-radius:8px;
+    padding:12px 14px;font-family:var(--mono);font-size:12.5px;line-height:1.55;
+    min-height:120px;white-space:pre-wrap;border:1px solid var(--line)}
+  .lg-state .k{color:#7fd1e6}.lg-state .m{color:#e9c46a}.lg-state .t{color:#94e2b8}.lg-state .dim{color:#8aa0ad}
+  .legend{display:flex;gap:16px;flex-wrap:wrap;font-size:12.5px;color:var(--muted);margin-top:10px}
+  .legend span{display:inline-flex;align-items:center;gap:6px}
+  .legend i{width:12px;height:12px;border-radius:3px;display:inline-block}
+
+  .code-runner{margin:1.6em 0;border-radius:12px;overflow:hidden;border:1px solid var(--line);box-shadow:var(--shadow)}
+  .code-runner .cr-head{display:flex;justify-content:space-between;align-items:center;
+    background:var(--code-bg);padding:8px 12px}
+  .cr-head .lang{color:#9c9384;font-size:12px;font-family:var(--mono);text-transform:uppercase;letter-spacing:.08em}
+  .cr-head .cr-btns{display:flex;gap:6px}
+  .cr-btns button{font:inherit;font-size:12px;font-family:var(--mono);color:var(--code-ink);
+    background:#ffffff18;border:1px solid #ffffff22;border-radius:6px;padding:4px 10px;cursor:pointer}
+  .cr-btns button:hover{background:#ffffff30}
+  .code-runner textarea{width:100%;border:0;resize:vertical;min-height:120px;padding:14px;
+    background:var(--code-bg);color:var(--code-ink);font-family:var(--mono);font-size:13.5px;line-height:1.55;outline:none}
+  .code-runner .output{margin:0;padding:12px 14px;background:#00000030;color:var(--code-ink);
+    font-family:var(--mono);font-size:13px;white-space:pre-wrap;min-height:20px;border-top:1px solid #ffffff14}
+
+  pre.snippet{background:var(--code-bg);color:var(--code-ink);font-family:var(--mono);font-size:13px;
+    line-height:1.62;padding:16px;border-radius:12px;overflow:auto;border:1px solid var(--line);
+    box-shadow:var(--shadow);margin:1.2em 0;white-space:pre}
+  .snip-label{font-size:12px;color:var(--muted);font-family:var(--mono);text-transform:uppercase;
+    letter-spacing:.06em;margin:1.6em 0 -.4em;display:block}
+  .snippet .c{color:#8aa0ad}.snippet .kw{color:#c792ea}.snippet .s{color:#94e2b8}.snippet .fn{color:#7fd1e6}
+
+  .quiz{border:1px solid var(--line);border-radius:14px;padding:18px 20px;margin:1.6em 0;
+    background:var(--panel);box-shadow:var(--shadow)}
+  .quiz .q{font-weight:600;margin:0 0 12px}
+  .quiz .options{list-style:none;padding:0;margin:0;display:grid;gap:8px}
+  .quiz .options li{border:1px solid var(--line);border-radius:9px;padding:10px 14px;cursor:pointer;transition:.12s}
+  .quiz .options li:hover{border-color:var(--accent)}
+  .quiz .options li.correct{border-color:var(--ok);background:#1f7a4d18}
+  .quiz .options li.wrong{border-color:var(--bad);background:#b0303018}
+  .quiz .options li.locked{cursor:default;opacity:.9}
+  .quiz .explain{display:none;margin-top:14px;padding-top:12px;border-top:1px dashed var(--line);
+    color:var(--muted);font-size:15px}
+  .quiz.answered .explain{display:block}
+
+  table.cmp{width:100%;border-collapse:collapse;margin:1.4em 0;font-size:14.5px;display:block;overflow-x:auto}
+  table.cmp th,table.cmp td{border:1px solid var(--line);padding:9px 11px;text-align:left;vertical-align:top}
+  table.cmp th{background:var(--accent-soft);font-weight:650;white-space:nowrap}
+  table.cmp td:first-child{font-weight:600;white-space:nowrap}
+
+  .proj{border:1px solid var(--line);border-radius:12px;background:var(--panel);padding:16px 18px;
+    margin:1em 0;box-shadow:var(--shadow)}
+  .proj h3{margin:.1em 0 .3em;font-size:17.5px}
+  .proj .lvl{font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;
+    padding:2px 8px;border-radius:999px;background:var(--accent-soft);color:var(--accent);margin-left:8px;vertical-align:middle}
+  .proj .teaches{font-size:13px;color:var(--muted);margin-top:8px}
+  .proj .teaches b{color:var(--ink)}
+  .pill{display:inline-block;font-size:12px;font-family:var(--mono);background:var(--accent-soft);
+    color:var(--accent);border-radius:6px;padding:2px 8px;margin:2px 4px 2px 0}
+
+  a.ref{color:var(--accent)}
+  footer{grid-column:1/-1;border-top:1px solid var(--line);margin-top:20px;padding-top:24px;
+    color:var(--muted);font-size:14px}
+  @media(max-width:640px){
+    body{font-size:16px} h1{font-size:32px} h2{font-size:23px}
+    .wrap{padding:0 18px 90px}
+  }
+</style>
+</head>
+<body>
+<div class="progress" id="progress"></div>
+<div class="wrap">
+
+  <header>
+    <div class="eyebrow">AI Agents · Orchestration Frameworks</div>
+    <h1>LangGraph for Advanced Agent Building</h1>
+    <p class="why">You already ship LLM features — you just haven't built on LangGraph yet. This module skips
+      "what is an agent" and goes straight to the model that matters: an agent is a <em>state machine</em>, and
+      LangGraph is a durable graph runtime for running one. We'll cover state &amp; reducers, cyclic control flow,
+      persistence, human-in-the-loop, and multi-agent orchestration — then brainstorm portfolio-grade projects to
+      practise each of them.</p>
+    <div class="controls">
+      <button class="btn active" id="depthBtn" data-mode="full">Mode: Full detail</button>
+      <button class="btn" id="themeBtn">◐ Theme</button>
+      <span class="depth-note" id="depthNote">Full mode — deep-dive blocks visible</span>
+    </div>
+  </header>
+
+  <nav class="toc" id="toc" aria-label="Contents"></nav>
+
+  <main>
+
+    <!-- ===================== MENTAL MODEL ===================== -->
+    <section id="idea">
+      <h2>The one idea</h2>
+      <p>A capable agent is a <strong>loop over shared state</strong>: think → act → observe → decide whether to go
+        again. That loop has cycles, branches, and points where you want to pause, persist, or hand off. A plain
+        chain (a DAG) can't express a cycle, and an <code>AgentExecutor</code>-style while-loop hides all the
+        interesting control flow inside one opaque function.</p>
+      <p><strong>LangGraph's answer:</strong> model the agent explicitly as a directed graph. <em>Nodes</em> are
+        plain functions that read the current state and return an update. <em>Edges</em> — including
+        <em>conditional</em> ones — decide what runs next, and they're allowed to point backwards, so loops are
+        first-class. A shared, typed <em>State</em> object flows through, and a <em>checkpointer</em> can snapshot it
+        at every step so a run can pause for a human, survive a crash, or resume days later.</p>
+      <div class="callout insight"><span class="tag">Key insight</span>
+        <p>Everything else in LangGraph — persistence, human-in-the-loop, streaming, multi-agent — falls out of two
+          primitives done well: an explicit <b>graph of nodes and edges</b>, and a <b>state channel with a reducer</b>
+          that says how each node's output merges in. Learn those two and the rest is composition.</p></div>
+    </section>
+
+    <!-- ===================== WHERE IT SITS ===================== -->
+    <section id="landscape">
+      <h2>Where LangGraph sits (and where it doesn't)</h2>
+      <p>You've seen the higher-level frameworks. LangGraph deliberately lives one layer <em>below</em> them: it is
+        the low-level orchestration engine, not a role/task abstraction. That's the whole trade — more control and
+        durability, more wiring.</p>
+      <table class="cmp">
+        <thead><tr><th>Tool</th><th>Abstraction</th><th>Cycles &amp; state</th><th>Reach for it when…</th></tr></thead>
+        <tbody>
+          <tr><td>Plain loop / <code>AgentExecutor</code></td><td>A while-loop around tool calls</td><td>Hidden, in-memory</td><td>A single tool-using agent, no persistence, throwaway scripts.</td></tr>
+          <tr><td>CrewAI</td><td>Roles + tasks (Crews) / Flows</td><td>Managed for you</td><td>You want a team metaphor fast and are happy with the framework's control flow.</td></tr>
+          <tr><td>AutoGen</td><td>Conversing agents</td><td>Conversation-driven</td><td>Research-style multi-agent chat and code execution loops.</td></tr>
+          <tr><td><strong>LangGraph</strong></td><td>Explicit graph (nodes/edges/state)</td><td>First-class, durable, inspectable</td><td>You need loops, branching, persistence, HITL, streaming, and production observability — with full control.</td></tr>
+        </tbody>
+      </table>
+      <div class="deep-dive">
+        <p class="depth-note">Deep dive — LangGraph vs LangChain vs LangGraph Platform</p>
+        <p><strong>LangChain</strong> is the components layer (model wrappers, tools, retrievers, message types).
+          <strong>LangGraph</strong> is the orchestration/runtime layer that runs those components as a stateful
+          graph — the two are made by the same team and interlock. As of the v1 releases (2026), the modern
+          high-level agent factory <code>create_agent</code> lives in <code>langchain</code> and is <em>itself</em>
+          built on LangGraph, so "use LangChain's agent" and "use LangGraph" are no longer opposing choices — you get
+          a compiled LangGraph graph either way. <strong>LangGraph Platform</strong> (deployment) + <strong>Studio</strong>
+          (visual graph debugger) + <strong>LangSmith</strong> (tracing) are the commercial/ops surface on top; none
+          of them are required to use the open-source library.</p>
+      </div>
+      <div class="quiz">
+        <p class="q">Why does LangGraph model an agent as a graph instead of a linear chain?</p>
+        <ul class="options">
+          <li>Graphs render more nicely in a UI than chains do.</li>
+          <li data-correct="true">Agents need cycles — reason → act → observe → reason again — and a DAG can't express a backward edge.</li>
+          <li>Because graph traversal is asymptotically faster than running a chain.</li>
+        </ul>
+        <div class="explain">The defining behaviour of an agent is <em>iteration</em>: it may call a tool, read the
+          result, and decide to call another before answering. That's a loop. A chain / DAG is acyclic by definition,
+          so it structurally can't loop back. Rendering and speed are not the reason — expressiveness is.</div>
+      </div>
+    </section>
+
+    <!-- ===================== CORE PRIMITIVES ===================== -->
+    <section id="primitives">
+      <h2>The core primitives: State, Nodes, Edges</h2>
+      <p>Three things and a compile step. Get these and you can read any LangGraph codebase.</p>
+
+      <h3>1 · State + reducers</h3>
+      <p>State is a typed dictionary (a <code>TypedDict</code> or a Pydantic model). Each key is a <em>channel</em>.
+        A channel can carry a <strong>reducer</strong> — a function that says how a node's output for that key merges
+        into what's already there. Without a reducer, an update <em>replaces</em> the value; with one, it merges. The
+        canonical example is <code>add_messages</code>, which <em>appends</em> new messages (and updates any with a
+        matching id) instead of overwriting the history.</p>
+
+      <span class="snip-label">real langgraph — minimal graph</span>
+      <pre class="snippet"><span class="c"># pip install -U langgraph langchain</span>
+<span class="kw">from</span> typing <span class="kw">import</span> Annotated, TypedDict
+<span class="kw">from</span> langgraph.graph <span class="kw">import</span> StateGraph, START, END
+<span class="kw">from</span> langgraph.graph.message <span class="kw">import</span> add_messages
+
+<span class="kw">class</span> <span class="fn">State</span>(TypedDict):
+    <span class="c"># the `add_messages` reducer makes this channel APPEND, not overwrite</span>
+    messages: Annotated[list, add_messages]
+
+<span class="kw">def</span> <span class="fn">chatbot</span>(state: State):
+    <span class="c"># a node takes state, returns a PARTIAL update (just the keys it changes)</span>
+    <span class="kw">return</span> {<span class="s">"messages"</span>: [llm.invoke(state[<span class="s">"messages"</span>])]}
+
+builder = StateGraph(State)
+builder.add_node(<span class="s">"chatbot"</span>, chatbot)
+builder.add_edge(START, <span class="s">"chatbot"</span>)
+builder.add_edge(<span class="s">"chatbot"</span>, END)
+graph = builder.compile()
+
+graph.invoke({<span class="s">"messages"</span>: [{<span class="s">"role"</span>: <span class="s">"user"</span>, <span class="s">"content"</span>: <span class="s">"hi"</span>}]})
+<span class="c"># -> {"messages": [HumanMessage("hi"), AIMessage("Hello! ...")]}</span></pre>
+
+      <div class="callout note"><span class="tag">Watch the return value</span>
+        <p>Nodes return a <em>partial</em> update — only the channels they touched — never the whole state. The engine
+          folds each update in through that channel's reducer. This is the single most important habit to internalise.</p>
+      </div>
+
+      <h3>2 · Nodes</h3>
+      <p>A node is just a function <code>(state) -&gt; partial_update</code> (sync or async). It can call a model, hit
+        a database, run a tool, or do pure Python. Nodes don't know about each other — they only read state and
+        return an update. That isolation is what makes the graph testable and the flow inspectable.</p>
+
+      <h3>3 · Edges — including conditional ones</h3>
+      <p><code>add_edge(a, b)</code> is an unconditional "after a, run b". <code>add_conditional_edges(a, router)</code>
+        calls your <code>router(state)</code> function and routes to whichever node name (or <code>END</code>) it
+        returns. That router is where an agent decides "do I need a tool, or am I done?" — and where the loop closes.</p>
+
+      <span class="snip-label">real langgraph — the ReAct tool loop, wired by hand</span>
+      <pre class="snippet"><span class="kw">from</span> langgraph.prebuilt <span class="kw">import</span> ToolNode, tools_condition
+
+builder.add_node(<span class="s">"tools"</span>, ToolNode(tools))          <span class="c"># runs any tool the model asked for</span>
+builder.add_conditional_edges(<span class="s">"chatbot"</span>, tools_condition)  <span class="c"># tool_calls? -> "tools" ; else -> END</span>
+builder.add_edge(<span class="s">"tools"</span>, <span class="s">"chatbot"</span>)              <span class="c"># THE CYCLE: after tools, think again</span>
+<span class="c"># chatbot -> (tools -> chatbot)* -> END      <-- a ReAct agent is exactly this loop</span></pre>
+
+      <p>Now run the same execution model yourself. The cell below is a ~40-line engine that mirrors LangGraph's
+        mechanics — a reducer, nodes, a conditional edge, and a backward edge that forms the loop. Hit <b>Run</b>,
+        then change <code>calls</code> to <code>3</code> and watch the loop run one extra time.</p>
+
+      <div class="code-runner" data-lang="js">
+        <div class="cr-head"><span class="lang">javascript · runs natively</span>
+          <div class="cr-btns"><button class="run">▶ Run</button><button class="copy">Copy</button></div></div>
+        <textarea spellcheck="false">// LangGraph's execution model in ~40 lines. No libraries, runs right here.
+const END = "__end__";
+const addMessages = (existing, update) => [...existing, ...update]; // the reducer: APPEND
+
+function StateGraph() {
+  const nodes = {}, edges = {}, cond = {};
+  const api = {
+    addNode(n, f) { nodes[n] = f; return api; },
+    addEdge(a, b) { edges[a] = () => b; return api; },
+    addConditional(a, router) { cond[a] = router; return api; },
+    run(state, entry) {
+      let cur = entry, step = 0;
+      while (cur !== END) {
+        step++;
+        const upd = nodes[cur](state);                              // node -> partial update
+        state.messages = addMessages(state.messages, upd.messages ?? []); // reducer merges
+        const last = state.messages.at(-1);
+        console.log(`super-step ${step}: '${cur}' ran | +1 msg -> ${state.messages.length} | last=${last}`);
+        cur = cond[cur] ? cond[cur](state) : (edges[cur]?.() ?? END);     // pick the next node
+      }
+      return state;
+    }
+  };
+  return api;
+}
+
+let calls = 2; // the "model" will ask for a tool this many times, then give a final answer
+const g = StateGraph()
+  .addNode("agent", () => ({ messages: [calls > 0 ? "AIMessage(tool_call)" : "AIMessage(FINAL)"] }))
+  .addNode("tools", () => { calls--; return { messages: ["ToolMessage(result)"] }; })
+  .addConditional("agent", s => s.messages.at(-1).includes("tool_call") ? "tools" : END) // conditional edge
+  .addEdge("tools", "agent");                                                            // the cycle
+
+const out = g.run({ messages: ["HumanMessage(weather in Paris & Tokyo?)"] }, "agent");
+console.log("DONE — cycled to", out.messages.length, "messages via ONE reducer + ONE conditional edge");
+/* expected:
+super-step 1: 'agent' ran | +1 msg -> 2 | last=AIMessage(tool_call)
+super-step 2: 'tools' ran | +1 msg -> 3 | last=ToolMessage(result)
+super-step 3: 'agent' ran | +1 msg -> 4 | last=AIMessage(tool_call)
+super-step 4: 'tools' ran | +1 msg -> 5 | last=ToolMessage(result)
+super-step 5: 'agent' ran | +1 msg -> 6 | last=AIMessage(FINAL)
+DONE — cycled to 6 messages via ONE reducer + ONE conditional edge */</textarea>
+        <pre class="output"></pre>
+      </div>
+
+      <div class="quiz">
+        <p class="q">A node returns <code>{"messages": [new_msg]}</code> and the channel uses the <code>add_messages</code>
+          reducer. What happens to the messages already in state?</p>
+        <ul class="options">
+          <li>They're replaced — the node's return value becomes the new <code>messages</code> list.</li>
+          <li data-correct="true">They're kept; <code>new_msg</code> is appended (and a message with a matching id would be updated in place).</li>
+          <li>They're cleared, and only messages with a reducer survive.</li>
+        </ul>
+        <div class="explain">A reducer defines the merge. <code>add_messages</code> appends new messages and updates
+          any existing one whose id matches (useful for streaming edits). Return-replaces-value is what you'd get
+          <em>without</em> a reducer — exactly the bug that silently wipes conversation history.</div>
+      </div>
+    </section>
+
+    <!-- ===================== EXECUTION MODEL + VIZ ===================== -->
+    <section id="execution">
+      <h2>The execution model: super-steps</h2>
+      <p>LangGraph runs on a Pregel-style, bulk-synchronous model. Each iteration is a <strong>super-step</strong>:
+        every node on the current frontier runs, their updates are collected, the reducers fold them into state, and
+        <em>then</em> edges pick the next frontier. Nodes at the same frontier run in parallel; a fan-out followed by
+        a merge is just several nodes writing to a channel whose reducer combines them.</p>
+      <p>The animation below traces an agent loop answering <em>"weather in Paris and Tokyo?"</em>. Watch the active
+        node glow, the pulse travel the chosen edge, and the shared <code>state["messages"]</code> grow via the
+        reducer. Note the two cycles through <code>tools → agent</code> before the conditional edge finally routes to
+        <code>END</code>.</p>
+
+      <div class="viz">
+        <canvas id="viz" width="720" height="330" aria-label="Animated LangGraph agent-loop execution"></canvas>
+        <div class="vbar">
+          <button class="btn" id="vizPlay">▶ Play</button>
+          <button class="btn" id="vizStep">Step</button>
+          <button class="btn" id="vizReset">Reset</button>
+          <span class="cap" id="vizNote" style="margin-top:0">Press Play or Step to advance the graph.</span>
+        </div>
+        <div class="legend">
+          <span><i style="background:#1f6f8b"></i> active node</span>
+          <span><i style="background:#e9c46a"></i> traversed edge</span>
+          <span><i style="background:#5d6b7a;opacity:.5"></i> idle edge</span>
+        </div>
+        <div class="lg-state" id="lgState"></div>
+      </div>
+
+      <div class="deep-dive">
+        <p class="depth-note">Deep dive — parallelism, and why a reducer is not optional there</p>
+        <p>Because a whole frontier runs before edges are re-evaluated, two nodes that both write <code>messages</code>
+          in the same super-step would <em>collide</em> — which is exactly why that channel needs a reducer to define
+          a deterministic merge. Fan-out/fan-in (e.g. query three retrievers in parallel, then combine) is idiomatic:
+          add three nodes, edge into all of them from one router, and give the result channel a reducer like
+          <code>operator.add</code>. If a node raises, LangGraph doesn't silently drop the super-step — with a
+          checkpointer, the completed work is durable and you can resume from the last good snapshot.</p>
+      </div>
+    </section>
+
+    <!-- ===================== MODERN ENTRY POINT ===================== -->
+    <section id="prebuilt">
+      <h2>The fast path: <code>create_agent</code></h2>
+      <p>You rarely hand-wire the ReAct loop in production — you reach for the prebuilt and drop to raw
+        <code>StateGraph</code> only when you need custom flow. In the v1 era the recommended factory is
+        <code>create_agent</code> from <code>langchain.agents</code>. It returns a compiled LangGraph graph, so
+        everything below (persistence, streaming, HITL) applies unchanged.</p>
+
+      <span class="snip-label">real langgraph — modern prebuilt agent</span>
+      <pre class="snippet"><span class="kw">from</span> langchain.agents <span class="kw">import</span> create_agent   <span class="c"># the 2026-recommended entry point</span>
+
+<span class="kw">def</span> <span class="fn">get_weather</span>(city: str) -&gt; str:
+    <span class="s">"""Look up the weather for a city."""</span>
+    <span class="kw">return</span> <span class="s">f"{city}: 18°C, clear"</span>
+
+agent = create_agent(
+    model=<span class="s">"openai:gpt-4o"</span>,      <span class="c"># or an Anthropic / local model handle</span>
+    tools=[get_weather],
+    system_prompt=<span class="s">"You are a concise weather assistant."</span>,
+)
+agent.invoke({<span class="s">"messages"</span>: [{<span class="s">"role"</span>: <span class="s">"user"</span>, <span class="s">"content"</span>: <span class="s">"weather in Paris?"</span>}]})
+<span class="c"># agent is a compiled graph: agent.stream(...), .get_state(...), checkpointer=... all work</span></pre>
+
+      <div class="callout pitfall"><span class="tag">Version note</span>
+        <p>You'll still find <code>from langgraph.prebuilt import create_react_agent</code> in most tutorials. As of
+          the v1 releases it's <strong>deprecated</strong> (slated for removal in v2) in favour of
+          <code>langchain.agents.create_agent</code>, which adds a composable <em>middleware</em> system (summarisation,
+          guardrails, human-approval, retries) around the same loop. Learn <code>create_agent</code>; recognise
+          <code>create_react_agent</code> when you read older code.</p>
+      </div>
+    </section>
+
+    <!-- ===================== PERSISTENCE ===================== -->
+    <section id="persistence">
+      <h2>Persistence &amp; durable execution</h2>
+      <p>Compile with a <strong>checkpointer</strong> and pass a <code>thread_id</code>, and LangGraph snapshots the
+        full state at every super-step. That one change unlocks: multi-turn memory (each <code>thread_id</code> is an
+        independent conversation with its own history), crash recovery (resume from the last snapshot), and
+        time-travel debugging (<code>get_state_history</code>, then re-run from any past checkpoint).</p>
+
+      <span class="snip-label">real langgraph — add memory with one argument</span>
+      <pre class="snippet"><span class="kw">from</span> langgraph.checkpoint.memory <span class="kw">import</span> InMemorySaver  <span class="c"># dev; swap for Postgres/SQLite in prod</span>
+
+graph = builder.compile(checkpointer=InMemorySaver())
+cfg = {<span class="s">"configurable"</span>: {<span class="s">"thread_id"</span>: <span class="s">"user-42"</span>}}
+
+graph.invoke({<span class="s">"messages"</span>: [{<span class="s">"role"</span>:<span class="s">"user"</span>,<span class="s">"content"</span>:<span class="s">"my name is Rex"</span>}]}, cfg)
+graph.invoke({<span class="s">"messages"</span>: [{<span class="s">"role"</span>:<span class="s">"user"</span>,<span class="s">"content"</span>:<span class="s">"what's my name?"</span>}]}, cfg)
+<span class="c"># -> "Your name is Rex."  (same thread_id => history was reloaded from the checkpoint)</span>
+
+graph.get_state(cfg)            <span class="c"># current StateSnapshot: values + next nodes + config</span>
+list(graph.get_state_history(cfg))  <span class="c"># every checkpoint — rewind and branch from any of them</span>
+<span class="c"># Production: from langgraph.checkpoint.postgres import PostgresSaver</span></pre>
+
+      <div class="callout insight"><span class="tag">Why this is the headline feature</span>
+        <p>Because state lives in a checkpoint, a paused run holds <em>no</em> compute. An agent can wait minutes,
+          hours, or days for a human or an external event and resume "as if milliseconds had passed." That's what
+          makes long-running, human-gated agents practical — and it's the foundation the next section stands on.</p>
+      </div>
+
+      <p>The <code>add_messages</code> reducer has one subtlety worth running yourself: it appends by default but
+        <em>updates</em> a message whose <code>id</code> already exists. That's how streamed/edited messages don't
+        duplicate. The Python cell reconstructs it from scratch (pure stdlib — runs in the browser via Pyodide):</p>
+
+      <div class="code-runner" data-lang="python">
+        <div class="cr-head"><span class="lang">python · first Run loads Pyodide (~a few s)</span>
+          <div class="cr-btns"><button class="run">▶ Run</button><button class="copy">Copy</button></div></div>
+        <textarea spellcheck="false"># The real `add_messages` reducer, from scratch — no dependencies.
+# It APPENDS new messages, but UPDATES one whose id already exists.
+def add_messages(existing, update):
+    index = {m["id"]: i for i, m in enumerate(existing)}
+    merged = list(existing)
+    for m in update:
+        if m["id"] in index:
+            merged[index[m["id"]]] = m   # same id -> replace in place (a streamed edit)
+        else:
+            merged.append(m)             # new id  -> append
+    return merged
+
+state = {"messages": [{"id": "1", "role": "user", "text": "weather in Paris?"}]}
+
+# node: agent proposes a tool call
+state["messages"] = add_messages(state["messages"],
+    [{"id": "2", "role": "ai", "text": "call get_weather('Paris')"}])
+# node: tool responds
+state["messages"] = add_messages(state["messages"],
+    [{"id": "3", "role": "tool", "text": "18C, clear"}])
+# node: agent revises msg 2 IN PLACE (same id) and adds a final answer
+state["messages"] = add_messages(state["messages"], [
+    {"id": "2", "role": "ai", "text": "call get_weather('Paris') [done]"},
+    {"id": "4", "role": "ai", "text": "It's 18C and clear in Paris."},
+])
+
+for m in state["messages"]:
+    print(f'{m["id"]}  {m["role"]:<5} {m["text"]}')
+# expected:
+# 1  user  weather in Paris?
+# 2  ai    call get_weather('Paris') [done]      <- updated, not duplicated
+# 3  tool  18C, clear
+# 4  ai    It's 18C and clear in Paris.</textarea>
+        <pre class="output"></pre>
+      </div>
+    </section>
+
+    <!-- ===================== HITL ===================== -->
+    <section id="hitl">
+      <h2>Human-in-the-loop</h2>
+      <p>Call <code>interrupt(payload)</code> inside a node. The graph <strong>pauses</strong>, persists its state
+        (this is why it needs a checkpointer), and surfaces <code>payload</code> to the caller. Whenever the human
+        responds — seconds or days later — you resume by invoking with <code>Command(resume=value)</code>, and
+        <code>interrupt(...)</code> returns that value as if it had never stopped.</p>
+
+      <span class="snip-label">real langgraph — approve/reject before a risky action</span>
+      <pre class="snippet"><span class="kw">from</span> langgraph.types <span class="kw">import</span> interrupt, Command
+
+<span class="kw">def</span> <span class="fn">review</span>(state):
+    decision = interrupt({<span class="s">"action"</span>: state[<span class="s">"proposed_action"</span>],
+                          <span class="s">"question"</span>: <span class="s">"Approve this refund?"</span>})   <span class="c"># <-- pauses here</span>
+    <span class="kw">if</span> decision == <span class="s">"approve"</span>:
+        <span class="kw">return</span> {<span class="s">"status"</span>: <span class="s">"executed"</span>}
+    <span class="kw">return</span> {<span class="s">"status"</span>: <span class="s">"cancelled"</span>}
+
+graph = builder.compile(checkpointer=InMemorySaver())
+cfg = {<span class="s">"configurable"</span>: {<span class="s">"thread_id"</span>: <span class="s">"ticket-7"</span>}}
+
+graph.invoke(inputs, cfg)     <span class="c"># runs until interrupt(); state is saved, control returns to you</span>
+<span class="c"># ... hours later, after a human clicks "approve" in your UI ...</span>
+graph.invoke(Command(resume=<span class="s">"approve"</span>), cfg)   <span class="c"># interrupt() returns "approve"; the node finishes</span></pre>
+
+      <p>Common HITL shapes: <strong>approve/reject</strong> a tool call, <strong>edit</strong> the proposed state
+        before continuing, <strong>review &amp; correct</strong> a model output, or an explicit <strong>ask-a-human</strong>
+        tool the agent can choose to call. There are also static breakpoints — <code>compile(interrupt_before=["tools"])</code>
+        — for pausing without editing node code.</p>
+
+      <div class="quiz">
+        <p class="q">Your <code>interrupt()</code> call raises or the resume never picks up state. What's the most likely cause?</p>
+        <ul class="options">
+          <li>You forgot to wrap the node in a <code>try/except</code>.</li>
+          <li data-correct="true">You compiled without a checkpointer (or didn't pass a <code>thread_id</code>), so there's nowhere to persist and resume from.</li>
+          <li><code>interrupt()</code> only works inside conditional edges, not nodes.</li>
+        </ul>
+        <div class="explain">Interrupts are built on persistence: the state must be saved to a checkpoint so the run
+          can stop and later resume against the same <code>thread_id</code>. No checkpointer (or no thread id) means
+          no snapshot — the pause/resume machinery has nothing to stand on. <code>interrupt()</code> lives in node
+          code, not in edges.</div>
+      </div>
+    </section>
+
+    <!-- ===================== STREAMING ===================== -->
+    <section id="streaming">
+      <h2>Streaming (so the UI isn't a spinner)</h2>
+      <p>Agents are slow; you stream to keep them feeling alive. <code>graph.stream(inputs, cfg, stream_mode=...)</code>
+        gives you different granularities, and you can pass a list to get several at once:</p>
+      <ul>
+        <li><code>"values"</code> — the full state after each super-step.</li>
+        <li><code>"updates"</code> — just the per-node delta each step (great for logging progress).</li>
+        <li><code>"messages"</code> — LLM tokens as they're generated (the ChatGPT-style typewriter).</li>
+        <li><code>"custom"</code> — whatever you emit from inside a node via the stream writer.</li>
+      </ul>
+      <pre class="snippet"><span class="kw">for</span> chunk <span class="kw">in</span> graph.stream(inputs, cfg, stream_mode=<span class="s">"updates"</span>):
+    <span class="fn">print</span>(chunk)   <span class="c"># {'agent': {...}}  then  {'tools': {...}}  then ...</span></pre>
+    </section>
+
+    <!-- ===================== MULTI-AGENT ===================== -->
+    <section id="multiagent">
+      <h2>Multi-agent orchestration</h2>
+      <p>Once one agent works, scaling to several is a routing question. LangGraph gives you two shapes plus a way to
+        nest them. Any compiled graph can also be dropped in as a <strong>node</strong> inside a bigger graph (a
+        <em>subgraph</em>), so an "agent" and a "team" are the same primitive at different scales.</p>
+      <table class="cmp">
+        <thead><tr><th>Pattern</th><th>How</th><th>Strength</th><th>Cost</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Supervisor</strong></td><td>One router node delegates to worker agents and synthesises their outputs (<code>langgraph-supervisor</code>).</td><td>Every decision is visible in one place — easy to reason about and trace. The production default.</td><td>Extra LLM hop through the supervisor on each turn.</td></tr>
+          <tr><td><strong>Swarm</strong></td><td>Peer agents hand off directly to each other via handoff tools that return a <code>Command</code> (<code>langgraph-swarm</code>).</td><td>Fewer LLM calls, faster — no middle-man.</td><td>Control flow is emergent; you lean harder on tracing to follow it.</td></tr>
+          <tr><td><strong>Hierarchical</strong></td><td>Supervisors nested as workers under a top-level supervisor.</td><td>Scales past ~6 workers by keeping any one router's fan-out small.</td><td>More moving parts; deeper traces.</td></tr>
+        </tbody>
+      </table>
+
+      <span class="snip-label">real langgraph — a supervisor over two specialists</span>
+      <pre class="snippet"><span class="kw">from</span> langchain.agents <span class="kw">import</span> create_agent
+<span class="kw">from</span> langgraph_supervisor <span class="kw">import</span> create_supervisor
+
+researcher = create_agent(model, tools=[web_search], name=<span class="s">"researcher"</span>)
+coder      = create_agent(model, tools=[run_python], name=<span class="s">"coder"</span>)
+
+app = create_supervisor(
+    agents=[researcher, coder],
+    model=model,
+    prompt=<span class="s">"Route research questions to researcher, code to coder, then summarise."</span>,
+).compile()
+
+app.invoke({<span class="s">"messages"</span>: [{<span class="s">"role"</span>:<span class="s">"user"</span>,<span class="s">"content"</span>:<span class="s">"Plot US GDP since 2000."</span>}]})</pre>
+
+      <div class="deep-dive">
+        <p class="depth-note">Deep dive — handoffs are just <code>Command(goto=...)</code></p>
+        <p>A swarm handoff isn't magic: a handoff tool returns <code>Command(goto="other_agent", update={...})</code>,
+          and the engine both jumps to that node <em>and</em> applies the state update in one move. You can write the
+          same thing by hand without the prebuilt package — the supervisor/swarm libraries are just ergonomic wrappers
+          over conditional edges and <code>Command</code>. Reach for the raw primitives the moment your routing needs
+          something the wrapper doesn't express.</p>
+      </div>
+
+      <div class="quiz">
+        <p class="q">Two specialist agents mostly pass work straight to each other with no central decision-maker, and
+          you want to minimise LLM calls. Which pattern fits?</p>
+        <ul class="options">
+          <li>Supervisor — always safest.</li>
+          <li data-correct="true">Swarm — peers hand off directly, avoiding an extra routing LLM hop each turn.</li>
+          <li>Neither; use a single agent with more tools.</li>
+        </ul>
+        <div class="explain">Swarm's whole point is direct peer-to-peer handoffs (via <code>Command</code>), which
+          removes the supervisor's per-turn LLM call — faster and cheaper when there's no genuine central routing
+          decision to make. Supervisor wins when you <em>do</em> want that decision centralised and legible in traces.</div>
+      </div>
+    </section>
+
+    <!-- ===================== PITFALLS ===================== -->
+    <section id="pitfalls">
+      <h2>Where people go wrong</h2>
+      <div class="callout pitfall"><span class="tag">Pitfall · overwriting state</span>
+        <p>Returning a whole list for a channel that has a reducer, expecting it to <em>replace</em> — or returning
+          the full state instead of a partial update. Nodes return only the keys they changed; reducers decide the
+          merge. Forgetting the reducer on <code>messages</code> silently wipes history.</p></div>
+      <div class="callout pitfall"><span class="tag">Pitfall · unbounded loops</span>
+        <p>A cyclic graph with a flaky termination condition runs forever (and bills forever). Always bound it: a
+          <code>recursion_limit</code> on invoke, a step/attempt counter in state, or a hard "give up and answer" edge.</p></div>
+      <div class="callout pitfall"><span class="tag">Pitfall · HITL without persistence</span>
+        <p>Expecting <code>interrupt()</code> to work without a checkpointer + <code>thread_id</code>. No snapshot,
+          nothing to resume. Same root cause behind "my agent forgot the conversation" — that's a missing/rotating
+          thread id, not the model.</p></div>
+      <div class="callout pitfall"><span class="tag">Pitfall · reaching for multi-agent too early</span>
+        <p>A supervisor over five agents when one agent with five tools would do. Every extra agent is extra latency,
+          cost, and failure surface. Start single-agent; split only when a role genuinely needs its own prompt, tools,
+          or state.</p></div>
+      <div class="callout pitfall"><span class="tag">Pitfall · learning deprecated APIs</span>
+        <p>Copying <code>create_react_agent</code> tutorials into new code. It's deprecated in v1. Use
+          <code>create_agent</code>; keep the old name only as reading knowledge.</p></div>
+    </section>
+
+    <!-- ===================== PRACTICE PROJECTS ===================== -->
+    <section id="projects">
+      <h2>Practice projects (pick by the concept you want to drill)</h2>
+      <p>These are ordered so each one forces a specific LangGraph muscle. Don't build all of them — build the
+        <b>Start here</b> one end-to-end, then jump to whichever concept you want to own next. Every one is small
+        enough for a weekend and substantial enough to sit in a portfolio.</p>
+
+      <div class="proj">
+        <h3>1 · Self-correcting RAG <span class="lvl">Start here</span></h3>
+        <p>Retrieve → <em>grade</em> the retrieved docs → if weak, rewrite the query or fall back to web search →
+          generate → grade the answer → loop if it hallucinated. This is the "hello world" of <em>useful</em>
+          LangGraph because it's inherently cyclic and conditional — a plain RAG chain can't self-correct.</p>
+        <div class="teaches"><b>Teaches:</b> conditional edges, cycles, a grading router node, bounded retries.
+          <span class="pill">StateGraph</span><span class="pill">add_conditional_edges</span><span class="pill">recursion_limit</span></div>
+      </div>
+
+      <div class="proj">
+        <h3>2 · Coding agent with a reflection loop <span class="lvl">Core loop</span></h3>
+        <p>Plan → generate code → run it against tests (a tool node) → if it fails, reflect on the traceback and
+          retry, capped at N attempts. The failing test output feeds straight back into state — a concrete, verifiable
+          reason to loop.</p>
+        <div class="teaches"><b>Teaches:</b> tool nodes, state accumulation, reflection, hard iteration caps.
+          <span class="pill">ToolNode</span><span class="pill">reducers</span><span class="pill">loop guard</span></div>
+      </div>
+
+      <div class="proj">
+        <h3>3 · "Agent inbox": human-approved actions <span class="lvl">HITL</span></h3>
+        <p>An ops/support agent that drafts a consequential action (issue a refund, send an email, merge a PR), then
+          <code>interrupt()</code>s for approval. Approve/edit/reject from a tiny UI; the run may sit paused for hours.
+          The most <em>employable</em> pattern here — every real deployment needs a human gate.</p>
+        <div class="teaches"><b>Teaches:</b> <code>interrupt()</code>/<code>Command(resume=)</code>, checkpointers, durable pause.
+          <span class="pill">interrupt</span><span class="pill">InMemorySaver → Postgres</span><span class="pill">thread_id</span></div>
+      </div>
+
+      <div class="proj">
+        <h3>4 · Multi-agent research assistant <span class="lvl">Supervisor</span></h3>
+        <p>A supervisor routes to a search agent, a code/plotting agent, and a writer, then assembles a cited report.
+          Make each specialist a subgraph so you can test them in isolation. Stream <code>updates</code> so the UI
+          shows which agent is working.</p>
+        <div class="teaches"><b>Teaches:</b> supervisor routing, subgraphs, streaming, output synthesis.
+          <span class="pill">langgraph-supervisor</span><span class="pill">subgraphs</span><span class="pill">stream_mode</span></div>
+      </div>
+
+      <div class="proj">
+        <h3>5 · Parallel daily-briefing agent <span class="lvl">Fan-out/in</span></h3>
+        <p>Fan out to calendar, news, and email-summary nodes in one super-step, merge their results through a reducer,
+          then have a writer node compose the brief. Best way to <em>feel</em> the bulk-synchronous execution model.</p>
+        <div class="teaches"><b>Teaches:</b> parallel nodes in a super-step, fan-in via <code>operator.add</code>-style reducers.
+          <span class="pill">parallel nodes</span><span class="pill">reducers</span><span class="pill">super-steps</span></div>
+      </div>
+
+      <div class="proj">
+        <h3>6 · Support-triage swarm <span class="lvl">Swarm</span></h3>
+        <p>Billing, technical, and account agents as peers that hand off directly (a billing question that turns out to
+          be a login bug jumps to technical, no supervisor). Then instrument it — swarms are where you learn to rely on
+          tracing to follow emergent control flow.</p>
+        <div class="teaches"><b>Teaches:</b> handoffs via <code>Command</code>, swarm trade-offs, observability.
+          <span class="pill">langgraph-swarm</span><span class="pill">Command(goto=)</span><span class="pill">LangSmith</span></div>
+      </div>
+
+      <div class="callout note"><span class="tag">Career angle</span>
+        <p>If you're building to show hiring managers, #1 and #3 punch above their weight: self-correction and a human
+          approval gate are the two things separating a demo from something a company would actually deploy. Ship one
+          of those with a checkpointer wired to Postgres and a short write-up of the graph, and you've demonstrated the
+          exact skills LangGraph is hired for.</p></div>
+    </section>
+
+    <!-- ===================== CHEAT SHEET ===================== -->
+    <section id="cheatsheet">
+      <h2>Cheat-sheet</h2>
+      <table class="cmp">
+        <thead><tr><th>You want…</th><th>Reach for</th></tr></thead>
+        <tbody>
+          <tr><td>Define shared, merge-aware state</td><td><code>TypedDict</code> + <code>Annotated[list, add_messages]</code> / custom reducer</td></tr>
+          <tr><td>A unit of work</td><td>A node: <code>def n(state) -&gt; dict</code> (partial update)</td></tr>
+          <tr><td>Static "then run X"</td><td><code>builder.add_edge(a, b)</code></td></tr>
+          <tr><td>"Decide what runs next"</td><td><code>builder.add_conditional_edges(a, router)</code></td></tr>
+          <tr><td>A standard tool-using agent</td><td><code>langchain.agents.create_agent(model, tools=…)</code></td></tr>
+          <tr><td>Memory / crash recovery / time-travel</td><td><code>compile(checkpointer=…)</code> + <code>thread_id</code></td></tr>
+          <tr><td>Pause for a human</td><td><code>interrupt(payload)</code> → <code>Command(resume=value)</code></td></tr>
+          <tr><td>Live output</td><td><code>graph.stream(…, stream_mode="updates" | "messages")</code></td></tr>
+          <tr><td>Central routing over agents</td><td>Supervisor (<code>langgraph-supervisor</code>)</td></tr>
+          <tr><td>Direct peer handoffs</td><td>Swarm (<code>langgraph-swarm</code>) / <code>Command(goto=…)</code></td></tr>
+          <tr><td>Stop runaway loops</td><td><code>invoke(…, {"recursion_limit": N})</code> + a counter in state</td></tr>
+          <tr><td>Debug the graph visually</td><td>LangGraph Studio + LangSmith traces</td></tr>
+        </tbody>
+      </table>
+      <p><strong>Mental checklist for any graph:</strong> What are the channels and their reducers? Which node is the
+        entry? Where is the loop, and what breaks it? Is there a checkpointer, and what's the <code>thread_id</code>?
+        Where might a human need to intervene?</p>
+    </section>
+
+    <!-- ===================== FURTHER READING ===================== -->
+    <section id="reading">
+      <h2>Further reading</h2>
+      <ul>
+        <li><a class="ref" href="https://docs.langchain.com/oss/python/releases/langgraph-v1" target="_blank" rel="noopener">What's new in LangGraph v1</a> — the authoritative "what changed / what's deprecated" note; read before trusting any older tutorial.</li>
+        <li><a class="ref" href="https://langchain-ai.github.io/langgraph/" target="_blank" rel="noopener">LangGraph docs &amp; how-to guides</a> — the concept guides (persistence, HITL, streaming, subgraphs) are the best reference once the mental model has clicked.</li>
+        <li><a class="ref" href="https://reference.langchain.com/python/langgraph-supervisor" target="_blank" rel="noopener">langgraph-supervisor reference</a> — the supervisor prebuilt, with the exact kwargs the snippet above abbreviates.</li>
+        <li><a class="ref" href="https://deepwiki.com/langchain-ai/langgraph/3.7-human-in-the-loop-and-interrupts" target="_blank" rel="noopener">DeepWiki: Human-in-the-loop &amp; interrupts</a> — a clear walkthrough of the interrupt/resume lifecycle and the checkpointer requirement.</li>
+        <li><a class="ref" href="https://dev.to/focused_dot_io/multi-agent-orchestration-in-langgraph-supervisor-vs-swarm-tradeoffs-and-architecture-1b7e" target="_blank" rel="noopener">Supervisor vs Swarm: trade-offs &amp; architecture</a> — the decision framework, with when-to-nest guidance for 6+ agents.</li>
+        <li><a class="ref" href="https://academy.langchain.com/" target="_blank" rel="noopener">LangChain Academy — "Introduction to LangGraph"</a> — free official course; the notebooks map 1:1 to the primitives above if you like learning by running code.</li>
+      </ul>
+    </section>
+
+    <footer>Part of Rex's Learning directory · self-contained — open in any browser, edit the code cells freely.
+      Content verified against LangGraph v1 (2026); APIs move fast, so cross-check the release notes above before
+      pinning versions.</footer>
+  </main>
+</div>
+
+<script>
+/* ---------- theme ---------- */
+const root=document.documentElement;
+document.getElementById('themeBtn').onclick=()=>{
+  root.dataset.theme = root.dataset.theme==='dark' ? '' : 'dark';
+  if(window.__vizRedraw) window.__vizRedraw();
+};
+
+/* ---------- depth toggle ---------- */
+const depthBtn=document.getElementById('depthBtn'), depthNote=document.getElementById('depthNote');
+depthBtn.onclick=()=>{
+  const skim=root.classList.toggle('skim');
+  depthBtn.textContent = skim ? 'Mode: Skim' : 'Mode: Full detail';
+  depthBtn.dataset.mode = skim ? 'skim' : 'full';
+  depthNote.textContent = skim ? 'Skim mode — deep-dive blocks hidden' : 'Full mode — deep-dive blocks visible';
+};
+
+/* ---------- build TOC + scroll-spy ---------- */
+const toc=document.getElementById('toc'), secs=[...document.querySelectorAll('main section[id]')];
+secs.forEach(s=>{
+  const h=s.querySelector('h2'); if(!h) return;
+  const a=document.createElement('a'); a.href='#'+s.id;
+  a.textContent=h.textContent.replace(/\s+/g,' ').trim(); a.dataset.for=s.id;
+  toc.appendChild(a);
+});
+const spy=new IntersectionObserver(es=>{
+  es.forEach(e=>{ if(e.isIntersecting){
+    toc.querySelectorAll('a').forEach(a=>a.classList.toggle('active',a.dataset.for===e.target.id));
+  }});
+},{rootMargin:'-20% 0px -70% 0px'});
+secs.forEach(s=>spy.observe(s));
+
+/* ---------- in-page fragment links (srcdoc-safe) ---------- */
+/* When this file is embedded via <iframe srcdoc>, its document base URL is the
+   PARENT page, so a bare "#id" link would navigate the frame to <parent>#id and
+   reload the whole host page inside itself. Intercept fragment links (TOC and
+   any others) and scroll within this document instead. */
+document.addEventListener('click',e=>{
+  const a=e.target.closest?.('a[href^="#"]'); if(!a) return;
+  const id=decodeURIComponent(a.getAttribute('href').slice(1)); if(!id) return;
+  const el=document.getElementById(id); if(!el) return;
+  e.preventDefault(); el.scrollIntoView({behavior:'smooth',block:'start'});
+});
+
+/* ---------- progress bar ---------- */
+const prog=document.getElementById('progress');
+addEventListener('scroll',()=>{
+  const h=document.documentElement, max=h.scrollHeight-h.clientHeight;
+  prog.style.width=(max>0?(h.scrollTop/max*100):0)+'%';
+},{passive:true});
+
+/* ---------- quizzes ---------- */
+document.querySelectorAll('.quiz').forEach(q=>{
+  const opts=q.querySelectorAll('.options li');
+  opts.forEach(li=>li.onclick=()=>{
+    if(q.classList.contains('answered')) return;
+    q.classList.add('answered');
+    opts.forEach(o=>{o.classList.add('locked');
+      if(o.dataset.correct) o.classList.add('correct');});
+    if(!li.dataset.correct) li.classList.add('wrong');
+  });
+});
+
+/* ---------- code runners ---------- */
+function fmt(v){ if(typeof v==='object'){try{return JSON.stringify(v);}catch(e){return String(v);}} return String(v); }
+function runJS(code,out){
+  const logs=[]; const c={log:(...a)=>logs.push(a.map(fmt).join(' ')),
+    error:(...a)=>logs.push('⚠ '+a.map(fmt).join(' ')), warn:(...a)=>logs.push(a.map(fmt).join(' '))};
+  try{ const r=new Function('console',code)(c); if(r!==undefined) logs.push(fmt(r)); }
+  catch(e){ logs.push('⚠ '+e); }
+  out.textContent = logs.join('\n') || '(no output)';
+}
+let pyodide=null;
+function ensurePy(out){
+  if(pyodide) return pyodide;
+  out.textContent='Loading Python runtime…';
+  pyodide=new Promise((res,rej)=>{
+    const s=document.createElement('script');
+    s.src='https://cdn.jsdelivr.net/pyodide/v0.26.2/full/pyodide.js';
+    s.onload=async()=>{ try{ res(await loadPyodide()); }catch(e){ rej(e); } };
+    s.onerror=()=>rej(new Error('Could not load Pyodide (needs internet).'));
+    document.head.appendChild(s);
+  });
+  return pyodide;
+}
+async function runPy(code,out){
+  try{
+    const py=await ensurePy(out);
+    py.runPython('import sys,io\nsys.stdout=io.StringIO()\nsys.stderr=sys.stdout');
+    py.runPython(code);
+    out.textContent = py.runPython('sys.stdout.getvalue()') || '(no output)';
+  }catch(e){ out.textContent='⚠ '+e; }
+}
+document.querySelectorAll('.code-runner').forEach(cr=>{
+  const ta=cr.querySelector('textarea'), out=cr.querySelector('.output'),
+        lang=cr.dataset.lang||'js';
+  cr.querySelector('.run').onclick=()=> lang==='python' ? runPy(ta.value,out) : runJS(ta.value,out);
+  cr.querySelector('.copy').onclick=()=>{ navigator.clipboard?.writeText(ta.value);
+    const b=cr.querySelector('.copy'), t=b.textContent; b.textContent='Copied'; setTimeout(()=>b.textContent=t,1000); };
+});
+
+/* ---------- visual explainer: agent-loop execution across super-steps ---------- */
+(function(){
+  const cv=document.getElementById('viz'); if(!cv) return;
+  const ctx=cv.getContext('2d');
+  const W=cv.width, H=cv.height;
+  const noteEl=document.getElementById('vizNote'), stateEl=document.getElementById('lgState');
+
+  // node rectangles (centres + size)
+  const N={
+    START:{x:70,  y:186, w:72, h:34, label:'START'},
+    agent:{x:250, y:180, w:96, h:44, label:'agent',  sub:'LLM'},
+    tools:{x:474, y:70,  w:96, h:44, label:'tools',  sub:'ToolNode'},
+    END:  {x:648, y:186, w:64, h:34, label:'END'},
+  };
+  const anchor=(n,side)=>{const b=N[n];
+    if(side==='r') return {x:b.x+b.w, y:b.y+b.h/2};
+    if(side==='l') return {x:b.x,     y:b.y+b.h/2};
+    if(side==='t') return {x:b.x+b.w/2, y:b.y};
+    return {x:b.x+b.w/2, y:b.y+b.h}; };
+  // edges as parametric curves p(t)
+  const E={
+    start_agent:{from:'START',to:'agent', p:seg(anchor('START','r'), anchor('agent','l'))},
+    agent_tools:{from:'agent',to:'tools', label:'has tool_calls', p:quad({x:340,y:172},{x:405,y:118},{x:474,y:96})},
+    tools_agent:{from:'tools',to:'agent', label:'ToolMessage', p:quad({x:500,y:114},{x:430,y:172},{x:342,y:182})},
+    agent_end:{from:'agent',to:'END', label:'no tool_calls', p:seg({x:346,y:196}, anchor('END','l'))},
+  };
+  function seg(a,b){ return t=>({x:a.x+(b.x-a.x)*t, y:a.y+(b.y-a.y)*t}); }
+  function quad(a,c,b){ return t=>{const u=1-t; return {
+    x:u*u*a.x+2*u*t*c.x+t*t*b.x, y:u*u*a.y+2*u*t*c.y+t*t*b.y}; }; }
+
+  // scripted execution trace
+  const TRACE=[
+    {edge:'start_agent', node:'agent', add:['AIMessage · tool_call get_weather("Paris")'], note:'super-step 1 — agent (LLM) decides it needs a tool'},
+    {edge:'agent_tools', node:'tools', add:['ToolMessage · Paris: 18°C'], note:'conditional edge: tool_calls present → route to tools'},
+    {edge:'tools_agent', node:'agent', add:['AIMessage · tool_call get_weather("Tokyo")'], note:'super-step 3 — loop back; agent runs again on the grown state'},
+    {edge:'agent_tools', node:'tools', add:['ToolMessage · Tokyo: 24°C'], note:'second tool call — the cycle repeats'},
+    {edge:'tools_agent', node:'agent', add:['AIMessage · "Paris 18°C, Tokyo 24°C."'], note:'super-step 5 — enough info; no tool_call this time'},
+    {edge:'agent_end',   node:'END',   add:[], note:'conditional edge: no tool_calls → END. Done.'},
+  ];
+
+  let i=-1, active=null, glow=null, pulseEdge=null, pulseT=0, raf=null, playing=false;
+  const messages=['HumanMessage · "weather in Paris and Tokyo?"'];
+
+  function css(v){ return getComputedStyle(document.body).getPropertyValue(v).trim(); }
+  function rrect(x,y,w,h,r){ ctx.beginPath();
+    ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r);
+    ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath(); }
+  function arrow(p, tEnd){ const a=p(tEnd-0.001), b=p(tEnd);
+    const ang=Math.atan2(b.y-a.y,b.x-a.x); const s=7;
+    ctx.beginPath(); ctx.moveTo(b.x,b.y);
+    ctx.lineTo(b.x-s*Math.cos(ang-0.4), b.y-s*Math.sin(ang-0.4));
+    ctx.lineTo(b.x-s*Math.cos(ang+0.4), b.y-s*Math.sin(ang+0.4));
+    ctx.closePath(); ctx.fill(); }
+
+  function drawEdge(key){
+    const e=E[key], hot = key===pulseEdge || (active && e.to===active && e.from===glowPrev);
+    const on = key===lastEdge;
+    ctx.lineWidth = on?2.4:1.4;
+    ctx.strokeStyle = on ? css('--warn') : css('--muted');
+    ctx.globalAlpha = on ? 1 : .5;
+    ctx.beginPath();
+    for(let t=0;t<=1;t+=0.04){ const q=e.p(t); t===0?ctx.moveTo(q.x,q.y):ctx.lineTo(q.x,q.y); }
+    ctx.stroke();
+    ctx.fillStyle = ctx.strokeStyle; arrow(e.p,1);
+    ctx.globalAlpha=1;
+    if(e.label){ const m=e.p(0.5); ctx.font='11px ui-monospace,monospace';
+      ctx.fillStyle=css('--muted'); ctx.textAlign='center';
+      ctx.fillText(e.label, m.x, m.y-6); }
+  }
+  function drawNode(key){
+    const n=N[key], isActive=key===active;
+    ctx.save();
+    if(isActive){ ctx.shadowColor=css('--accent'); ctx.shadowBlur=18; }
+    rrect(n.x,n.y,n.w,n.h,10);
+    ctx.fillStyle = isActive ? css('--accent') : css('--panel');
+    ctx.fill(); ctx.shadowBlur=0;
+    ctx.lineWidth=1.5; ctx.strokeStyle = isActive ? css('--accent') : css('--line'); ctx.stroke();
+    ctx.restore();
+    ctx.textAlign='center';
+    ctx.fillStyle = isActive ? '#fff' : css('--ink');
+    ctx.font='600 13px Inter,system-ui,sans-serif';
+    ctx.fillText(n.label, n.x+n.w/2, n.y+n.h/2 + (n.sub?-2:4));
+    if(n.sub){ ctx.font='10px ui-monospace,monospace';
+      ctx.fillStyle = isActive ? '#e8f4f8' : css('--muted');
+      ctx.fillText(n.sub, n.x+n.w/2, n.y+n.h/2+12); }
+  }
+  let lastEdge=null, glowPrev=null;
+  function draw(){
+    ctx.clearRect(0,0,W,H);
+    // faint grid
+    ctx.strokeStyle=css('--line'); ctx.globalAlpha=.35; ctx.lineWidth=1;
+    for(let x=0;x<=W;x+=40){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,H);ctx.stroke();}
+    for(let y=0;y<=H;y+=40){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke();}
+    ctx.globalAlpha=1;
+    Object.keys(E).forEach(drawEdge);
+    Object.keys(N).forEach(drawNode);
+    // moving pulse
+    if(pulseEdge){ const q=E[pulseEdge].p(pulseT);
+      ctx.beginPath(); ctx.arc(q.x,q.y,6,0,7);
+      ctx.fillStyle=css('--warn'); ctx.shadowColor=css('--warn'); ctx.shadowBlur=12; ctx.fill(); ctx.shadowBlur=0; }
+    // step counter
+    ctx.textAlign='left'; ctx.font='600 12px ui-monospace,monospace'; ctx.fillStyle=css('--muted');
+    ctx.fillText('super-step '+(i<0?0:Math.min(i+1,TRACE.length))+' / '+TRACE.length, 12, 18);
+  }
+  window.__vizRedraw=draw;
+
+  function renderState(){
+    const rows=messages.slice(-6).map(m=>{
+      let cls='t', tag='msg';
+      if(m.startsWith('Human')) {cls='k'; tag='human';}
+      else if(m.startsWith('AI')) {cls='m'; tag='ai';}
+      else if(m.startsWith('Tool')) {cls='t'; tag='tool';}
+      const body=m.split('·').slice(1).join('·').trim();
+      return `<span class="dim">state["messages"][${messages.indexOf(m)}]</span>  <span class="${cls}">${tag.padEnd(5)}</span> ${body}`;
+    }).join('\n');
+    const head=`<span class="k">len(messages) = ${messages.length}</span>  ·  reducer: add_messages (append)\n\n`;
+    stateEl.innerHTML=head+rows;
+  }
+  renderState();
+
+  function applyStep(k){
+    const s=TRACE[k];
+    glowPrev = active; active=s.node; lastEdge=s.edge;
+    s.add.forEach(m=>messages.push(m));
+    noteEl.textContent=s.note;
+    renderState(); draw();
+  }
+  function stopPlay(){ if(raf){cancelAnimationFrame(raf);raf=null;} playing=false;
+    document.getElementById('vizPlay').textContent='▶ Play'; }
+
+  function animateEdge(key, done){
+    pulseEdge=key; pulseT=0;
+    const t0=performance.now(), dur=650;
+    (function frame(now){
+      pulseT=Math.min(1,(now-t0)/dur); draw();
+      if(pulseT<1){ raf=requestAnimationFrame(frame); }
+      else { pulseEdge=null; done(); }
+    })(t0);
+  }
+  function next(auto){
+    if(i>=TRACE.length-1){ stopPlay(); noteEl.textContent='Run complete — the loop ran twice, then routed to END.'; return; }
+    const k=i+1;
+    animateEdge(TRACE[k].edge, ()=>{
+      i=k; applyStep(k);
+      if(auto && playing && i<TRACE.length-1){ raf=requestAnimationFrame(()=>setTimeout(()=>next(true),380)); }
+      else if(auto && playing){ stopPlay(); noteEl.textContent='Run complete — the loop ran twice, then routed to END.'; }
+    });
+  }
+  function reset(){ stopPlay(); i=-1; active=null; glowPrev=null; lastEdge=null; pulseEdge=null;
+    messages.length=1; noteEl.textContent='Press Play or Step to advance the graph.'; renderState(); draw(); }
+
+  document.getElementById('vizPlay').onclick=e=>{
+    if(playing){ stopPlay(); return; }
+    if(i>=TRACE.length-1) reset();
+    playing=true; e.target.textContent='⏸ Pause'; next(true);
+  };
+  document.getElementById('vizStep').onclick=()=>{ if(playing) stopPlay();
+    if(i>=TRACE.length-1) reset(); next(false); };
+  document.getElementById('vizReset').onclick=reset;
+  draw();
+})();
+</script>
+</body>
+</html>
