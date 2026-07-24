@@ -1,0 +1,986 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kustomize — Learning Module</title>
+<style>
+  :root{
+    --bg:#faf7f2; --panel:#fffdf9; --ink:#26221d; --muted:#6b6357; --line:#e6ded1;
+    --accent:#2f6fb0; --accent-soft:#dce8f4; --ok:#1f7a4d; --bad:#b03030;
+    --code-bg:#1f2530; --code-ink:#eef2f7; --shadow:0 1px 2px rgba(0,0,0,.05),0 6px 20px rgba(30,45,70,.07);
+    --sans:'Inter',system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+    --serif:'Charter','Georgia',Cambria,'Times New Roman',serif;
+    --mono:'SF Mono',ui-monospace,'JetBrains Mono',Menlo,Consolas,monospace;
+  }
+  html[data-theme="dark"]{
+    --bg:#11151b; --panel:#181d25; --ink:#e7ecf3; --muted:#95a0b0; --line:#28313d;
+    --accent:#63a8e6; --accent-soft:#1e2a38; --code-bg:#0c1016; --code-ink:#eef2f7;
+    --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 24px rgba(0,0,0,.4);
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);
+    line-height:1.65;font-size:17px;-webkit-font-smoothing:antialiased}
+  .progress{position:fixed;top:0;left:0;height:3px;width:0;background:var(--accent);z-index:50;transition:width .1s}
+  .wrap{display:grid;grid-template-columns:240px minmax(0,760px);gap:48px;max-width:1080px;
+    margin:0 auto;padding:0 28px 120px}
+  @media(max-width:820px){.wrap{grid-template-columns:1fr;gap:0}.toc{display:none}
+    main{grid-column:1}
+    main table{display:block;width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch}
+    pre,.code-runner{max-width:100%}}
+
+  header{grid-column:1/-1;padding:44px 0 24px;border-bottom:1px solid var(--line);margin-bottom:36px}
+  .eyebrow{font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:var(--accent);font-weight:600}
+  h1{font-family:var(--serif);font-size:38px;line-height:1.15;margin:.25em 0 .15em;font-weight:650}
+  .why{color:var(--muted);font-size:18px;max-width:60ch;margin:.4em 0 0}
+  .controls{display:flex;gap:10px;margin-top:22px;flex-wrap:wrap}
+  .btn{font:inherit;font-size:14px;padding:7px 14px;border:1px solid var(--line);background:var(--panel);
+    color:var(--ink);border-radius:999px;cursor:pointer;box-shadow:var(--shadow);transition:.15s}
+  .btn:hover{border-color:var(--accent)}
+  .btn.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+
+  .toc{position:sticky;top:24px;align-self:start;font-size:14px;max-height:90vh;overflow:auto}
+  .toc a{display:block;color:var(--muted);text-decoration:none;padding:4px 0 4px 12px;
+    border-left:2px solid transparent;transition:.15s}
+  .toc a:hover{color:var(--ink)}
+  .toc a.active{color:var(--accent);border-left-color:var(--accent);font-weight:600}
+
+  main{grid-column:2;min-width:0}
+  section{margin:0 0 52px;scroll-margin-top:24px}
+  h2{font-family:var(--serif);font-size:26px;margin:0 0 .5em;font-weight:640}
+  h3{font-size:19px;margin:1.6em 0 .4em}
+  p{margin:0 0 1em} code{font-family:var(--mono);font-size:.9em;background:var(--accent-soft);
+    padding:.1em .35em;border-radius:4px}
+  ul,ol{padding-left:1.2em} li{margin:.25em 0}
+
+  .deep-dive{border-left:3px solid var(--accent-soft);padding:2px 0 2px 18px;margin:1em 0;transition:.2s}
+  html.skim .deep-dive{display:none}
+  .depth-note{font-size:13px;color:var(--muted);font-style:italic}
+  html:not(.skim) .skim-only{display:none}
+
+  .callout{border:1px solid var(--line);border-radius:12px;padding:16px 18px;margin:1.4em 0;
+    background:var(--panel);box-shadow:var(--shadow)}
+  .callout .tag{font-size:12px;font-weight:700;letter-spacing:.05em;text-transform:uppercase}
+  .callout.insight{border-color:#c7a34d55}.callout.insight .tag{color:#a9791b}
+  .callout.pitfall{border-color:#b0303055}.callout.pitfall .tag{color:var(--bad)}
+  .callout p:last-child{margin-bottom:0}
+  details{margin:1em 0;border:1px solid var(--line);border-radius:10px;padding:0 16px;background:var(--panel)}
+  details summary{cursor:pointer;padding:12px 0;font-weight:600}
+
+  .viz{border:1px solid var(--line);border-radius:14px;background:var(--panel);
+    padding:16px;margin:1.6em 0;box-shadow:var(--shadow)}
+  .viz canvas{width:100%;height:auto;display:block;border-radius:8px;background:var(--bg)}
+  .viz .vbar{display:flex;gap:8px;margin-top:12px;align-items:center;flex-wrap:wrap}
+  .viz .cap{font-size:13px;color:var(--muted);margin-top:8px}
+
+  .code-runner{margin:1.6em 0;border-radius:12px;overflow:hidden;border:1px solid var(--line);box-shadow:var(--shadow)}
+  .code-runner .cr-head{display:flex;justify-content:space-between;align-items:center;
+    background:var(--code-bg);padding:8px 12px}
+  .cr-head .lang{color:#9aa6b6;font-size:12px;font-family:var(--mono);text-transform:uppercase;letter-spacing:.08em}
+  .cr-head .cr-btns{display:flex;gap:6px}
+  .cr-btns button{font:inherit;font-size:12px;font-family:var(--mono);color:var(--code-ink);
+    background:#ffffff18;border:1px solid #ffffff22;border-radius:6px;padding:4px 10px;cursor:pointer}
+  .cr-btns button:hover{background:#ffffff30}
+  .code-runner textarea{width:100%;border:0;resize:vertical;min-height:120px;padding:14px;
+    background:var(--code-bg);color:var(--code-ink);font-family:var(--mono);font-size:13.5px;line-height:1.55;outline:none}
+  .code-runner .output{margin:0;padding:12px 14px;background:#00000030;color:var(--code-ink);
+    font-family:var(--mono);font-size:13px;white-space:pre-wrap;min-height:20px;border-top:1px solid #ffffff14}
+
+  /* yaml code block (non-runnable) */
+  pre.yaml{margin:1.4em 0;background:var(--code-bg);color:var(--code-ink);border-radius:12px;
+    padding:14px 16px;overflow-x:auto;font-family:var(--mono);font-size:13.5px;line-height:1.55;
+    box-shadow:var(--shadow);-webkit-overflow-scrolling:touch}
+  pre.yaml .k{color:#8fd0ff} pre.yaml .s{color:#c8e6a0} pre.yaml .c{color:#7d8794;font-style:italic}
+  pre.yaml .d{color:#e6a15c} pre.yaml b{color:#f2c66d;font-weight:600}
+
+  .tree{font-family:var(--mono);font-size:13.5px;background:var(--panel);border:1px solid var(--line);
+    border-radius:10px;padding:14px 16px;white-space:pre;overflow-x:auto;color:var(--ink);margin:1.4em 0}
+
+  table{border-collapse:collapse;width:100%;margin:1.2em 0;font-size:15px}
+  th,td{border:1px solid var(--line);padding:8px 11px;text-align:left;vertical-align:top}
+  th{background:var(--accent-soft);font-weight:600}
+  td code{font-size:.86em}
+
+  .quiz{border:1px solid var(--line);border-radius:14px;padding:18px 20px;margin:1.6em 0;
+    background:var(--panel);box-shadow:var(--shadow)}
+  .quiz .q{font-weight:600;margin:0 0 12px}
+  .quiz .options{list-style:none;padding:0;margin:0;display:grid;gap:8px}
+  .quiz .options li{border:1px solid var(--line);border-radius:9px;padding:10px 14px;cursor:pointer;transition:.12s}
+  .quiz .options li:hover{border-color:var(--accent)}
+  .quiz .options li.correct{border-color:var(--ok);background:#1f7a4d18}
+  .quiz .options li.wrong{border-color:var(--bad);background:#b0303018}
+  .quiz .options li.locked{cursor:default;opacity:.85}
+  .quiz .explain{display:none;margin-top:14px;padding-top:12px;border-top:1px dashed var(--line);
+    color:var(--muted);font-size:15px}
+  .quiz.answered .explain{display:block}
+
+  a.ref{color:var(--accent)}
+  footer{grid-column:1/-1;border-top:1px solid var(--line);margin-top:20px;padding-top:24px;
+    color:var(--muted);font-size:14px}
+
+  @media(max-width:640px){
+    body{font-size:16px}
+    .wrap{padding:0 18px 90px}
+    header{padding:30px 0 20px;margin-bottom:26px}
+    h1{font-size:27px;line-height:1.2}
+    h2{font-size:21px}
+    h3{font-size:17px}
+    .why{font-size:16px}
+  }
+</style>
+</head>
+<body>
+<div class="progress" id="progress"></div>
+<div class="wrap">
+
+  <header>
+    <div class="eyebrow">Kubernetes · Configuration Management</div>
+    <h1>Kustomize, from zero to overlays</h1>
+    <p class="why">You already know Deployments, Services, and ConfigMaps. Kustomize is the thin
+      layer that lets you keep one honest set of those manifests and reshape them per environment —
+      no templating language, no variables, just plain YAML in and plain YAML out. This module is
+      the mental model plus the exact syntax to make it do what you want.</p>
+    <div class="controls">
+      <button class="btn active" id="depthBtn" data-mode="full">Mode: Full detail</button>
+      <button class="btn" id="themeBtn">◐ Theme</button>
+      <span class="depth-note" id="depthNote">Full mode — deep-dive blocks visible</span>
+    </div>
+  </header>
+
+  <nav class="toc" id="toc" aria-label="Contents"></nav>
+
+  <main>
+
+    <!-- ============================================================ -->
+    <section id="intuition">
+      <h2>The one idea</h2>
+      <p>Kustomize is a <b>pure function on YAML</b>: it reads a directory of valid Kubernetes
+        manifests plus a recipe file (<code>kustomization.yaml</code>) and prints a new stream of
+        valid manifests to stdout. It never runs your cluster, never stores state, and — this is the
+        part that trips up people coming from Helm — <b>it has no template language</b>. There are no
+        <code>{{ .Values }}</code> placeholders, no <code>if</code>, no <code>range</code>. The input
+        manifests are already deployable as-is; Kustomize just <em>transforms</em> them.</p>
+
+      <div class="callout insight"><span class="tag">Key insight</span>
+        <p>Helm <em>parameterizes</em> — you write templates with holes and fill them at install time.
+          Kustomize <em>overlays</em> — you keep a real, complete <b>base</b> and stack declarative
+          edits (<b>patches</b> and <b>transformers</b>) on top of it. The base stays deployable on its
+          own; each environment is "the base, plus this small diff."</p></div>
+
+      <p>Everything else in this module is just the vocabulary for describing those edits precisely:
+        which resources to include, what to rename, what to patch, and what to generate.</p>
+    </section>
+
+    <!-- ============================================================ -->
+    <section id="mental-model">
+      <h2>How you run it</h2>
+      <p>Kustomize ships <em>inside</em> <code>kubectl</code>, and also as a standalone binary. Two
+        commands cover almost everything:</p>
+      <pre class="yaml"><span class="c"># Render the manifests to stdout — inspect, diff, pipe. Changes nothing.</span>
+kubectl kustomize ./overlays/prod
+<span class="c"># same thing with the standalone binary:</span>
+kustomize build ./overlays/prod
+
+<span class="c"># Render AND apply in one step (the -k flag = "kustomize this dir"):</span>
+kubectl apply -k ./overlays/prod</pre>
+      <p>The mental loop is: <b>edit YAML → <code>kubectl kustomize</code> to see the rendered
+        output → apply.</b> Because the output is just manifests, you can pipe it into
+        <code>kubectl diff -f -</code>, into a GitOps tool (Argo CD and Flux both call
+        <code>kustomize build</code> under the hood), or into <code>grep</code>. That "it's only a
+        renderer" property is the whole reason it composes so well.</p>
+
+      <div class="callout pitfall"><span class="tag">Watch the version</span>
+        <p>The <code>kubectl</code>-embedded Kustomize often lags the standalone binary by several
+          releases. If a field works in <code>kustomize build</code> but not <code>kubectl kustomize</code>,
+          your kubectl is old. For anything nontrivial, install the standalone <code>kustomize</code>
+          and check <code>kustomize version</code>.</p></div>
+
+      <div class="quiz">
+        <p class="q">You run <code>kubectl kustomize ./overlays/prod</code>. What happens to your cluster?</p>
+        <ul class="options">
+          <li>The prod overlay is applied and pods start rolling.</li>
+          <li data-correct="true">Nothing — the rendered manifests are printed to stdout; the cluster is untouched.</li>
+          <li>Kustomize connects to the cluster to diff current vs desired state.</li>
+        </ul>
+        <div class="explain"><code>kubectl kustomize</code> (and <code>kustomize build</code>) are
+          <em>build</em> commands: pure YAML→YAML, no cluster contact. You need <code>kubectl apply -k</code>
+          (or <code>apply -f -</code> on the piped output) to actually change anything. Keeping build and
+          apply separate is what lets you review the diff first.</div>
+      </div>
+    </section>
+
+    <!-- ============================================================ -->
+    <section id="anatomy">
+      <h2>Anatomy of a kustomization.yaml</h2>
+      <p>Every Kustomize directory has exactly one file named <code>kustomization.yaml</code> (or
+        <code>.yml</code>/<code>Kustomization</code>). It's the recipe. Its top-level keys fall into
+        three buckets, and once you can name the bucket a key belongs to, the whole tool clicks:</p>
+      <ul>
+        <li><b>Inputs</b> — <code>resources</code>, <code>components</code>, <code>configMapGenerator</code>,
+          <code>secretGenerator</code>: what manifests enter the pipeline.</li>
+        <li><b>Transformers</b> — <code>namespace</code>, <code>namePrefix</code>/<code>nameSuffix</code>,
+          <code>labels</code>, <code>commonAnnotations</code>, <code>images</code>, <code>replicas</code>:
+          broad, structured edits applied across everything.</li>
+        <li><b>Patches</b> — <code>patches</code>, <code>replacements</code>: surgical, targeted edits.</li>
+      </ul>
+
+      <pre class="yaml"><span class="k">apiVersion:</span> <span class="s">kustomize.config.k8s.io/v1beta1</span>
+<span class="k">kind:</span> <span class="s">Kustomization</span>
+
+<span class="c"># --- inputs ---</span>
+<span class="k">resources:</span>
+  <span class="d">-</span> <span class="s">deployment.yaml</span>
+  <span class="d">-</span> <span class="s">service.yaml</span>
+
+<span class="c"># --- transformers ---</span>
+<span class="k">namespace:</span> <span class="s">web-prod</span>
+<span class="k">namePrefix:</span> <span class="s">prod-</span>
+<span class="k">labels:</span>
+  <span class="d">-</span> <span class="k">pairs:</span>
+      <span class="k">app.kubernetes.io/part-of:</span> <span class="s">storefront</span>
+    <span class="k">includeSelectors:</span> <span class="d">false</span>
+<span class="k">images:</span>
+  <span class="d">-</span> <span class="k">name:</span> <span class="s">nginx</span>
+    <span class="k">newTag:</span> <span class="s">1.27.3</span>
+
+<span class="c"># --- patches ---</span>
+<span class="k">patches:</span>
+  <span class="d">-</span> <span class="k">path:</span> <span class="s">replicas-patch.yaml</span></pre>
+
+      <p>That's the whole shape. The rest of this module walks each bucket with the syntax you'd
+        actually type.</p>
+    </section>
+
+    <!-- ============================================================ -->
+    <section id="resources">
+      <h2>Inputs: resources &amp; bases</h2>
+      <p><code>resources</code> is a list of things to pull into the build. Each entry is one of:</p>
+      <ul>
+        <li>a <b>local manifest file</b> — <code>deployment.yaml</code></li>
+        <li>a <b>directory that itself contains a <code>kustomization.yaml</code></b> — this is how an
+          overlay includes a base: <code>../../base</code></li>
+        <li>a <b>remote reference</b> — a Git URL like
+          <code>github.com/org/repo/config?ref=v1.4.0</code> (always pin <code>?ref=</code>).</li>
+      </ul>
+
+      <div class="callout pitfall"><span class="tag">Deprecated: <code>bases</code></span>
+        <p>Old tutorials use a separate <code>bases:</code> field. It was deprecated years ago —
+          directories now go in <code>resources</code> alongside files. If you inherit a repo with
+          <code>bases:</code>, run <code>kustomize edit fix</code> to migrate it automatically.</p></div>
+
+      <p>A base is just a normal Kustomize directory that happens to be referenced by others. There's
+        nothing special marking it as "a base" — the role is relational. This is the directory layout
+        you'll see everywhere:</p>
+      <div class="tree">app/
+├── base/
+│   ├── kustomization.yaml     <span style="color:var(--muted)"># resources: [deployment.yaml, service.yaml]</span>
+│   ├── deployment.yaml
+│   └── service.yaml
+└── overlays/
+    ├── dev/
+    │   ├── kustomization.yaml <span style="color:var(--muted)"># resources: [../../base] + dev tweaks</span>
+    │   └── replicas-patch.yaml
+    └── prod/
+        ├── kustomization.yaml <span style="color:var(--muted)"># resources: [../../base] + prod tweaks</span>
+        └── replicas-patch.yaml</div>
+      <p>You <code>build</code> an <em>overlay</em> (<code>overlays/prod</code>), never the base
+        directly for deployment. The overlay says <code>resources: [../../base]</code> and then layers
+        its environment-specific edits.</p>
+
+      <div class="callout insight"><span class="tag">Key insight</span>
+        <p>An overlay <b>never edits the base's files</b>. It composes on top of them. That's the
+          property that keeps a 3-environment repo honest: there is exactly one copy of the real
+          manifest, and each environment is a readable diff against it — not a forked, drifting copy.</p></div>
+    </section>
+
+    <!-- ============================================================ -->
+    <section id="transformers">
+      <h2>Transformers: broad edits</h2>
+      <p>Transformers are top-level fields that sweep across <em>every</em> resource in the build and
+        apply a structured change. You don't target them at one object; they're the "do this to
+        everything" knobs. The workhorses:</p>
+
+      <table>
+        <thead><tr><th>Field</th><th>What it does</th></tr></thead>
+        <tbody>
+          <tr><td><code>namespace</code></td><td>Sets <code>metadata.namespace</code> on all namespaced resources, and rewrites references (e.g. a RoleBinding's subject namespace).</td></tr>
+          <tr><td><code>namePrefix</code> / <code>nameSuffix</code></td><td>Prepends/appends to every <code>metadata.name</code>, and rewrites references to those names (a Service referenced by a Deployment follows along).</td></tr>
+          <tr><td><code>labels</code></td><td>Adds labels to <code>metadata.labels</code> on every resource. <code>includeSelectors</code> controls whether they're also added to selectors/pod templates.</td></tr>
+          <tr><td><code>commonAnnotations</code></td><td>Adds annotations to every resource's <code>metadata.annotations</code>.</td></tr>
+          <tr><td><code>images</code></td><td>Overrides container image <code>name</code> / <code>newName</code> / <code>newTag</code> / <code>digest</code> without editing the Deployment YAML.</td></tr>
+          <tr><td><code>replicas</code></td><td>Sets <code>spec.replicas</code> by resource name — the clean way to scale per environment.</td></tr>
+        </tbody>
+      </table>
+
+      <pre class="yaml"><span class="k">images:</span>
+  <span class="d">-</span> <span class="k">name:</span> <span class="s">nginx</span>              <span class="c"># match containers using image "nginx[:...]"</span>
+    <span class="k">newName:</span> <span class="s">registry.internal/nginx</span>
+    <span class="k">newTag:</span> <span class="s">1.27.3</span>
+  <span class="d">-</span> <span class="k">name:</span> <span class="s">api</span>
+    <span class="k">digest:</span> <span class="s">sha256:abc123…</span>   <span class="c"># pin by digest instead of tag</span>
+
+<span class="k">replicas:</span>
+  <span class="d">-</span> <span class="k">name:</span> <span class="s">web</span>                <span class="c"># matches metadata.name BEFORE namePrefix is applied</span>
+    <span class="k">count:</span> <span class="d">5</span></pre>
+
+      <div class="deep-dive">
+        <p class="depth-note">Deep dive — the <code>labels</code> footgun and why <code>commonLabels</code> was replaced</p>
+        <p>The old <code>commonLabels</code> field <b>always</b> injected your labels into pod-template
+          <em>selectors</em> too. That sounds convenient until you realize a Deployment's
+          <code>spec.selector</code> is <b>immutable</b> — so adding a common label to an already-deployed
+          Deployment made the next apply fail outright. The replacement, <code>labels</code>, defaults to
+          <code>includeSelectors: false</code>: labels land on metadata only, selectors are left alone.
+          You opt into selector injection explicitly, per label group:</p>
+        <pre class="yaml"><span class="k">labels:</span>
+  <span class="d">-</span> <span class="k">pairs:</span>
+      <span class="k">app.kubernetes.io/part-of:</span> <span class="s">storefront</span>
+    <span class="k">includeSelectors:</span> <span class="d">false</span>   <span class="c"># metadata only — safe on live Deployments</span>
+  <span class="d">-</span> <span class="k">pairs:</span>
+      <span class="k">app:</span> <span class="s">web</span>
+    <span class="k">includeSelectors:</span> <span class="d">true</span>    <span class="c"># also selector + pod template — set on NEW resources only</span></pre>
+        <p>Rule of thumb: use <code>includeSelectors: true</code> only on brand-new resources where the
+          selector doesn't exist yet; leave it <code>false</code> for org-wide labels you sprinkle on
+          existing workloads.</p>
+      </div>
+
+      <div class="callout pitfall"><span class="tag">Deprecated: <code>commonLabels</code></span>
+        <p><code>commonLabels: {app: web}</code> still works but warns. It maps to a <code>labels</code>
+          entry with <code>includeSelectors: true</code>. Prefer the explicit <code>labels</code> list.</p></div>
+
+      <div class="quiz">
+        <p class="q">Your Deployment is already live. You add <code>commonLabels: {team: payments}</code> and
+          <code>kubectl apply -k</code>. It fails with an error about the selector. Why?</p>
+        <ul class="options">
+          <li>Common labels must be unique per resource.</li>
+          <li data-correct="true"><code>commonLabels</code> injects into the immutable pod selector, and you can't change a live Deployment's selector.</li>
+          <li>Labels can't contain a <code>/</code> or the apply is rejected.</li>
+        </ul>
+        <div class="explain">A Deployment's <code>spec.selector.matchLabels</code> is immutable after
+          creation. <code>commonLabels</code> (and <code>labels</code> with <code>includeSelectors: true</code>)
+          write into it, so the apply is rejected. Use the newer <code>labels</code> with
+          <code>includeSelectors: false</code> to add metadata labels without touching the selector.</div>
+      </div>
+    </section>
+
+    <!-- ============================================================ -->
+    <section id="patches">
+      <h2>Patches: surgical edits</h2>
+      <p>Transformers handle "rename everything" and "set every image." <b>Patches</b> are for the
+        specific edits — bump this Deployment's replicas, add an env var to that container, drop a
+        volume. The modern field is a single list called <code>patches</code>, and each entry is:</p>
+      <ul>
+        <li>a <b>patch body</b>, given inline (<code>patch:</code>) or as a file (<code>path:</code>), and</li>
+        <li>an optional <b>target</b> selector saying <em>which</em> resource(s) it hits.</li>
+      </ul>
+      <p>Kustomize auto-detects the <b>two patch flavors</b> by shape:</p>
+
+      <h3>1. Strategic Merge Patch (SMP)</h3>
+      <p>You write a <em>partial manifest</em> — just enough of the resource to identify it and the
+        fields you want to change. Kustomize deep-merges it into the base. This is the one you'll reach
+        for 90% of the time because it reads like the resource itself:</p>
+      <pre class="yaml"><span class="c"># replicas-patch.yaml — a partial Deployment</span>
+<span class="k">apiVersion:</span> <span class="s">apps/v1</span>
+<span class="k">kind:</span> <span class="s">Deployment</span>
+<span class="k">metadata:</span>
+  <span class="k">name:</span> <span class="s">web</span>          <span class="c"># identifies the target</span>
+<span class="k">spec:</span>
+  <span class="k">replicas:</span> <span class="d">3</span>         <span class="c"># the only thing that changes</span></pre>
+      <pre class="yaml"><span class="c"># in kustomization.yaml — no target needed; the patch's own kind+name identify it</span>
+<span class="k">patches:</span>
+  <span class="d">-</span> <span class="k">path:</span> <span class="s">replicas-patch.yaml</span></pre>
+      <p>Lists merge intelligently: <code>containers</code> merge <b>by name</b> (the merge key baked
+        into the Kubernetes type), so a patch that names one container edits only that one and leaves
+        the siblings alone. To force other behavior, SMP has directives:
+        <code>$patch: replace</code> (swap the whole list/map instead of merging) and
+        <code>$patch: delete</code> (remove an element).</p>
+
+      <h3>2. JSON 6902 Patch</h3>
+      <p>An RFC 6902 patch is an explicit list of operations — <code>op</code>, <code>path</code>,
+        <code>value</code>. It's precise and unambiguous, which makes it the right tool when strategic
+        merge is fuzzy: removing one item from a list by index, or editing a field on a resource kind
+        Kustomize has no merge-key knowledge of (a CRD).</p>
+      <pre class="yaml"><span class="k">patches:</span>
+  <span class="d">-</span> <span class="k">target:</span>                 <span class="c"># JSON6902 needs a target selector</span>
+      <span class="k">kind:</span> <span class="s">Deployment</span>
+      <span class="k">name:</span> <span class="s">web</span>
+    <span class="k">patch:</span> <span class="d">|-</span>
+      <span class="d">-</span> op: replace
+        path: /spec/replicas
+        value: 3
+      <span class="d">-</span> op: add
+        path: /spec/template/spec/containers/0/env
+        value:
+          - {name: TIER, value: prod}</pre>
+
+      <h3>The <code>target</code> selector — patch many objects at once</h3>
+      <p>Give a patch a <code>target</code> and it applies to <em>every</em> resource that matches.
+        This is how you say "add this security context to all Deployments" without naming each one.
+        A target can filter on <code>group</code>, <code>version</code>, <code>kind</code>,
+        <code>name</code> (regex), <code>namespace</code>, <code>labelSelector</code>, and
+        <code>annotationSelector</code>:</p>
+      <pre class="yaml"><span class="k">patches:</span>
+  <span class="d">-</span> <span class="k">target:</span>
+      <span class="k">kind:</span> <span class="s">Deployment</span>
+      <span class="k">labelSelector:</span> <span class="s">"tier=backend"</span>
+    <span class="k">patch:</span> <span class="d">|-</span>
+      - op: add
+        path: /spec/template/spec/securityContext
+        value: {runAsNonRoot: true}</pre>
+
+      <div class="callout pitfall"><span class="tag">Deprecated: <code>patchesStrategicMerge</code> &amp; <code>patchesJson6902</code></span>
+        <p>These two older fields have been folded into the single <code>patches</code> list, which
+          auto-detects the flavor. You'll see the old ones constantly in existing repos — recognize
+          them, but write new code with <code>patches</code>. <code>kustomize edit fix</code> migrates.</p></div>
+
+      <p>The runnable cells below let you <em>feel</em> both merge mechanics — edit and re-run them.</p>
+
+      <div class="code-runner" data-lang="js">
+        <div class="cr-head"><span class="lang">javascript · strategic merge</span>
+          <div class="cr-btns"><button class="run">▶ Run</button><button class="copy">Copy</button></div></div>
+        <textarea spellcheck="false">// A tiny model of how a Strategic Merge Patch overlays onto a base.
+// The patch only names the fields it wants; everything else is preserved.
+// (Real SMP merges lists by a type-specific key like container "name";
+//  here we keep it to objects to show the core deep-merge idea.)
+function smMerge(base, patch){
+  if(base===null || typeof base!=="object" || Array.isArray(base)) return patch;
+  const out = {...base};
+  for(const k in patch){
+    const bv = base[k], pv = patch[k];
+    out[k] = (bv && pv && typeof bv==="object" && typeof pv==="object"
+              && !Array.isArray(bv) && !Array.isArray(pv))
+      ? smMerge(bv, pv)   // recurse into nested maps
+      : pv;               // scalar / list / new key -> take patch value
+  }
+  return out;
+}
+
+const base = {
+  metadata: { name: "web", labels: { app: "web" } },
+  spec: { replicas: 1, strategy: { type: "RollingUpdate" } }
+};
+const patch = { spec: { replicas: 3 } };   // <-- the whole overlay
+
+console.log(JSON.stringify(smMerge(base, patch), null, 2));
+// expected: replicas -> 3, and labels + strategy are untouched</textarea>
+        <pre class="output"></pre>
+      </div>
+
+      <div class="code-runner" data-lang="python">
+        <div class="cr-head"><span class="lang">python · json 6902</span>
+          <div class="cr-btns"><button class="run">▶ Run</button><button class="copy">Copy</button></div></div>
+        <textarea spellcheck="false"># A minimal RFC-6902 applier — the same ops Kustomize's JSON patches use.
+# Note how the path walks into a LIST by index (containers/0): that
+# index-precision is exactly why you pick JSON6902 over strategic merge.
+import json
+
+def apply(doc, op):
+    parts = op["path"].lstrip("/").split("/")
+    node = doc
+    for p in parts[:-1]:
+        node = node[int(p)] if isinstance(node, list) else node[p]
+    key = parts[-1]
+    if op["op"] == "replace":
+        node[int(key)] = op["value"] if isinstance(node, list) else None
+        if not isinstance(node, list): node[key] = op["value"]
+    elif op["op"] == "add":
+        if isinstance(node, list):
+            node.insert(len(node) if key == "-" else int(key), op["value"])
+        else:
+            node[key] = op["value"]
+    elif op["op"] == "remove":
+        del node[int(key)] if isinstance(node, list) else node.pop(key)
+    return doc
+
+doc = {"spec": {"replicas": 1,
+                "template": {"spec": {"containers": [{"name": "app", "image": "nginx:1.14"}]}}}}
+patch = [
+    {"op": "replace", "path": "/spec/replicas", "value": 3},
+    {"op": "add", "path": "/spec/template/spec/containers/0/env",
+     "value": [{"name": "TIER", "value": "prod"}]},
+]
+for op in patch:
+    apply(doc, op)
+print(json.dumps(doc, indent=2))
+# expected: replicas=3 and an env var added to container[0]</textarea>
+        <pre class="output"></pre>
+      </div>
+
+      <div class="quiz">
+        <p class="q">You need to delete the second entry of a container's <code>args</code> list — just
+          that one element, by position. Which patch flavor fits cleanly?</p>
+        <ul class="options">
+          <li>Strategic merge — write the args list without that element.</li>
+          <li data-correct="true">JSON 6902 — <code>{op: remove, path: /spec/.../args/1}</code>.</li>
+          <li>Neither; you must edit the base file directly.</li>
+        </ul>
+        <div class="explain">Strategic merge can't cleanly remove one positional list item — a merge
+          of an args list would try to merge element-by-element and there's no merge key, so you'd end
+          up replacing the whole list. JSON 6902's <code>remove</code> with an index path targets exactly
+          one element. This "surgical on lists" quality is the signature reason to reach for JSON6902.</div>
+      </div>
+    </section>
+
+    <!-- ============================================================ -->
+    <section id="generators">
+      <h2>Generators: ConfigMaps &amp; Secrets</h2>
+      <p>You <em>could</em> hand-write a ConfigMap manifest, but Kustomize can generate one from
+        literals, files, or an env file — and it does something clever with the name:</p>
+      <pre class="yaml"><span class="k">configMapGenerator:</span>
+  <span class="d">-</span> <span class="k">name:</span> <span class="s">app-config</span>
+    <span class="k">literals:</span>
+      <span class="d">-</span> <span class="s">LOG_LEVEL=info</span>
+      <span class="d">-</span> <span class="s">TIMEOUT=30s</span>
+    <span class="k">files:</span>
+      <span class="d">-</span> <span class="s">nginx.conf</span>          <span class="c"># key = filename, value = file contents</span>
+
+<span class="k">secretGenerator:</span>
+  <span class="d">-</span> <span class="k">name:</span> <span class="s">db-creds</span>
+    <span class="k">envs:</span>
+      <span class="d">-</span> <span class="s">db.env</span>             <span class="c"># KEY=VALUE lines, base64-encoded for you</span></pre>
+
+      <p>The generated object is named <code>app-config-<b>t4f8h9k2c6</b></code> — a content hash is
+        appended. Change any value and the hash changes, producing a <em>new</em> ConfigMap name. And
+        here's the magic: <b>Kustomize rewrites every reference</b> to <code>app-config</code> in your
+        Deployments to the hashed name.</p>
+
+      <div class="callout insight"><span class="tag">Key insight</span>
+        <p>The hash suffix isn't cosmetic — it's how Kustomize gives you <b>automatic rolling restarts
+          on config change</b>. New config → new ConfigMap name → the Deployment's pod spec now
+          references a different name → Kubernetes sees a changed pod template → rolling update. Without
+          it, editing a ConfigMap's data leaves running pods stuck on the old values.</p></div>
+
+      <p>Control it with <code>generatorOptions</code> and <code>behavior</code>:</p>
+      <pre class="yaml"><span class="k">generatorOptions:</span>
+  <span class="k">disableNameSuffixHash:</span> <span class="d">true</span>   <span class="c"># stable name, e.g. for a CM other tools read by name</span>
+
+<span class="k">configMapGenerator:</span>
+  <span class="d">-</span> <span class="k">name:</span> <span class="s">app-config</span>
+    <span class="k">behavior:</span> <span class="s">merge</span>          <span class="c"># merge into a same-named generator in the BASE</span>
+    <span class="k">literals:</span>
+      <span class="d">-</span> <span class="s">LOG_LEVEL=debug</span>      <span class="c"># overlay overrides just this key</span></pre>
+      <p><code>behavior</code> is <code>create</code> (default), <code>merge</code> (add/override keys of
+        a base generator), or <code>replace</code> (swap it wholesale) — the overlay's way to tweak a
+        base-defined ConfigMap.</p>
+
+      <div class="callout pitfall"><span class="tag">Pitfall</span>
+        <p>If something <em>outside</em> Kustomize's view references the ConfigMap by its plain name
+          (a hardcoded name in an app arg, a separately-applied resource), the hash suffix breaks that
+          link — Kustomize only rewrites references it can see in the build. Either include that resource
+          in the same build so the rewrite reaches it, or set <code>disableNameSuffixHash: true</code>.</p></div>
+
+      <div class="quiz">
+        <p class="q">Why does <code>configMapGenerator</code> append a hash like <code>-t4f8h9k2c6</code> to the name?</p>
+        <ul class="options">
+          <li>To avoid name collisions between namespaces.</li>
+          <li data-correct="true">So a config change yields a new name, which changes the pod template and triggers a rolling update.</li>
+          <li>It's a checksum Kubernetes verifies on apply.</li>
+        </ul>
+        <div class="explain">The hash makes config changes <em>propagate</em>. Mutating a ConfigMap's
+          data in place does not restart pods — they keep the mounted/old values. By minting a new
+          ConfigMap name on every change and rewriting references to it, Kustomize forces the Deployment's
+          pod spec to change, and Kubernetes rolls the pods. Turn it off with
+          <code>disableNameSuffixHash</code> only when you specifically need a stable name.</div>
+      </div>
+    </section>
+
+    <!-- ============================================================ -->
+    <section id="pipeline">
+      <h2>The build pipeline, visualized</h2>
+      <p>When you run <code>kustomize build</code>, your resources flow through the recipe in a fixed
+        conceptual order: inputs are collected, generators mint their ConfigMaps/Secrets, transformers
+        sweep across everything, then patches make their targeted edits. Step through it below and watch
+        a single Deployment get reshaped, field by field, into what actually deploys.</p>
+
+      <div class="viz">
+        <canvas id="viz" width="720" height="340"></canvas>
+        <div class="vbar">
+          <button class="btn" id="vizPlay">▶ Play</button>
+          <button class="btn" id="vizStep">Step ▸</button>
+          <button class="btn" id="vizReset">Reset</button>
+          <span class="cap" id="vizStage" style="margin:0"></span>
+        </div>
+        <p class="cap">The base manifest (left of the arrow, conceptually) is rewritten stage by stage.
+          Highlighted lines are what the current stage changed. Notice: the base is never mutated on
+          disk — this is the <em>rendered</em> output only.</p>
+      </div>
+
+      <div class="deep-dive">
+        <p class="depth-note">Deep dive — ordering caveats</p>
+        <p>The real ordering has subtleties: generators run before transformers, <code>namePrefix</code>/
+          <code>nameSuffix</code> and <code>namespace</code> also rewrite <em>references</em> (not just
+          the names themselves), and <code>patches</code> apply near the end so they see already-transformed
+          resources. One practical consequence: the <code>replicas</code> transformer and a patch's
+          <code>target: name</code> match against the <b>original</b> name, before <code>namePrefix</code>
+          is applied — target the base name, not the prefixed one. When in doubt, run
+          <code>kustomize build</code> and read the output; it's the ground truth.</p>
+      </div>
+    </section>
+
+    <!-- ============================================================ -->
+    <section id="advanced">
+      <h2>Replacements &amp; components</h2>
+      <p>Two more pieces you'll meet in mature repos, both replacing older mechanisms.</p>
+
+      <h3>replacements — copy a value from A to B</h3>
+      <p>Sometimes one value must appear in several places kept in sync — an image tag that also goes in
+        a label, a Service name that a ConfigMap references. The old <code>vars</code> field did this and
+        was fragile; <code>replacements</code> is the current, well-defined way. It reads a value from a
+        <b>source</b> field and writes it into one or more <b>target</b> field paths:</p>
+      <pre class="yaml"><span class="k">replacements:</span>
+  <span class="d">-</span> <span class="k">source:</span>
+      <span class="k">kind:</span> <span class="s">Deployment</span>
+      <span class="k">name:</span> <span class="s">web</span>
+      <span class="k">fieldPath:</span> <span class="s">spec.template.spec.containers.0.image</span>
+    <span class="k">targets:</span>
+      <span class="d">-</span> <span class="k">select:</span>
+          <span class="k">kind:</span> <span class="s">ConfigMap</span>
+          <span class="k">name:</span> <span class="s">build-info</span>
+        <span class="k">fieldPaths:</span>
+          <span class="d">-</span> <span class="s">data.image</span></pre>
+      <p>Unlike <code>vars</code>, replacements don't need the value to look like a string token in the
+        target — they just overwrite the field. That's why they're reliable where <code>vars</code>
+        silently failed.</p>
+
+      <h3>components — reusable, opt-in mixins</h3>
+      <p>A <b>Component</b> is a mini-kustomization (<code>kind: Component</code>) that an overlay can
+        pull in via <code>components:</code>. Unlike a base (which is a complete app), a component is a
+        <em>fragment</em> — "the monitoring sidecar," "the mTLS patch" — that several overlays share.
+        Use it when the same optional feature is toggled on across environments:</p>
+      <pre class="yaml"><span class="c"># components/mtls/kustomization.yaml</span>
+<span class="k">apiVersion:</span> <span class="s">kustomize.config.k8s.io/v1alpha1</span>
+<span class="k">kind:</span> <span class="s">Component</span>
+<span class="k">patches:</span>
+  <span class="d">-</span> <span class="k">path:</span> <span class="s">inject-sidecar.yaml</span></pre>
+      <pre class="yaml"><span class="c"># overlays/prod/kustomization.yaml</span>
+<span class="k">resources:</span>
+  <span class="d">-</span> <span class="s">../../base</span>
+<span class="k">components:</span>
+  <span class="d">-</span> <span class="s">../../components/mtls</span>    <span class="c"># prod gets mTLS; dev overlay simply omits it</span></pre>
+      <p>Components apply in list order and can add resources, patches, and generators — think of them as
+        composable feature flags for your manifests.</p>
+    </section>
+
+    <!-- ============================================================ -->
+    <section id="pitfalls">
+      <h2>Where people go wrong</h2>
+      <div class="callout pitfall"><span class="tag">Expecting templates</span>
+        <p>The number-one misconception: reaching for Kustomize when you actually want
+          <em>parameterization</em> (loops, conditionals, a value computed from three inputs). Kustomize
+          has none of that on purpose. If your need is "render N near-identical objects from a list" or
+          "branch on a flag," that's Helm — or Helm rendered <em>and then</em> Kustomized. Kustomize
+          shines at "one base, small per-env diffs," not at generating structure.</p></div>
+
+      <div class="callout pitfall"><span class="tag">Silent patch no-ops</span>
+        <p>A patch whose <code>target</code> matches nothing simply does nothing — no error. Get the
+          <code>group</code>/<code>version</code>/<code>kind</code>/<code>name</code> wrong (e.g. targeting
+          <code>Deployment</code> in the wrong <code>apiVersion</code>, or the prefixed name instead of the
+          base name) and your change vanishes with no warning. Always diff the <code>build</code> output.</p></div>
+
+      <div class="callout pitfall"><span class="tag">namespace on cluster-scoped resources</span>
+        <p>The <code>namespace</code> transformer only touches namespaced resources. ClusterRoles,
+          ClusterRoleBindings, PVs, and the like are left alone — as they must be. Don't expect it to
+          "move" a cluster-scoped object.</p></div>
+
+      <div class="callout pitfall"><span class="tag">Legacy fields everywhere</span>
+        <p>You'll open real repos full of <code>bases</code>, <code>patchesStrategicMerge</code>,
+          <code>patchesJson6902</code>, <code>commonLabels</code>, and <code>vars</code>. They still work
+          (with warnings) but are the <em>old</em> syntax. <code>kustomize edit fix</code> rewrites a
+          kustomization.yaml to the current fields automatically — run it before you start editing.</p></div>
+    </section>
+
+    <!-- ============================================================ -->
+    <section id="cheatsheet">
+      <h2>Cheat-sheet</h2>
+
+      <h3>Commands</h3>
+      <pre class="yaml">kustomize build ./overlays/prod          <span class="c"># render to stdout</span>
+kubectl kustomize ./overlays/prod        <span class="c"># same, via kubectl</span>
+kubectl apply -k ./overlays/prod         <span class="c"># render + apply</span>
+kubectl diff -k ./overlays/prod          <span class="c"># preview against live cluster</span>
+kustomize edit fix                       <span class="c"># migrate deprecated fields in place</span>
+kustomize edit set image nginx=nginx:1.27.3   <span class="c"># scripted edits</span></pre>
+
+      <h3>kustomization.yaml fields</h3>
+      <table>
+        <thead><tr><th>Bucket</th><th>Field</th><th>Purpose</th></tr></thead>
+        <tbody>
+          <tr><td rowspan="4">Inputs</td><td><code>resources</code></td><td>Files &amp; base directories to include</td></tr>
+          <tr><td><code>components</code></td><td>Reusable opt-in fragments</td></tr>
+          <tr><td><code>configMapGenerator</code></td><td>Generate ConfigMaps (hashed names)</td></tr>
+          <tr><td><code>secretGenerator</code></td><td>Generate Secrets (hashed names)</td></tr>
+          <tr><td rowspan="6">Transformers</td><td><code>namespace</code></td><td>Set namespace everywhere</td></tr>
+          <tr><td><code>namePrefix</code> / <code>nameSuffix</code></td><td>Rename + rewrite references</td></tr>
+          <tr><td><code>labels</code></td><td>Add labels (opt into selectors)</td></tr>
+          <tr><td><code>commonAnnotations</code></td><td>Add annotations everywhere</td></tr>
+          <tr><td><code>images</code></td><td>Override image name/tag/digest</td></tr>
+          <tr><td><code>replicas</code></td><td>Set replica counts by name</td></tr>
+          <tr><td rowspan="2">Patches</td><td><code>patches</code></td><td>SMP or JSON6902, optional target</td></tr>
+          <tr><td><code>replacements</code></td><td>Copy a value field→field</td></tr>
+        </tbody>
+      </table>
+
+      <h3>Old → new (recognize the legacy, write the modern)</h3>
+      <table>
+        <thead><tr><th>Deprecated</th><th>Use instead</th></tr></thead>
+        <tbody>
+          <tr><td><code>bases</code></td><td><code>resources</code></td></tr>
+          <tr><td><code>patchesStrategicMerge</code></td><td><code>patches</code> (path/inline)</td></tr>
+          <tr><td><code>patchesJson6902</code></td><td><code>patches</code> (with <code>target</code>)</td></tr>
+          <tr><td><code>commonLabels</code></td><td><code>labels</code> + <code>includeSelectors</code></td></tr>
+          <tr><td><code>vars</code></td><td><code>replacements</code></td></tr>
+        </tbody>
+      </table>
+
+      <h3>SMP vs JSON6902 — when</h3>
+      <table>
+        <thead><tr><th>Use SMP when…</th><th>Use JSON6902 when…</th></tr></thead>
+        <tbody>
+          <tr><td>Editing/adding map fields; merging by name into <code>containers</code></td><td>Removing a list item by index</td></tr>
+          <tr><td>The patch should read like the resource</td><td>Editing a CRD with no known merge key</td></tr>
+          <tr><td>Most day-to-day edits</td><td>You need op-level precision (<code>add/remove/replace/move</code>)</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- ============================================================ -->
+    <section id="reading">
+      <h2>Further reading</h2>
+      <ul>
+        <li><a class="ref" href="https://kubectl.docs.kubernetes.io/references/kustomize/kustomization/" target="_blank" rel="noopener">Kustomize field reference (kubectl docs)</a> — the authoritative, per-field spec; keep it open while you write.</li>
+        <li><a class="ref" href="https://kubernetes.io/docs/tasks/manage-kubernetes-objects/kustomization/" target="_blank" rel="noopener">Declarative management using Kustomize (kubernetes.io)</a> — the official task guide with runnable base+overlay examples.</li>
+        <li><a class="ref" href="https://github.com/kubernetes-sigs/kustomize/tree/master/examples" target="_blank" rel="noopener">kubernetes-sigs/kustomize · examples/</a> — small, focused example dirs (multi-object patches, inline patches, generators). The best "show me the YAML" source.</li>
+        <li><a class="ref" href="https://nickjanetakis.com/blog/replace-kustomize-commonlabels-patchesstrategicmerge-and-patchesjson6902" target="_blank" rel="noopener">Replacing commonLabels / patchesStrategicMerge / patchesJson6902</a> — a concise before/after for migrating the deprecated fields.</li>
+      </ul>
+    </section>
+
+    <footer>Generated for on-demand learning · open in any browser · edit the code cells freely.
+      Kustomize field names verified against the current <code>kustomize.config.k8s.io/v1beta1</code> spec.</footer>
+  </main>
+</div>
+
+<script>
+/* ---------- theme ---------- */
+const root=document.documentElement;
+document.getElementById('themeBtn').onclick=()=>{
+  root.dataset.theme = root.dataset.theme==='dark' ? '' : 'dark';
+};
+
+/* ---------- depth toggle ---------- */
+const depthBtn=document.getElementById('depthBtn'), depthNote=document.getElementById('depthNote');
+depthBtn.onclick=()=>{
+  const skim=root.classList.toggle('skim');
+  depthBtn.textContent = skim ? 'Mode: Skim' : 'Mode: Full detail';
+  depthBtn.dataset.mode = skim ? 'skim' : 'full';
+  depthNote.textContent = skim ? 'Skim mode — deep-dive blocks hidden' : 'Full mode — deep-dive blocks visible';
+};
+
+/* ---------- build TOC + scroll-spy ---------- */
+const toc=document.getElementById('toc'), secs=[...document.querySelectorAll('main section[id]')];
+secs.forEach(s=>{
+  const h=s.querySelector('h2'); if(!h) return;
+  const a=document.createElement('a'); a.href='#'+s.id; a.textContent=h.textContent; a.dataset.for=s.id;
+  toc.appendChild(a);
+});
+const spy=new IntersectionObserver(es=>{
+  es.forEach(e=>{ if(e.isIntersecting){
+    toc.querySelectorAll('a').forEach(a=>a.classList.toggle('active',a.dataset.for===e.target.id));
+  }});
+},{rootMargin:'-20% 0px -70% 0px'});
+secs.forEach(s=>spy.observe(s));
+
+/* ---------- in-page fragment links (srcdoc-safe) ---------- */
+document.addEventListener('click',e=>{
+  const a=e.target.closest?.('a[href^="#"]'); if(!a) return;
+  const id=decodeURIComponent(a.getAttribute('href').slice(1)); if(!id) return;
+  const el=document.getElementById(id); if(!el) return;
+  e.preventDefault(); el.scrollIntoView({behavior:'smooth',block:'start'});
+});
+
+/* ---------- progress bar ---------- */
+const prog=document.getElementById('progress');
+addEventListener('scroll',()=>{
+  const h=document.documentElement, max=h.scrollHeight-h.clientHeight;
+  prog.style.width=(max>0?(h.scrollTop/max*100):0)+'%';
+},{passive:true});
+
+/* ---------- quizzes ---------- */
+document.querySelectorAll('.quiz').forEach(q=>{
+  const opts=q.querySelectorAll('.options li');
+  opts.forEach(li=>li.onclick=()=>{
+    if(q.classList.contains('answered')) return;
+    q.classList.add('answered');
+    opts.forEach(o=>{o.classList.add('locked');
+      if(o.dataset.correct) o.classList.add('correct');});
+    if(!li.dataset.correct) li.classList.add('wrong');
+  });
+});
+
+/* ---------- code runners ---------- */
+function fmt(v){ if(typeof v==='object'){try{return JSON.stringify(v);}catch(e){return String(v);}} return String(v); }
+function runJS(code,out){
+  const logs=[]; const c={log:(...a)=>logs.push(a.map(fmt).join(' ')),
+    error:(...a)=>logs.push('⚠ '+a.map(fmt).join(' ')), warn:(...a)=>logs.push(a.map(fmt).join(' '))};
+  try{ const r=new Function('console',code)(c); if(r!==undefined) logs.push(fmt(r)); }
+  catch(e){ logs.push('⚠ '+e); }
+  out.textContent = logs.join('\n') || '(no output)';
+}
+let pyodide=null;
+function ensurePy(out){
+  if(pyodide) return pyodide;
+  out.textContent='Loading Python runtime…';
+  pyodide=new Promise((res,rej)=>{
+    const s=document.createElement('script');
+    s.src='https://cdn.jsdelivr.net/pyodide/v0.26.2/full/pyodide.js';
+    s.onload=async()=>{ try{ res(await loadPyodide()); }catch(e){ rej(e); } };
+    s.onerror=()=>rej(new Error('Could not load Pyodide (needs internet).'));
+    document.head.appendChild(s);
+  });
+  return pyodide;
+}
+async function runPy(code,out){
+  try{
+    const py=await ensurePy(out);
+    py.runPython('import sys,io\nsys.stdout=io.StringIO()\nsys.stderr=sys.stdout');
+    py.runPython(code);
+    out.textContent = py.runPython('sys.stdout.getvalue()') || '(no output)';
+  }catch(e){ out.textContent='⚠ '+e; }
+}
+document.querySelectorAll('.code-runner').forEach(cr=>{
+  const ta=cr.querySelector('textarea'), out=cr.querySelector('.output'),
+        lang=cr.dataset.lang||'js';
+  cr.querySelector('.run').onclick=()=> lang==='python' ? runPy(ta.value,out) : runJS(ta.value,out);
+  cr.querySelector('.copy').onclick=()=>{ navigator.clipboard?.writeText(ta.value);
+    const b=cr.querySelector('.copy'), t=b.textContent; b.textContent='Copied'; setTimeout(()=>b.textContent=t,1000); };
+});
+
+/* ---------- visual explainer: the kustomize build pipeline ----------
+   Steps a single Deployment through the render stages. Each stage mutates the
+   shown manifest lines and highlights what changed. Play/Step/Reset. */
+(function(){
+  const cv=document.getElementById('viz'); if(!cv) return;
+  const ctx=cv.getContext('2d');
+  const stageEl=document.getElementById('vizStage');
+
+  // Each stage: label + the manifest lines AFTER it runs + which line indices changed.
+  // Lines use {t: text, i: indent}. We build states cumulatively for clarity.
+  const stages=[
+    { name:'0 · base manifest', changed:[],
+      lines:[['apiVersion: apps/v1',0],['kind: Deployment',0],['metadata:',0],
+             ['name: web',1],['labels:',1],['app: web',2],['spec:',0],
+             ['replicas: 1',1],['template:',1],['spec:',2],['containers:',3],
+             ['- name: app',4],['image: nginx:1.14',5]] },
+    { name:'1 · namespace: web-prod', changed:[3],
+      lines:[['apiVersion: apps/v1',0],['kind: Deployment',0],['metadata:',0],
+             ['namespace: web-prod',1],['name: web',1],['labels:',1],['app: web',2],['spec:',0],
+             ['replicas: 1',1],['template:',1],['spec:',2],['containers:',3],
+             ['- name: app',4],['image: nginx:1.14',5]] },
+    { name:'2 · namePrefix: prod-', changed:[4],
+      lines:[['apiVersion: apps/v1',0],['kind: Deployment',0],['metadata:',0],
+             ['namespace: web-prod',1],['name: prod-web',1],['labels:',1],['app: web',2],['spec:',0],
+             ['replicas: 1',1],['template:',1],['spec:',2],['containers:',3],
+             ['- name: app',4],['image: nginx:1.14',5]] },
+    { name:'3 · labels (part-of)', changed:[7],
+      lines:[['apiVersion: apps/v1',0],['kind: Deployment',0],['metadata:',0],
+             ['namespace: web-prod',1],['name: prod-web',1],['labels:',1],['app: web',2],
+             ['app.kubernetes.io/part-of: storefront',2],['spec:',0],
+             ['replicas: 1',1],['template:',1],['spec:',2],['containers:',3],
+             ['- name: app',4],['image: nginx:1.14',5]] },
+    { name:'4 · images: nginx→1.27.3', changed:[14],
+      lines:[['apiVersion: apps/v1',0],['kind: Deployment',0],['metadata:',0],
+             ['namespace: web-prod',1],['name: prod-web',1],['labels:',1],['app: web',2],
+             ['app.kubernetes.io/part-of: storefront',2],['spec:',0],
+             ['replicas: 1',1],['template:',1],['spec:',2],['containers:',3],
+             ['- name: app',4],['image: nginx:1.27.3',5]] },
+    { name:'5 · patch: replicas 1→3', changed:[9],
+      lines:[['apiVersion: apps/v1',0],['kind: Deployment',0],['metadata:',0],
+             ['namespace: web-prod',1],['name: prod-web',1],['labels:',1],['app: web',2],
+             ['app.kubernetes.io/part-of: storefront',2],['spec:',0],
+             ['replicas: 3',1],['template:',1],['spec:',2],['containers:',3],
+             ['- name: app',4],['image: nginx:1.27.3',5]] },
+    { name:'✓ rendered output', changed:[],
+      lines:[['apiVersion: apps/v1',0],['kind: Deployment',0],['metadata:',0],
+             ['namespace: web-prod',1],['name: prod-web',1],['labels:',1],['app: web',2],
+             ['app.kubernetes.io/part-of: storefront',2],['spec:',0],
+             ['replicas: 3',1],['template:',1],['spec:',2],['containers:',3],
+             ['- name: app',4],['image: nginx:1.27.3',5]] },
+  ];
+
+  let cur=0, raf=null, flash=1;
+
+  function draw(){
+    const w=cv.width, h=cv.height, cs=getComputedStyle(document.body);
+    const ink=cs.getPropertyValue('--ink').trim(), muted=cs.getPropertyValue('--muted').trim(),
+          accent=cs.getPropertyValue('--accent').trim(), line=cs.getPropertyValue('--line').trim(),
+          panel=cs.getPropertyValue('--bg').trim();
+    ctx.clearRect(0,0,w,h);
+
+    const st=stages[cur];
+
+    // progress pills across the top
+    const pillY=18, pillH=22, gap=6, n=stages.length;
+    const pillW=(w-40-gap*(n-1))/n;
+    for(let i=0;i<n;i++){
+      const x=20+i*(pillW+gap);
+      ctx.fillStyle = i<=cur ? accent : line;
+      roundRect(x,pillY,pillW,pillH,6); ctx.fill();
+    }
+
+    // card background for the manifest
+    const cardX=20, cardY=54, cardW=w-40, cardH=h-cardY-16;
+    ctx.fillStyle=panel; ctx.strokeStyle=line; ctx.lineWidth=1;
+    roundRect(cardX,cardY,cardW,cardH,10); ctx.fill(); ctx.stroke();
+
+    // manifest lines
+    ctx.textBaseline='top';
+    ctx.font='13px ui-monospace, SFMono-Regular, Menlo, monospace';
+    const lh=18, startY=cardY+14, indent=16;
+    st.lines.forEach((ln,idx)=>{
+      const [text,ind]=ln;
+      const y=startY+idx*lh;
+      const isChanged=st.changed.includes(idx);
+      if(isChanged){
+        ctx.globalAlpha=0.16*flash;
+        ctx.fillStyle=accent;
+        roundRect(cardX+8,y-2,cardW-16,lh,4); ctx.fill();
+        ctx.globalAlpha=1;
+      }
+      ctx.fillStyle = isChanged ? accent : ink;
+      if(isChanged) ctx.font='bold 13px ui-monospace, SFMono-Regular, Menlo, monospace';
+      else ctx.font='13px ui-monospace, SFMono-Regular, Menlo, monospace';
+      ctx.fillText(text, cardX+16+ind*indent, y);
+    });
+
+    stageEl.textContent = st.name + (cur<stages.length-1 ? '' : '  — never edits the base files');
+    stageEl.style.color = muted;
+  }
+
+  function roundRect(x,y,w,h,r){
+    ctx.beginPath();
+    ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r);
+    ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath();
+  }
+
+  function reset(){ cur=0; flash=1; draw(); }
+  function step(){ if(cur<stages.length-1){ cur++; } else { cur=0; } flash=1; draw(); }
+
+  let flashDir=-1, lastTs=0;
+  function loop(ts){
+    if(ts-lastTs>900){ step(); lastTs=ts; }
+    // gentle pulse of the highlight
+    flash += flashDir*0.05; if(flash<0.5){flash=0.5;flashDir=1;} if(flash>1){flash=1;flashDir=-1;}
+    draw();
+    raf=requestAnimationFrame(loop);
+  }
+  document.getElementById('vizPlay').onclick=e=>{
+    if(raf){cancelAnimationFrame(raf);raf=null;e.target.textContent='▶ Play';}
+    else{e.target.textContent='⏸ Pause';lastTs=performance.now();raf=requestAnimationFrame(loop);}
+  };
+  document.getElementById('vizStep').onclick=()=>{ if(raf){cancelAnimationFrame(raf);raf=null;
+    document.getElementById('vizPlay').textContent='▶ Play';} flash=1; step(); };
+  document.getElementById('vizReset').onclick=()=>{ if(raf){cancelAnimationFrame(raf);raf=null;
+    document.getElementById('vizPlay').textContent='▶ Play';} reset(); };
+  reset();
+})();
+</script>
+</body>
+</html>
