@@ -147,18 +147,67 @@
 }
 
 /* ------------------------------------------------------------
+   Sections — Pinned / Series / Ad-hoc. Pinned starts empty and is
+   filled client-side; a section with no visible cards is hidden
+   outright so filtering never strands a heading.
+   ------------------------------------------------------------ */
+.learning-sections {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-12);
+  margin-top: var(--space-12);
+}
+
+.learning-section[hidden] {
+  display: none;
+}
+
+.learning-section-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-2) var(--space-3);
+  padding-bottom: var(--space-3);
+  border-bottom: 1px solid var(--separator);
+}
+
+.learning-section-title {
+  margin: 0;
+  color: var(--label-primary);
+  font-size: var(--text-title-2);
+  font-weight: var(--weight-semibold);
+  letter-spacing: var(--tracking-tight);
+  line-height: var(--leading-snug);
+}
+
+.learning-section-empty {
+  margin: var(--space-6) 0 0;
+  color: var(--label-tertiary);
+  font-size: var(--text-footnote);
+}
+
+.learning-section-empty[hidden] {
+  display: none;
+}
+
+/* ------------------------------------------------------------
    Card directory.
    ------------------------------------------------------------ */
 .learning-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(min(100%, 17rem), 1fr));
   gap: var(--space-4);
-  margin: var(--space-10) 0 0;
+  margin: var(--space-6) 0 0;
   padding: 0;
   list-style: none;
 }
 
+.learning-grid:empty {
+  display: none;
+}
+
 .learning-card-item {
+  position: relative;
   min-width: 0;
 }
 
@@ -192,6 +241,7 @@
 }
 
 .learning-card-title {
+  padding-right: var(--space-6);
   color: var(--label-primary);
   font-size: var(--text-headline);
   font-weight: var(--weight-semibold);
@@ -202,6 +252,58 @@
 
 .learning-card:hover .learning-card-title {
   color: var(--color-blue);
+}
+
+/* Pin toggle — a sibling of the card link, not a child, so the card stays a
+   single link. Quiet until hovered or pinned. */
+.learning-pin {
+  position: absolute;
+  top: var(--space-3);
+  right: var(--space-3);
+  display: inline-grid;
+  place-items: center;
+  width: 1.875rem;
+  height: 1.875rem;
+  padding: 0;
+  color: var(--label-quaternary);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--radius-full);
+  cursor: pointer;
+  transition:
+    color var(--duration-fast) var(--ease-out),
+    background-color var(--duration-fast) var(--ease-out),
+    border-color var(--duration-fast) var(--ease-out);
+}
+
+.learning-pin svg {
+  display: block;
+  transition: transform var(--duration-fast) var(--ease-out);
+}
+
+.learning-pin:hover {
+  color: var(--color-blue);
+  background: var(--fill-tertiary);
+}
+
+.learning-pin:focus-visible {
+  outline: none;
+  color: var(--color-blue);
+  border-color: color-mix(in srgb, var(--color-blue) 55%, transparent);
+}
+
+.learning-pin[aria-pressed='true'] {
+  color: var(--color-blue);
+}
+
+.learning-pin[aria-pressed='true'] svg {
+  fill: currentColor;
+  transform: rotate(0);
+}
+
+/* Unpinned pins read as "available" rather than "set" — a slight tilt. */
+.learning-pin[aria-pressed='false'] svg {
+  transform: rotate(-20deg);
 }
 
 .learning-card-tags {

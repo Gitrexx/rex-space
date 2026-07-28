@@ -11,7 +11,7 @@ Four kinds of content, all served from one small, fast static site:
 - **CV** — a short bio, career timeline, focus, and links, on the **About** page.
 - **Blog** — tech write-ups, thoughts, and the occasional sci-fi story.
 - **Projects** — each with an intro, the details, a link out to the work, and interactive demos where they help.
-- **Learning materials** — a searchable directory on the **Learning** page: standalone study sites I keep elsewhere, each embedded on its own page.
+- **Learning materials** — a searchable directory on the **Learning** page, split into **Pinned**, **Series** (multi-part courses hosted as their own sites) and **Ad-hoc** (single-topic modules hosted here). Each topic is embedded on its own page, and any card can be pinned to the top.
 
 The blog is authored as **posts** (Markdown / MDX) and grouped by **category**. The CV on the About page and the Projects directory are config-driven, edited in `astro-theme-config.ts`. The Learning directory is a content collection — one small file per topic under `src/content/learning/` — so each addition is an isolated edit; its page copy still lives in `astro-theme-config.ts`. The home page opens with a short greeting and a **quote that rotates daily**, drawn from a curated list in `src/data/quotes.ts`. See [`.claude/CLAUDE.md`](.claude/CLAUDE.md) for how the pieces fit together and where to extend.
 

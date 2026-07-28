@@ -243,12 +243,31 @@ const config = {
    * that folder (the filename is the `/learning/<slug>` path segment) — no edit
    * to this file is needed. Each item embeds either an external `url` or an
    * `embed` HTML file from `src/embeds/` on its own detail page.
+   *
+   * `sections` is copy only. The page renders three of them:
+   *   pinned  cards the reader pinned — chosen in the browser, stored in
+   *           localStorage, so this section is empty on a first visit
+   *   series  items with a `url` — multi-part courses hosted as their own sites
+   *   adhoc   items with an `embed` — one-topic modules in `src/embeds/`
+   * An item's home section is derived from its frontmatter, not configured here.
    */
   learning: {
     eyebrow: 'Learning',
     title: 'What I am learning',
     intro:
       'Living notebooks I keep as small standalone sites and embed here. Open a topic to read it embedded on its own page, or launch it in its own tab.',
+    sections: {
+      pinned: {
+        title: 'Pinned',
+        empty: 'Nothing pinned yet — use the pin on any card to keep it here.',
+      },
+      series: {
+        title: 'Series',
+      },
+      adhoc: {
+        title: 'Ad-hoc',
+      },
+    },
   },
 
   /**

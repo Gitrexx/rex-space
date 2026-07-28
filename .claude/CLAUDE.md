@@ -14,7 +14,7 @@ search. Rex is turning it into a personal site with four kinds of content:
 1. **CV** — the config-driven **About** page.
 2. **Blog** — tech write-ups, thoughts, and sci-fi stories.
 3. **Projects** — intro + details + external link + optional interactive demos.
-4. **Learning materials** — the **Learning** page: a searchable card directory of study sites, each embedded as an iframe on its own detail page.
+4. **Learning materials** — the **Learning** page: a searchable card directory of study sites, split into three sections (Pinned / Series / Ad-hoc), each item embedded as an iframe on its own detail page.
 
 **Key architectural fact:** there are **two content collections, `posts` and `learning`**
 (both defined in `src/content.config.ts`). The blog lives in `posts`; the Learning items
@@ -24,7 +24,8 @@ render from `astro-theme-config.ts`: the CV from the `about` block and **Project
 `projects` block (see Routes below). Projects are a config-driven card directory — there is
 **no** `projects` collection (a deliberate contrast: Learning grows daily and gets a
 file-per-item collection; Projects is a small, hand-curated array). The `learning` config
-block now holds only the page copy (eyebrow/title/intro); the items are the collection.
+block now holds only the page copy (eyebrow/title/intro/section headings); the items are the
+collection.
 If a task needs another genuinely distinct section (its own route, schema, or index), that
 has to be **built** — pattern-match on how `about` / `projects` (config) or `learning`
 (collection) are wired, whichever fits.
@@ -92,7 +93,7 @@ happen here before touching components:
 - `comments` — giscus config, `mode: 'off'` by default.
 - `social` — GitHub / website / LinkedIn / email (feed the About page links).
 - `about` — the **entire CV**: name, role, location, focus, hero `tags`, summary, plus `experience` / `education` / `skills` / `awards` / `languages` arrays.
-- `learning` — the **Learning page** copy only: `eyebrow` / `title` / `intro`. The items are **not** here — they live in the `learning` **content collection** (`src/content/learning/*.md`, schema in `src/content.config.ts`): one metadata-only file per topic (`title`, `description`, optional `tags`, and either `url` for an external site or `embed` for a self-contained HTML file in `src/embeds/`). Filename = slug. Add a file to add a topic — no config or component edits needed.
+- `learning` — the **Learning page** copy only: `eyebrow` / `title` / `intro` plus `sections` (the `pinned` / `series` / `adhoc` headings and the pinned empty-state line). The items are **not** here — they live in the `learning` **content collection** (`src/content/learning/*.md`, schema in `src/content.config.ts`): one metadata-only file per topic (`title`, `description`, optional `tags`, and either `url` for an external site or `embed` for a self-contained HTML file in `src/embeds/`). Filename = slug. Add a file to add a topic — no config or component edits needed. **A topic's section is derived, not configured:** an `embed` item is Ad-hoc, a `url`-only item is Series (`embed` wins if both are set, since that is what the detail page frames).
 - `projects` — the **Projects page**: `eyebrow` / `title` / `intro` copy plus an `items` array (`slug`, `title`, `description`, optional `tag` / `url` / `urlLabel` / `details` / `stack` / `demo`). Its card-directory UX mirrors Learning, but the data model does **not**: Projects stays a hand-curated config array (no collection), while Learning's items moved to a collection. Cards grouped by `tag` open a detail page showing the intro, `details` prose, `stack` chips, an external link, and an optional `demo` iframe. Add an item to add a project — no component edits needed.
 
 `src/consts.ts` re-exports the site meta; `src/ui.ts` holds visible UI strings. Copy lives
@@ -168,7 +169,7 @@ complete diff-level record underneath both approaches.
 - `posts/index.astro` — `/posts`: category filter row + inline list search.
 - `posts/[...slug].astro` — individual post via `PostLayout` (reading time, related posts, TOC rail, optional scroll-dark).
 - `about.astro` — `/about`: the full CV (summary, experience, education, skills, recognition, languages), rendered from `config.about` and styled in `src/styles/pages/about.css`.
-- `learning.astro` — `/learning`: a searchable card directory of study sites from the `learning` collection (`getCollection('learning')`), grouped by `tag`. Client-side filter over the cards (title/description/tag); styled in `src/styles/pages/learning.css`.
+- `learning.astro` — `/learning`: a searchable card directory of study sites from the `learning` collection (`getCollection('learning')`), split into three sections — **Pinned**, **Series** (`url` items), **Ad-hoc** (`embed` items) — with a text search + tag-chip filter over the cards; a section with no visible cards hides itself. Each card carries a **pin toggle**: clicking it moves the card's DOM node into the Pinned grid and stores the slug in `localStorage` (`learning-pinned`); unpinning returns the card to its home section at its original alphabetical slot (via `data-order`). An `is:inline` script after the grids replays stored pins **before first paint** so pinned cards don't visibly jump; the module script wires every listener. Styled in `src/styles/pages/learning.css`.
 - `learning/[slug].astro` — `/learning/<slug>`: one topic embedded as a full-height iframe with a back link, "Reload", and "Open ↗"; `getStaticPaths` from the `learning` collection (slug = the file's `id`), styled in `src/styles/pages/learning-item.css`.
 - `projects.astro` — `/projects`: a searchable, tag-grouped card directory of projects from `config.projects.items`; same client-side filter as `/learning`, styled in `src/styles/pages/projects.css`.
 - `projects/[slug].astro` — `/projects/<slug>`: one project's detail page — header with external-link / "Reload" actions, an optional embedded `demo` iframe, plus `details` prose and `stack` chips; `getStaticPaths` from `config.projects.items`, styled in `src/styles/pages/project-item.css`.
@@ -187,7 +188,7 @@ system. Full guidance is in `.claude/rules/styling-design.md`.
 
 - **Home hero** (`src/pages/index.astro`, `styles/pages/home.css`) — the template's tagline + description were replaced with a fixed title and a daily rotating quote; the quote list lives in `src/data/quotes.ts`.
 - **About / CV** (`src/pages/about.astro`, `styles/pages/about.css`) — extended beyond the template's generic `career` / `interests` slots to render experience, education, skills, recognition, and languages from `config.about`.
-- **Learning** (`src/pages/learning.astro` + `learning/[slug].astro`, `styles/pages/learning.css` + `learning-item.css`) — new section: a searchable, tag-grouped card directory whose cards open per-topic detail pages that embed a site (external `url`) or a self-contained HTML file (`embed` from `src/embeds/`) as an iframe. Items are the `learning` **content collection** (`src/content/learning/`); the `learning` config block supplies only the page copy. Both pages carry small page-scoped scripts (card filtering; iframe reload/expand).
+- **Learning** (`src/pages/learning.astro` + `learning/[slug].astro`, `styles/pages/learning.css` + `learning-item.css`) — new section: a searchable card directory in three sections (Pinned / Series / Ad-hoc) whose cards open per-topic detail pages that embed a site (external `url`) or a self-contained HTML file (`embed` from `src/embeds/`) as an iframe. Items are the `learning` **content collection** (`src/content/learning/`); the `learning` config block supplies only the page copy. Pinning is client-side (`localStorage`), so the pinned set is per-browser and never part of the build. Both pages carry small page-scoped scripts (card filtering + pinning; iframe reload/expand).
 - **Projects** (`src/pages/projects.astro` + `projects/[slug].astro`, `styles/pages/projects.css` + `project-item.css`) — config-driven section built by mirroring Learning's page UX (not its data model): a searchable, tag-grouped card directory whose cards open per-project detail pages (intro, `details` prose, `stack` chips, external link, optional `demo` iframe). Driven entirely by `config.projects`; both pages carry small page-scoped scripts (card filtering; iframe reload).
 - **Footer** (`src/components/Footer.astro`) — copyright reads `© {year} {site.author}. Based on astro-tone. MIT Licensed.`
 
@@ -196,6 +197,7 @@ system. Full guidance is in `.claude/rules/styling-design.md`.
 - **Prose starts at `##`** — the page title is the only `h1`. See `.claude/rules/markdown-reference.md` for every element the theme styles (callouts, `<kbd>`, `<mark>`, footnotes, tables, images/lightbox).
 - **Categories** must be in `content.categoryOrder` to sort correctly in the filter row (the current dummy post uses `'Misc'`, which is not yet listed — add real categories as content grows).
 - **Interactive content = MDX** importing an Astro/framework component — the mechanism for project demos and learning widgets (`.claude/rules/when-to-use-mdx.mdx`).
+- **The Learning pin button is a _sibling_ of the card link, not a child.** The whole card is one `<a>`; nesting a `<button>` inside it is invalid HTML and breaks keyboard use. It is positioned into the card's top-right corner from `.learning-card-item { position: relative }`. Keep that shape if you restructure the card.
 - **Internal links** should go through `withBase()` (`src/utils/paths.ts`) so they respect `site.base` under subpath deploys.
 - The old `AGENTS.md` (which the root `CLAUDE.md`/`README.md` symlinked to) was removed; both are now real files.
 
