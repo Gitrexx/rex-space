@@ -68,6 +68,7 @@ const config = {
 
   content: {
     categoryOrder: [
+      'AI',
       'Design',
       'Getting Started',
       'Markdown',
