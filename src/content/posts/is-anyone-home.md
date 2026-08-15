@@ -10,7 +10,7 @@ In June 2026, on the Big Technology Podcast, Geoffrey Hinton said plainly that h
 
 I admire Hinton enormously, and when someone who has thought about neural computation for fifty years says something like that, my first assumption is that he has reasons I haven't fully understood yet. So this post isn't me telling you he's wrong. It's me following where his claim sent my thinking, and being honest that **for now, with my own understanding, I land somewhere else** — and that the interesting part isn't the conclusion, it's what my reasoning turns out to be made of.
 
-This is the first of three posts on AI safety. Consider it a topic thrown out for discussion rather than a case being closed.
+This is the first of three posts on AI safety — the [second](/posts/nobody-was-home/) is about what actually broke in 2026. Consider this one a topic thrown out for discussion rather than a case being closed.
 
 ## Weights are just numbers, and so are you
 
