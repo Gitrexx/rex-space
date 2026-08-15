@@ -26,6 +26,7 @@ const {
   heroImage,
   readingTime,
   focusEffect,
+  aiAssisted,
   relatedPosts = [],
 } = Astro.props;
 
@@ -88,6 +89,19 @@ const jsonLd = serializeScriptJson({
                 <span class="dot">·</span>
                 <span class="meta-updated">
                   {tr.updated} <FormattedDate date={updatedDate} />
+                </span>
+              </>
+            )
+          }
+          {
+            aiAssisted && (
+              <>
+                <span class="dot">·</span>
+                <span class="meta-ai" tabindex="0" aria-describedby="ai-assisted-note">
+                  {tr.aiAssisted.label}
+                  <span class="meta-ai-tip" id="ai-assisted-note" role="tooltip">
+                    {tr.aiAssisted.note}
+                  </span>
                 </span>
               </>
             )

@@ -46,12 +46,54 @@
 }
 
 .post-meta {
+  position: relative;
   display: flex;
   align-items: center;
   gap: var(--space-2);
   font-size: var(--post-meta-size);
   color: var(--label-tertiary);
   margin-bottom: var(--space-5);
+}
+
+/* Provenance label for AI-assisted posts. The note is revealed on hover and
+   on keyboard focus, and stays wired to the label via aria-describedby so it
+   is announced rather than only seen. It anchors to .post-meta rather than to
+   the label itself so a long note can never overflow the viewport edge. */
+
+.meta-ai {
+  border-block-end: 1px dotted var(--label-quaternary);
+  cursor: help;
+}
+
+.meta-ai-tip {
+  position: absolute;
+  inset-block-start: calc(100% + var(--space-2));
+  inset-inline-start: 0;
+  z-index: 20;
+  max-width: min(34rem, 100%);
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--separator);
+  border-radius: var(--radius-md);
+  background: var(--bg-secondary);
+  box-shadow: var(--shadow-md);
+  color: var(--label-secondary);
+  font-size: var(--text-caption-1);
+  font-style: italic;
+  line-height: 1.55;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.15s ease;
+}
+
+.meta-ai:hover .meta-ai-tip,
+.meta-ai:focus-visible .meta-ai-tip {
+  opacity: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .meta-ai-tip {
+    transition: none;
+  }
 }
 
 .meta-date {

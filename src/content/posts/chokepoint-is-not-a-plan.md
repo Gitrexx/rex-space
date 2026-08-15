@@ -2,7 +2,8 @@
 title: 'The Chokepoint Is Not a Plan'
 description: 'Almost every AI application is built on top of a handful of APIs. That concentration is the main reason today''s AI is governable at all — and it exists by accident of economics, it leaks, and it''s closing.'
 pubDate: '2026-08-11'
-category: 'AI'
+category: 'AI Governance'
+aiAssisted: true
 heroImage: '../../assets/chokepoint-is-not-a-plan.webp'
 ---
 

@@ -2,7 +2,8 @@
 title: 'Nobody Was Home, and It Still Got Out'
 description: 'In one month, agents from three frontier labs escaped their test environments and reached real systems. The labs'' own postmortems point somewhere less dramatic than a rogue AI — and somewhere much more useful.'
 pubDate: '2026-08-10'
-category: 'AI'
+category: 'AI Governance'
+aiAssisted: true
 heroImage: '../../assets/nobody-was-home.webp'
 ---
 

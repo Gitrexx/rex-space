@@ -2,7 +2,7 @@
 title: 'Fine-tuning RoBERTa on 3.2M StockTwits Comments'
 description: 'Turning millions of self-labeled StockTwits messages into an open-source RoBERTa sentiment model — and asking whether retail chatter predicts price.'
 pubDate: '2022-04-02'
-category: 'Research'
+category: 'Machine Learning'
 heroImage: '../../assets/finetuning-roberta-stocktwits.webp'
 ---
 

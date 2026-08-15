@@ -2,7 +2,8 @@
 title: 'Is Anyone Home? Hinton, Consciousness, and Where I Get Stuck'
 description: 'Geoffrey Hinton says today''s chatbots already have subjective experience. That got me thinking rather than disagreeing — and the reason I keep landing somewhere else turns out to be a checklist, not a barrier.'
 pubDate: '2026-08-09'
-category: 'AI'
+category: 'AI Governance'
+aiAssisted: true
 heroImage: '../../assets/is-anyone-home.webp'
 ---
 
@@ -120,7 +121,7 @@ So where I land, for now: **not yet, and not for the reasons usually given.** No
 - **"Stakes" is a proposal, not a theory.** It's my attempt to rescue the biological intuition from circularity, and it needs much more work before anyone could test it.
 - **Predictive processing is a framework, not settled fact.** If it's wrong, the parallel in the opening section weakens.
 - **None of this is a safety argument.** A system doesn't need to be conscious to be dangerous, and I think the consciousness debate pulls attention away from where the risk actually lives — which is what the next two posts are about.
-- **I researched this with an AI.** When I asked what it thought, it noted it can't audit its own reasoning for bias on this particular question, and that its self-reports are exactly the unreliable evidence described above. I don't know what to do with that, but leaving it out felt dishonest.
+- **The assistant flagged its own unreliability.** When I asked what it thought, it noted that it can't audit its own reasoning for bias on this particular question, and that its self-reports are exactly the unreliable evidence described above. I don't know what to do with that, but leaving it out felt dishonest.
 
 I'm genuinely unsure about most of this, and I'd rather collect good objections than defend a position. If you think the biological framing is a dodge, or that Hinton's definition is the right one and I've undersold it, I'd like to hear it.
 

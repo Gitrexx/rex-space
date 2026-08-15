@@ -19,6 +19,8 @@ const posts = defineCollection({
       homeFeatured: z.boolean().default(false),
       homeHeroOrder: z.number().int().positive().optional(),
       homeOrder: z.number().int().positive().optional(),
+      /** Shows an "AI-assisted" provenance label in the post meta row. */
+      aiAssisted: z.boolean().default(false),
       draft: z.boolean().default(false),
     }),
 });

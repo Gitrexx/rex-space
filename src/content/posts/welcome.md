@@ -2,7 +2,7 @@
 title: 'Welcome to Rex Space'
 description: 'A quick tour of my personal site — CV, blog, projects, and learning notes, all on one site'
 pubDate: '2021-11-13'
-category: 'Getting Started'
+category: 'Intro'
 heroImage: '../../assets/welcome.webp'
 homeFeatured: true
 ---
