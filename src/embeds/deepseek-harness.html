@@ -1,0 +1,857 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DeepSeek Harness (dsh) — Learning Module</title>
+<style>
+  :root{
+    --bg:#faf7f2; --panel:#fffdf9; --ink:#26221d; --muted:#6b6357; --line:#e6ded1;
+    --accent:#b4531f; --accent-soft:#f3e2d5; --ok:#1f7a4d; --bad:#b03030;
+    --code-bg:#2a2620; --code-ink:#f3ece0; --shadow:0 1px 2px rgba(0,0,0,.05),0 6px 20px rgba(60,45,25,.06);
+    --sans:'Inter',system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+    --serif:'Charter','Georgia',Cambria,'Times New Roman',serif;
+    --mono:'SF Mono',ui-monospace,'JetBrains Mono',Menlo,Consolas,monospace;
+  }
+  html[data-theme="dark"]{
+    --bg:#17150f; --panel:#201d16; --ink:#efe8db; --muted:#a79d8c; --line:#332e24;
+    --accent:#e08a52; --accent-soft:#3a2c20; --code-bg:#0f0d09; --code-ink:#f3ece0;
+    --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 24px rgba(0,0,0,.35);
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);
+    line-height:1.65;font-size:17px;-webkit-font-smoothing:antialiased}
+  .progress{position:fixed;top:0;left:0;height:3px;width:0;background:var(--accent);z-index:50;transition:width .1s}
+  .wrap{display:grid;grid-template-columns:240px minmax(0,760px);gap:48px;max-width:1080px;
+    margin:0 auto;padding:0 28px 120px}
+  @media(max-width:820px){.wrap{grid-template-columns:1fr;gap:0}.toc{display:none}
+    main{grid-column:1}
+    main table{display:block;width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch}
+    pre,.code-runner{max-width:100%}}
+
+  header{grid-column:1/-1;padding:44px 0 24px;border-bottom:1px solid var(--line);margin-bottom:36px}
+  .eyebrow{font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:var(--accent);font-weight:600}
+  h1{font-family:var(--serif);font-size:38px;line-height:1.15;margin:.25em 0 .15em;font-weight:650}
+  .why{color:var(--muted);font-size:18px;max-width:60ch;margin:.4em 0 0}
+  .controls{display:flex;gap:10px;margin-top:22px;flex-wrap:wrap}
+  .btn{font:inherit;font-size:14px;padding:7px 14px;border:1px solid var(--line);background:var(--panel);
+    color:var(--ink);border-radius:999px;cursor:pointer;box-shadow:var(--shadow);transition:.15s}
+  .btn:hover{border-color:var(--accent)}
+  .btn.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+
+  .toc{position:sticky;top:24px;align-self:start;font-size:14px;max-height:90vh;overflow:auto}
+  .toc a{display:block;color:var(--muted);text-decoration:none;padding:4px 0 4px 12px;
+    border-left:2px solid transparent;transition:.15s}
+  .toc a:hover{color:var(--ink)}
+  .toc a.active{color:var(--accent);border-left-color:var(--accent);font-weight:600}
+
+  main{grid-column:2;min-width:0}
+  section{margin:0 0 52px;scroll-margin-top:24px}
+  h2{font-family:var(--serif);font-size:26px;margin:0 0 .5em;font-weight:640}
+  h3{font-size:19px;margin:1.6em 0 .4em}
+  p{margin:0 0 1em} code{font-family:var(--mono);font-size:.9em;background:var(--accent-soft);
+    padding:.1em .35em;border-radius:4px}
+  ul,ol{padding-left:1.2em}
+  pre{background:var(--code-bg);color:var(--code-ink);font-family:var(--mono);font-size:13.5px;line-height:1.55;
+    padding:14px;border-radius:12px;overflow-x:auto;margin:1.2em 0;border:1px solid var(--line)}
+  p code,li code,td code{overflow-wrap:anywhere}
+  pre code{background:none;padding:0;font-size:inherit;color:inherit}
+  table{border-collapse:collapse;width:100%;font-size:15px;margin:1.2em 0}
+  th,td{border:1px solid var(--line);padding:8px 10px;vertical-align:top;text-align:left}
+  th{background:var(--accent-soft);font-weight:600}
+  .tblwrap{overflow-x:auto;-webkit-overflow-scrolling:touch;margin:1.2em 0}
+  .tblwrap table{display:table;margin:0;min-width:100%}
+  td strong{white-space:nowrap}
+  @media(max-width:820px){td strong{white-space:normal}}
+
+  .deep-dive{border-left:3px solid var(--accent-soft);padding:2px 0 2px 18px;margin:1em 0;transition:.2s}
+  html.skim .deep-dive{display:none}
+  .depth-note{font-size:13px;color:var(--muted);font-style:italic}
+  html:not(.skim) .skim-only{display:none}
+
+  .callout{border:1px solid var(--line);border-radius:12px;padding:16px 18px;margin:1.4em 0;
+    background:var(--panel);box-shadow:var(--shadow)}
+  .callout .tag{font-size:12px;font-weight:700;letter-spacing:.05em;text-transform:uppercase}
+  .callout.insight{border-color:#c7a34d55}.callout.insight .tag{color:#a9791b}
+  .callout.pitfall{border-color:#b0303055}.callout.pitfall .tag{color:var(--bad)}
+  .callout p:last-child{margin-bottom:0}
+  details{margin:1em 0;border:1px solid var(--line);border-radius:10px;padding:0 16px;background:var(--panel)}
+  details summary{cursor:pointer;padding:12px 0;font-weight:600}
+
+  .viz{border:1px solid var(--line);border-radius:14px;background:var(--panel);
+    padding:16px;margin:1.6em 0;box-shadow:var(--shadow)}
+  .viz canvas{width:100%;height:auto;display:block;border-radius:8px;background:var(--bg)}
+  .viz .vbar{display:flex;gap:8px;margin-top:12px;align-items:center;flex-wrap:wrap}
+  .viz .cap{font-size:13px;color:var(--muted);margin-top:8px}
+
+  .code-runner{margin:1.6em 0;border-radius:12px;overflow:hidden;border:1px solid var(--line);box-shadow:var(--shadow)}
+  .code-runner .cr-head{display:flex;justify-content:space-between;align-items:center;
+    background:var(--code-bg);padding:8px 12px}
+  .cr-head .lang{color:#9c9384;font-size:12px;font-family:var(--mono);text-transform:uppercase;letter-spacing:.08em}
+  .cr-head .cr-btns{display:flex;gap:6px}
+  .cr-btns button{font:inherit;font-size:12px;font-family:var(--mono);color:var(--code-ink);
+    background:#ffffff18;border:1px solid #ffffff22;border-radius:6px;padding:4px 10px;cursor:pointer}
+  .cr-btns button:hover{background:#ffffff30}
+  .code-runner textarea{width:100%;border:0;resize:vertical;min-height:120px;padding:14px;
+    background:var(--code-bg);color:var(--code-ink);font-family:var(--mono);font-size:13.5px;line-height:1.55;outline:none}
+  .code-runner .output{margin:0;padding:12px 14px;background:#00000030;color:var(--code-ink);
+    font-family:var(--mono);font-size:13px;white-space:pre-wrap;min-height:20px;border-top:1px solid #ffffff14}
+
+  .quiz{border:1px solid var(--line);border-radius:14px;padding:18px 20px;margin:1.6em 0;
+    background:var(--panel);box-shadow:var(--shadow)}
+  .quiz .q{font-weight:600;margin:0 0 12px}
+  .quiz .options{list-style:none;padding:0;margin:0;display:grid;gap:8px}
+  .quiz .options li{border:1px solid var(--line);border-radius:9px;padding:10px 14px;cursor:pointer;transition:.12s}
+  .quiz .options li:hover{border-color:var(--accent)}
+  .quiz .options li.correct{border-color:var(--ok);background:#1f7a4d18}
+  .quiz .options li.wrong{border-color:var(--bad);background:#b0303018}
+  .quiz .options li.locked{cursor:default;opacity:.85}
+  .quiz .explain{display:none;margin-top:14px;padding-top:12px;border-top:1px dashed var(--line);
+    color:var(--muted);font-size:15px}
+  .quiz.answered .explain{display:block}
+
+  a.ref{color:var(--accent)}
+  footer{grid-column:1/-1;border-top:1px solid var(--line);margin-top:20px;padding-top:24px;
+    color:var(--muted);font-size:14px}
+
+  @media(max-width:640px){
+    body{font-size:16px}
+    .wrap{padding:0 18px 90px}
+    header{padding:30px 0 20px;margin-bottom:26px}
+    h1{font-size:27px;line-height:1.2}
+    h2{font-size:21px}
+    h3{font-size:17px}
+    .why{font-size:16px}
+    table{font-size:14px}
+  }
+  /* must come after main{grid-column:2} so the single-column layout wins on phones */
+  @media(max-width:820px){main{grid-column:1}}
+</style>
+</head>
+<body>
+<div class="progress" id="progress"></div>
+<div class="wrap">
+
+  <header>
+    <div class="eyebrow">Agent infrastructure · Coding agents · Runtimes</div>
+    <h1>DeepSeek Harness (dsh)</h1>
+    <p class="why">You want to know what dsh actually is, which problem it solves, how it differs from Claude Code, Codex, OpenCode and the SDK frameworks, when it is the right pick, and what building and deploying an agent on it looks like in code. This module covers all of that against the state of the project as of early September 2026, ten days after its developer preview.</p>
+    <div class="controls">
+      <button class="btn active" id="depthBtn" data-mode="full">Mode: Full detail</button>
+      <button class="btn" id="themeBtn">◐ Theme</button>
+      <span class="depth-note" id="depthNote">Full mode — deep-dive blocks visible</span>
+    </div>
+  </header>
+
+  <nav class="toc" id="toc" aria-label="Contents"></nav>
+
+  <main>
+
+    <section id="intuition">
+      <h2>The one idea</h2>
+      <p>A <em>harness</em> is everything around the model that turns a chat completion into an agent: the loop that decides when to call the model again, the tool registry, the shell and file editor, the session transcript, the sandbox, the permission prompts, the UI. Claude Code, Codex CLI and OpenCode are harnesses with a model attached. They each ship one fixed arrangement of those parts.</p>
+      <p>DeepSeek Harness (the CLI is <code>dsh</code>) is DeepSeek's answer to the question "what if none of those parts were fixed?" It is an MIT-licensed runtime, released as a developer preview on 13 August 2026, in which <strong>every capability is a plugin</strong>: the model adapter, the tool registry, the session log, the sandbox, the scheduler, the web UI, and the agent loop itself. There is no privileged core to patch. You compose an agent from plugins in configuration, and you swap any piece without forking the source.</p>
+      <div class="callout insight"><span class="tag">Key insight</span>
+        <p>dsh is not "DeepSeek's Claude Code". It is a <em>runtime for building</em> agents like Claude Code, and it can even run Claude Code and Codex as sub-agents inside a loop you own. Judge it as infrastructure, not as a finished assistant.</p></div>
+      <p>Two principles from the launch page summarise the design: <strong>everything is a plugin</strong>, and <strong>every run is traceable</strong>. The second one matters as much as the first: dsh keeps an append-only session log with the invariant that anything the model saw must be reconstructible from the log, which is what makes resume, fork and replay first-class.</p>
+    </section>
+
+    <section id="problem">
+      <h2>What problem it solves</h2>
+      <p>Three pressures pushed the industry toward this shape of tool, and dsh is the first vendor-backed harness to embrace all three at once.</p>
+      <h3>1. The harness moves results more than the model does</h3>
+      <p>Winder.ai's 2026 harness survey cites a study where changing only the harness lifted a Terminal-Bench score from 52.8% to 66.5% with the same model. Community benchmarking after DeepSeek V4 launched found up to a 7× cost difference between harnesses running the same DeepSeek model. If the loop, the prompt budget and the compaction strategy decide that much, engineers want to control them. DeepSeek's own V4-Pro agent numbers were measured with dsh in <code>minimal</code> mode, which tells you they think of the harness as part of the measured system.</p>
+      <h3>2. Monolithic harnesses lock you in twice</h3>
+      <p>Claude Code and Codex lock you to a model vendor and to their loop. OpenCode and OpenHands free the model but still hand you a fixed core with extension points around the edges. If you want a different compaction policy, a different tool-approval flow, or an agent that writes programs instead of issuing tool calls, you fork. dsh moves those decisions into configuration.</p>
+      <h3>3. Long-running agents need to be inspectable and resumable</h3>
+      <p>A 16-hour autonomous run is only useful if you can see what happened, resume it after a crash, and fork it from the point where it went wrong. dsh's append-only event log captures user messages, tool invocations, reasoning states, token metrics and sub-agent dispatches into one trajectory, and everything else (transcripts, forks, resumes, telemetry, persistence) is derived from that stream.</p>
+
+      <div class="deep-dive">
+        <p class="depth-note">Deep dive — the Cordis theory underneath</p>
+        <p>dsh is built on <strong>Cordis</strong>, a plugin meta-framework from the same authors, described in the arXiv paper <em>A Programming Paradigm for Spatiotemporal Composability</em> (2608.25512). The paper names two properties a plugin system needs to be safely reconfigurable at runtime:</p>
+        <ul>
+          <li><strong>Temporal composability</strong>: removing a component completely reverts its side effects. Every registration a plugin makes (a tool, an event listener, a service, a timer) is a <em>revertible effect</em> that carries its own inverse, so unloading is exact.</li>
+          <li><strong>Spatial composability</strong>: components declare what they depend on, and the kernel reacts. A plugin that <code>inject</code>s the <code>tools</code> service loads only once that service exists, unloads automatically if the service disappears, and reloads when it returns.</li>
+        </ul>
+        <p>The paper explicitly motivates this with "self-evolving agent harnesses": a runtime where the agent can add, remove or rewrite its own capabilities while running. dsh's <code>cordis</code> preset (marketed as "Creator" mode) is exactly that: the model writes JavaScript against the live runtime. The theory is what makes that safe enough to ship.</p>
+      </div>
+    </section>
+
+    <section id="architecture">
+      <h2>How it is put together</h2>
+      <p>Read the architecture as four layers, bottom-up.</p>
+      <h3>Kernel: Cordis</h3>
+      <p>The kernel does one job: mount and unmount plugins, resolve their dependencies, and route <em>services</em> and typed <em>events</em> between them. Each plugin runs in a <em>fiber</em> with a small state machine (pending → loading → active → unloading → disposed). It knows nothing about agents.</p>
+      <h3>Plugins: the capability families</h3>
+      <p>The monorepo's <code>packages/</code> folder holds about fifty capability families. The ones that shape your mental model:</p>
+      <div class="tblwrap"><table>
+        <tr><th>Family</th><th>What it provides</th></tr>
+        <tr><td><strong>llm</strong></td><td>Abstract LLM service plus provider adapters. The default adapter (<code>llm-pi-ai</code>) wraps the <code>pi-ai</code> library from the Pi coding-agent project, which is how dsh talks to DeepSeek, Anthropic, OpenAI, Bedrock, Vertex, Azure, Codex and any OpenAI-compatible endpoint.</td></tr>
+        <tr><td><strong>core / preset</strong></td><td>The session, prompt and agent services, and the "agent preset" mechanism that composes a per-session agent (system prompt, tool list, model) from YAML.</td></tr>
+        <tr><td><strong>shell / fs / terminal / web / lsp</strong></td><td>Tools: persistent bash (or pwsh), file editing, PTYs, web search and fetch, language-server access.</td></tr>
+        <tr><td><strong>sandbox</strong></td><td>Process-confinement backends: bwrap and Landlock on Linux, ACL-based on Windows. Filesystem only.</td></tr>
+        <tr><td><strong>session / session-query / compaction / spill</strong></td><td>The append-only log, its persistence backends, retrieval, context compaction and overflow storage.</td></tr>
+        <tr><td><strong>subagent</strong></td><td>Delegation: in-process children, peer harnesses over stdio JSON-RPC, ACP agents, and named providers for Claude Code and Codex.</td></tr>
+        <tr><td><strong>mcp / acp / sdk / hooks</strong></td><td>MCP client, an Agent Client Protocol server, the JSON-RPC surface the Python SDK drives, and a hook bridge for external scripts.</td></tr>
+        <tr><td><strong>skill / workflow / jobs / schedule / webhook</strong></td><td>Skills registry, a workflow engine, background jobs, session-local scheduled follow-ups, and verified inbound events.</td></tr>
+        <tr><td><strong>interaction / guard / code-runtime / extensions</strong></td><td>The approval plane, loop-hygiene enforcement, code execution for "code mode", and runtime self-modification.</td></tr>
+      </table></div>
+
+      <h3>Composition: bundles → profiles → patches → presets</h3>
+      <ul>
+        <li><strong>Bundles</strong> are ordered sets of plugins. <code>dsh-base</code> provides the core services; <code>dsh-web-app</code> or <code>dsh-headless</code> stack on top.</li>
+        <li><strong>Profiles</strong> live at <code>$DSH_HOME/profiles/&lt;name&gt;</code> and combine bundles with environment-specific config. Five ship: <code>web</code>, <code>headless</code>, <code>sdk</code>, <code>sdk-minimal</code>, <code>acp</code>. Each profile folder holds a <code>package.json</code> (plugin dependencies), a <code>dsh.profile</code> (bundle order and lifecycle) and a <code>cordis.patch.yml</code>.</li>
+        <li><strong>Patches</strong> (<code>cordis.patch.yml</code>, or <code>--patch file.yml</code> at launch) insert, remove or override plugins without touching the originals. Layers cascade: bundle defaults, then profile, then home-level, then launch-time.</li>
+        <li><strong>Agent presets</strong> are per-session YAML personas mounted into their own fiber: system prompt, tool selection, model parameters. Four ship:</li>
+      </ul>
+      <div class="tblwrap"><table>
+        <tr><th>Preset</th><th>Behaviour</th><th>Use</th></tr>
+        <tr><td><strong>standard</strong></td><td>Full coding agent: file editing, shell, web search, planning, sub-agents.</td><td>Day-to-day work.</td></tr>
+        <tr><td><strong>code</strong></td><td>The model writes TypeScript programs that orchestrate tools, instead of issuing one tool call per step (the CodeAct idea).</td><td>Long multi-step tool chains where per-call round trips are wasteful.</td></tr>
+        <tr><td><strong>minimal</strong></td><td>Persistent shell plus <code>str_replace_editor</code>, nothing else. No compaction.</td><td>Benchmarks and SDK jobs where you want the harness to add as little as possible.</td></tr>
+        <tr><td><strong>cordis</strong> ("Creator")</td><td>The model writes JavaScript against the live runtime and can inspect or reshape its own composition.</td><td>Building and debugging custom presets. Deliberately not a default.</td></tr>
+      </table></div>
+
+      <h3>The session log</h3>
+      <p>Two units of time: a <strong>step</strong> is one model request plus the tool calls it produced; a <strong>turn</strong> is zero or more steps, opened before the first input and closed when the agent's obligations are met. Every event is appended, never edited. The on-disk format is at version <code>0</code> and the backends reject older formats with no migration path, which is the single biggest reason not to run production sessions on it yet.</p>
+
+      <div class="viz">
+        <canvas id="viz" width="720" height="400"></canvas>
+        <div class="vbar">
+          <button class="btn" id="vizPlay">▶ Play</button>
+          <button class="btn" id="vizStep">Step</button>
+          <button class="btn" id="vizSwap">Swap LLM adapter</button>
+          <button class="btn" id="vizReset">Reset</button>
+        </div>
+        <p class="cap">One turn moving through the plugin pipeline. Each hop lights the plugin that owns it and appends an event to the session log at the bottom. Press <em>Swap LLM adapter</em> mid-run: the kernel unloads the old adapter fiber, loads the new one, and the loop carries on with the same log. That is temporal composability in one click.</p>
+      </div>
+
+      <div class="deep-dive">
+        <p class="depth-note">Deep dive — the tool execution pipeline and its extension points</p>
+        <p>A tool call is not a function call. It passes through a pipeline, and each stage is an event other plugins can hook:</p>
+        <ol>
+          <li><code>tools/pre-execute</code>: an extensible allow / deny / ask policy. This is where permission plugins live, and where a third-party policy-control plugin (one appeared on day three of the preview) inserts itself.</li>
+          <li><code>ctx.tools.guard()</code>: a final, monotonic deny. Guards can only remove permission, never add it.</li>
+          <li><code>tools/execute</code>: the call itself, wrappable with deadlines, retries or metrics.</li>
+          <li><code>tools/post-execute</code>: replace the presentation or attach context before the result reaches the model.</li>
+          <li><code>tools/result</code>: observe the immutable, normalised outcome.</li>
+        </ol>
+        <p>Arguments are frozen as immutable JSON before <code>execute</code> runs, and the registry validates the returned value against the tool's declared <code>output.schema</code>. In a headless composition, an <em>ask</em> outcome resolves to <em>deny</em>: an unattended agent cannot approve itself.</p>
+      </div>
+
+      <div class="quiz">
+        <p class="q">dsh states the invariant "model-visible means logged." What does that commit the runtime to?</p>
+        <ul class="options">
+          <li>Every model response is logged so the UI can show it later.</li>
+          <li data-correct="true">Anything that reaches a model request must be reconstructible from the append-only event log, so resume, fork and replay can rebuild the exact context.</li>
+          <li>The model can read its own session log as a tool.</li>
+        </ul>
+        <div class="explain">The invariant is about the <em>input</em> side, not display. If some plugin injected text into the prompt without logging it, a resumed or forked session would see a different context than the original run. Making the log the only source of model-visible state is what lets transcripts, forks and telemetry all be derived views of one stream.</div>
+      </div>
+    </section>
+
+    <section id="compare">
+      <h2>How it differs from the alternatives</h2>
+      <p>The useful cut is not "open vs closed" but <em>"is the loop yours?"</em> Most tools give you a finished agent with hooks around the edges. dsh gives you the parts.</p>
+      <div class="tblwrap"><table>
+        <tr><th>Tool</th><th>What it is</th><th>Models</th><th>Can you replace the loop?</th><th>Sandbox</th><th>Maturity (Sept 2026)</th><th>Reach for it when</th></tr>
+        <tr><td><strong>DeepSeek Harness</strong></td><td>Composable agent runtime; web UI, headless, Python SDK, ACP server</td><td>Any: DeepSeek native, Anthropic, OpenAI, Bedrock, Vertex, Azure, custom endpoints</td><td>Yes, the loop is a plugin; presets swap per session</td><td>Filesystem only (bwrap / Landlock / ACL); network unconfined</td><td>Developer preview, breaking changes weekly</td><td>You are building an agent product or an evaluation rig and need to own composition</td></tr>
+        <tr><td><strong>Claude Code</strong></td><td>Managed coding agent plus Agent SDK; terminal, IDE, web, mobile, hosted background agents</td><td>Claude</td><td>No; hooks, skills, MCP, sub-agents around a fixed loop</td><td>Managed; permission modes and hooks</td><td>Mature</td><td>Vendor-native single-agent coding with GitHub-native PR workflows</td></tr>
+        <tr><td><strong>Codex CLI</strong></td><td>Managed coding agent; IDE extension, GitHub integration, cloud agents</td><td>OpenAI</td><td>No</td><td>Built-in OS sandboxing</td><td>Mature</td><td>You are on the OpenAI stack</td></tr>
+        <tr><td><strong>OpenCode</strong></td><td>Open-source coding agent; TUI, desktop app, IDE extension</td><td>Any</td><td>No; JS/TS plugins extend a fixed core</td><td>None built in</td><td>Stable, 160k+ stars, large user base</td><td>Self-hosted daily driver, especially with open-weight models</td></tr>
+        <tr><td><strong>OpenHands</strong></td><td>Open-source agent platform with container runtime and web app</td><td>Any</td><td>Partly; agent classes are pluggable, the platform is not</td><td>Docker per session</td><td>Mature</td><td>Batch software tasks in isolated containers, SWE-bench style pipelines</td></tr>
+        <tr><td><strong>Pi</strong></td><td>Tiny open-source harness; the smallest system prompt of the group (2–3k tokens)</td><td>Any via <code>pi-ai</code></td><td>Fork it; the codebase is small enough</td><td>None</td><td>Stable</td><td>Small models and constrained machines. Note dsh reuses Pi's <code>pi-ai</code> adapter.</td></tr>
+        <tr><td><strong>Claude Agent SDK / OpenAI Agents SDK</strong></td><td>Programmatic SDKs to embed a vendor agent loop in your app</td><td>Vendor</td><td>You write the app, the loop is theirs</td><td>Provider-managed</td><td>Mature</td><td>Embedding one vendor's agent in your own product</td></tr>
+        <tr><td><strong>LangGraph / CrewAI</strong></td><td>Orchestration frameworks, not harnesses</td><td>Any</td><td>You own the graph entirely</td><td>None</td><td>Mature</td><td>Explicit multi-agent state machines; often sit <em>above</em> a harness</td></tr>
+      </table></div>
+      <p>Token overhead is a real differentiator. Tencent Cloud's comparison puts dsh's system prompt at roughly 6k tokens with auto-compaction on by default, against about 10k for OpenCode and 20k for Hermes, with Pi lightest at 2–3k. That, plus the log-based context rather than verbatim transcript replay, is why dsh gets recommended for 24/7 runs.</p>
+      <div class="callout insight"><span class="tag">Positioning in one line</span>
+        <p>Several reviewers converge on the same verdict: OpenCode is the safer daily driver in 2026; dsh is the more consequential architecture. Pick by which of those two you need this quarter.</p></div>
+
+      <div class="deep-dive">
+        <p class="depth-note">Deep dive — dsh as a layer above Claude Code and Codex</p>
+        <p>The <code>subagent</code> family ships seven providers. Two are named integrations: <code>subagent-claude-code</code> delegates to the Claude Agent SDK inside the parent's workspace, and <code>subagent-codex</code> talks to <code>codex app-server --stdio</code>. The rest are generic: any Agent Client Protocol agent, a peer dsh over stdio JSON-RPC, and in-process children with or without the parent's history seeded in. Sub-agents behave like contractors: they receive a self-contained task, work alone, and return only a final answer (the Claude Code provider sets <code>inheritsParentContext: false</code>). Since the v0.1.2 alphas, parent and child can also exchange messages mid-task via <code>send_message</code>, and children are continuable with message queueing.</p>
+        <p>The practical consequence: you can run the same task through DeepSeek V4, Claude Code and Codex side by side under one orchestrator, one log format and one permission policy. That is a genuinely new capability for an evaluation team.</p>
+      </div>
+
+      <div class="quiz">
+        <p class="q">A team wants a self-hosted coding agent for daily use on open-weight models, and they need it to be stable across upgrades for the next six months. Which is the better fit today?</p>
+        <ul class="options">
+          <li>DeepSeek Harness, because it is model-agnostic and MIT-licensed.</li>
+          <li data-correct="true">OpenCode, because it is model-agnostic, self-hosted and stable, while dsh is a preview with a version-0 session format that breaks between releases.</li>
+          <li>Claude Code, because it is the most mature harness.</li>
+        </ul>
+        <div class="explain">Model-agnostic and MIT apply to both OpenCode and dsh, so they do not decide it. Stability across upgrades does: dsh explicitly warns of compatibility-breaking changes, and its session backends reject old on-disk formats with no migration. Claude Code fails the open-weight requirement outright. Revisit dsh once the session format and plugin contracts stabilise.</div>
+      </div>
+    </section>
+
+    <section id="when">
+      <h2>When to use it, and when not to</h2>
+      <h3>Good fits</h3>
+      <ul>
+        <li><strong>Building an agent product</strong> where the loop, approval flow, compaction or tool set must be yours, and you would otherwise fork a harness.</li>
+        <li><strong>An evaluation rig</strong> that runs the same task across DeepSeek, Claude Code and Codex under one log format. One install, seven sub-agent providers.</li>
+        <li><strong>Long-running headless jobs</strong> where a small system prompt, default auto-compaction and a resumable log matter more than a polished TUI.</li>
+        <li><strong>Harness research</strong>: benchmarking what the harness contributes, in <code>minimal</code> mode, is exactly what DeepSeek did for V4-Pro.</li>
+        <li><strong>Cost-sensitive DeepSeek workloads.</strong> Even after the August 2026 price rise (V4-Pro at $0.66 / $1.98 per million tokens off-peak, double at peak), DeepSeek stays far below Claude Opus and OpenAI flagship pricing, and dsh is the first-party harness for it.</li>
+      </ul>
+      <h3>Poor fits, for now</h3>
+      <ul>
+        <li><strong>Production sessions that must survive upgrades.</strong> Session format version 0, no migration path, weekly breaking changes.</li>
+        <li><strong>Anything needing network isolation.</strong> The sandbox governs filesystem effects only. Network and process visibility are outside its vocabulary, in every mode.</li>
+        <li><strong>A finished assistant today.</strong> If you want a TUI that just works, OpenCode or Claude Code will cost you less time.</li>
+        <li><strong>Python-native typed agents.</strong> The Python SDK drives dsh as a subprocess over JSON-RPC. If you want the agent to <em>be</em> Python, Pydantic AI or a vendor SDK is the natural home.</li>
+        <li><strong>Explicit multi-agent graphs.</strong> dsh has sub-agents and a workflow engine, but a stateful graph with branches and human checkpoints is still LangGraph territory. The two can stack.</li>
+      </ul>
+    </section>
+
+    <section id="install">
+      <h2>Hands-on: install and run</h2>
+      <p>Requirements are Node <code>^22.19.0 || &gt;=24.0.0</code> and pnpm for source builds. The fastest path is the npm package.</p>
+<pre><code># Web UI on http://127.0.0.1:3080 (add --no-open to skip the browser)
+export DEEPSEEK_API_KEY=sk-...
+npx @deepseek-ai/dsh web
+
+# or install globally and pin the version (breaking changes are weekly)
+npm install -g @deepseek-ai/dsh@0.1.3-alpha.2
+dsh web
+
+# from source
+git clone https://github.com/deepseek-ai/deepseek-harness.git
+cd deepseek-harness && pnpm install && pnpm run build
+pnpm dsh web</code></pre>
+      <p>The CLI is really a profile launcher. The profile decides which bundles boot and how the process talks to the outside world:</p>
+<pre><code>dsh --profile web                       # browser UI (dsh web is an alias)
+dsh --profile headless "summarize this workspace"
+                                        # one fresh persisted session, prints the answer, exits
+dsh --profile sdk                       # serve SDK clients over JSON-RPC on stdio
+dsh --profile sdk-minimal               # same, with the standalone minimal agent tree
+dsh --profile acp                       # serve Agent Client Protocol clients (editors, automation)
+dsh --profile web --patch ./my.cordis.yml   # apply a config overlay for this launch
+dsh --profile web --dump-config         # print the composed plugin tree without booting
+dsh plugin --profile web add &lt;pkg&gt;     # manage a profile's plugins (forwards to pnpm)</code></pre>
+      <h3>Pointing it at other models</h3>
+      <p>Settings live in <code>$DSH_HOME/settings.yaml</code>; credentials in <code>$DSH_HOME/.credentials.yaml</code> and are write-only from the UI. Catalog providers (Anthropic, OpenAI, Bedrock, Vertex, Azure, Codex) are added under Settings → Models. A custom OpenAI-compatible gateway or a self-hosted vLLM/SGLang server is declared under the <code>llm-pi-ai</code> plugin:</p>
+<pre><code># $DSH_HOME/settings.yaml (excerpt)
+llm-pi-ai:
+  providers:
+    my-gateway:                       # lowercase provider id, permanent once created
+      apiKeyEnv: GATEWAY_API_KEY
+      api: openai-completions
+      baseURL: https://gateway.example/v1
+      models:
+        - id: qwen3-coder
+        - id: vision-preview
+          input: [text, image]        # declare modalities per model
+      # compat: { supportsDeveloperRole: false, maxTokensField: max_tokens }</code></pre>
+      <p>"Fetch available models" queries the endpoint's <code>/models</code> route, so a local vLLM server is discoverable without hand-listing models.</p>
+    </section>
+
+    <section id="build">
+      <h2>Building on it: your first plugin and tool</h2>
+      <p>A plugin is a TypeScript module with a <code>name</code> and an <code>apply(ctx)</code>. Everything registered through <code>ctx</code> is a reversible effect, so there is no teardown code to write for listeners, tools or timers.</p>
+<pre><code>// src/greet-tool.ts
+import type { Context } from '@deepseek-ai/cordis'
+import { defineTool } from '@deepseek-ai/dsh-tools'
+
+export const name = 'greet-tool'
+export const inject = ['tools']          // load only once the tool registry exists
+
+export function apply(ctx: Context) {
+  ctx.tools.register(defineTool({
+    name: 'greet',
+    description: 'Greet someone by name.',
+    parameters: {
+      name: { type: 'string', required: true, description: 'The name to greet' },
+    },
+    output: {
+      schema: { type: 'string' },                       // canonical value the tool returns
+      render: (_args, value) => [{ type: 'text', text: value }],   // model-facing content
+    },
+    async execute(args, exec) {
+      // exec.signal fires on cancellation; honour it for long work
+      return `Hello, ${args.name}!`
+    },
+  }))
+
+  // explicit cleanup for things ctx does not own (sockets, timers)
+  ctx.effect(() => {
+    const timer = setInterval(() => ctx.logger?.info?.('tick'), 5000)
+    return () => clearInterval(timer)
+  })
+}</code></pre>
+      <p>Register it with a patch and launch:</p>
+<pre><code># cordis.yml
+- insert:
+    - id: greet
+      name: '/absolute/path/to/src/greet-tool.ts'</code></pre>
+<pre><code>pnpm dsh web --patch ./cordis.yml</code></pre>
+      <p>Three things to notice. The framework validates model-generated arguments against <code>parameters</code> before <code>execute</code> runs, so you never parse JSON. The return value is validated against <code>output.schema</code> and then passed to <code>render</code>; UI-only formatting stays out of the model result (there are separate pure <code>presentCall</code> / <code>presentResult</code> hooks for cards). And because registration is effect-based, disposing the plugin fiber unregisters the tool, which is what hot reload (<code>@deepseek-ai/cordis-plugin-hmr</code>) relies on.</p>
+
+      <h3>Adding a policy hook</h3>
+<pre><code>// deny any shell command that touches production credentials
+export const name = 'no-prod-secrets'
+export const inject = ['tools']
+export function apply(ctx: Context) {
+  ctx.on('tools/pre-execute', (call) => {
+    if (call.name === 'bash' && /PROD_|\.aws\/credentials/.test(String(call.arguments.command)))
+      return { decision: 'deny', reason: 'blocked by no-prod-secrets' }
+  })
+}</code></pre>
+      <p class="depth-note">The event name and the pre-execute stage are documented; the exact shape of the handler's return value is from the preview docs and may change, so check the tool-authoring reference for your pinned version.</p>
+
+      <p>Below is a forty-line toy of the kernel idea: a context where every registration is a reversible effect and plugins load only when the services they inject exist. Run it, then try removing the <code>inject</code> line or calling <code>offlineTools()</code> earlier.</p>
+      <div class="code-runner" data-lang="js">
+        <div class="cr-head"><span class="lang">javascript</span>
+          <div class="cr-btns"><button class="run">▶ Run</button><button class="copy">Copy</button></div></div>
+        <textarea spellcheck="false">// A toy Cordis: reversible effects + dependency-driven loading.
+class Context {
+  constructor(){ this.services = {}; this.fibers = []; }
+  // providing a service is itself an effect: it returns its own undo
+  provide(name, svc){
+    this.services[name] = svc; console.log(`[kernel] service '${name}' online`);
+    this.fibers.forEach(f => this._tryLoad(f));
+    return () => {
+      delete this.services[name]; console.log(`[kernel] service '${name}' offline`);
+      this.fibers.forEach(f => { if (f.active && (f.plugin.inject||[]).includes(name)) this._unload(f); });
+    };
+  }
+  plugin(plugin){ const f = { plugin, active:false, disposers:[] }; this.fibers.push(f); this._tryLoad(f); return f; }
+  _tryLoad(f){
+    if (f.active) return;
+    const missing = (f.plugin.inject||[]).filter(d => !(d in this.services));
+    if (missing.length){ console.log(`[pending] ${f.plugin.name} waits for: ${missing.join(', ')}`); return; }
+    const ctx = { ...this.services, effect: run => { f.disposers.push(run()); } };
+    f.plugin.apply(ctx); f.active = true; console.log(`[active]  ${f.plugin.name}`);
+  }
+  _unload(f){ f.disposers.reverse().forEach(undo => undo()); f.disposers = []; f.active = false;
+    console.log(`[unload]  ${f.plugin.name}`); }
+}
+
+const kernel = new Context();
+const tools = { list: [], register(t){ this.list.push(t); return () => { this.list = this.list.filter(x => x !== t); }; } };
+
+kernel.plugin({ name:'greet-tool', inject:['tools'], apply(ctx){
+  ctx.effect(() => ctx.tools.register({ name:'greet' }));
+  ctx.effect(() => { console.log('   greet-tool: timer started'); return () => console.log('   greet-tool: timer cleared'); });
+}});
+
+const offlineTools = kernel.provide('tools', tools);     // dependency arrives -> plugin loads
+console.log('tools now:', JSON.stringify(tools.list.map(t => t.name)));
+offlineTools();                                          // e.g. swapping the registry plugin
+console.log('tools now:', JSON.stringify(tools.list.map(t => t.name)));
+// expected:
+// [pending] greet-tool waits for: tools
+// [kernel] service 'tools' online
+//    greet-tool: timer started
+// [active]  greet-tool
+// tools now: ["greet"]
+// [kernel] service 'tools' offline
+//    greet-tool: timer cleared
+// [unload]  greet-tool
+// tools now: []</textarea>
+        <pre class="output"></pre>
+      </div>
+
+      <div class="quiz">
+        <p class="q">Your plugin declares <code>inject = ['tools', 'llm']</code>. At runtime the operator replaces the LLM adapter plugin. What happens to your plugin?</p>
+        <ul class="options">
+          <li>Nothing; it keeps a reference to the old adapter until restart.</li>
+          <li data-correct="true">It is unloaded (all its registrations reverted) when the <code>llm</code> service disappears, and reloaded automatically when the new adapter provides it again.</li>
+          <li>It throws, because a required service was removed.</li>
+        </ul>
+        <div class="explain">This is the spatial half of Cordis's composability. Declaring a dependency is a live contract, not a boot-time check: the kernel unloads dependents when a service goes away and reloads them when it returns. Combined with reversible effects, that is what makes hot-swapping a model adapter mid-session safe.</div>
+      </div>
+    </section>
+
+    <section id="deploy">
+      <h2>Deploying agents: SDK, headless and sub-agents</h2>
+      <h3>Python SDK</h3>
+      <p>The SDK drives a bundled <code>dsh --profile sdk</code> runtime as a subprocess over newline-delimited JSON-RPC on stdio. It requires an explicit harness home and never silently reads <code>~/.dsh</code>, which is exactly what you want in CI.</p>
+<pre><code>python -m venv .venv && . .venv/bin/activate
+python -m pip install deepseek-harness-sdk      # pulls the matching runtime wheel
+export DEEPSEEK_API_KEY=sk-...                  # DEEPSEEK_BASE_URL for a proxy</code></pre>
+<pre><code>from pathlib import Path
+from deepseek_harness import DeepSeekHarness
+
+workspace = Path("./repo").resolve()
+dsh_home  = Path("./.dsh-home").resolve()      # persistent profiles + sessions live here
+
+with DeepSeekHarness(
+    provider="deepseek-official",
+    model="deepseek-v4-flash",
+    max_tokens=49_152,
+    cwd=str(workspace),
+    dsh_home=str(dsh_home),
+    profile="sdk-minimal",   # bash/pwsh + str_replace_editor, no compaction, JSONL sessions
+) as harness:
+    result = harness.run(
+        "Inspect the repository and fix the failing tests.",
+        session_id="ci-run-001",          # stable id => resumable, forkable
+    )
+    print(result.final_response)</code></pre>
+      <p>The <code>sdk-minimal</code> profile is the benchmark configuration: a persistent shell, the editor, a 300-second shell timeout, a 16k-character editor output limit, and uncompressed JSONL session logs. To give the SDK agent more tools, install plugins into that profile and restart the runtime:</p>
+<pre><code>dsh plugin --profile sdk-minimal add file:/path/to/my-plugin-bundle
+# or edit $DSH_HOME/profiles/sdk-minimal/cordis.patch.yml for persistent changes</code></pre>
+
+      <h3>Headless in a pipeline</h3>
+<pre><code># one-shot job; exits non-zero on config or boot failure
+dsh --profile headless "Run the test suite, summarise failures, and propose a patch" > report.md</code></pre>
+      <p>In a headless composition any tool that would prompt for approval is denied. Grant what the job needs in the profile's permission policy up front, and run it in a disposable container with the narrowest filesystem mode you can:</p>
+<pre><code># Dockerfile sketch for a CI agent
+FROM node:22-bookworm-slim
+RUN npm install -g @deepseek-ai/dsh@0.1.3-alpha.2 && apt-get update && apt-get install -y bubblewrap
+WORKDIR /work
+ENV DSH_HOME=/dsh-home
+COPY dsh-home/ /dsh-home/            # profiles/headless with your patch + permission policy
+ENTRYPOINT ["dsh", "--profile", "headless"]</code></pre>
+      <div class="tblwrap"><table>
+        <tr><th>Sandbox mode</th><th>Scope</th></tr>
+        <tr><td><code>read-only</code></td><td>No writes anywhere.</td></tr>
+        <tr><td><code>workspace-write</code></td><td>Edits inside the workspace only. The sensible CI default.</td></tr>
+        <tr><td><code>danger-full-access</code></td><td>Unrestricted. Never in automation.</td></tr>
+      </table></div>
+      <p>Enforcement is full on Linux with bwrap and Landlock, partial on older Landlock ABIs (reported as <code>partial</code>) and on Windows. None of the modes restrict network access.</p>
+
+      <h3>Orchestrating other agents</h3>
+      <p>Enable the sub-agent providers in your preset and the orchestrator can delegate to Claude Code, Codex, an ACP agent, or another dsh, and compare answers. The provider names are stable; the exact preset YAML keys were still moving during the alphas, so copy the shipped <code>standard</code> preset (<code>apps/cli/config/agent-presets/standard/agent.cordis.yml</code>) as your starting point.</p>
+<pre><code># agent.cordis.yml (excerpt, shape illustrative)
+- id: my-orchestrator
+  name: dsh-preset
+  config:
+    prompt: ./PROMPT.md
+    tools: [bash, str_replace_editor, web_search, subagent, send_message, todo]
+    subagents:
+      - subagent-claude-code        # Claude Agent SDK, inheritsParentContext: false
+      - subagent-codex              # codex app-server --stdio
+      - subagent-acp                # any Agent Client Protocol agent</code></pre>
+      <p>Editors that speak the Agent Client Protocol (Zed, and the JetBrains and Neovim ACP clients) can drive dsh directly via <code>dsh --profile acp</code>. MCP servers are supported through the <code>mcp</code> family; the settings syntax was still shifting across releases, so verify it against the docs for your pinned version rather than a blog post.</p>
+
+      <p>The runnable below reproduces the session-log idea in Python: an append-only stream, a transcript derived from it, and a fork that replays the prefix. The first Run downloads the Python runtime.</p>
+      <div class="code-runner" data-lang="python">
+        <div class="cr-head"><span class="lang">python</span>
+          <div class="cr-btns"><button class="run">▶ Run</button><button class="copy">Copy</button></div></div>
+        <textarea spellcheck="false"># "Model-visible means logged": everything the model saw is derived from one append-only stream.
+log = []
+def append(kind, **data):
+    log.append({"seq": len(log), "kind": kind, **data})
+
+append("turn.open"); append("user", text="fix the failing test")
+append("step.open"); append("assistant", tool_call={"name": "bash", "args": {"cmd": "pytest -x"}})
+append("tool.result", name="bash", output="FAILED tests/test_parse.py::test_parse"); append("step.close")
+append("step.open"); append("assistant", tool_call={"name": "str_replace_editor", "args": {"path": "parse.py"}})
+append("tool.result", name="str_replace_editor", output="edited 1 hunk"); append("step.close")
+append("step.open"); append("assistant", text="Fixed test_parse: off-by-one in the tokenizer."); append("step.close")
+append("turn.close")
+
+def transcript(events):
+    """The model-visible context, rebuilt purely from the log (no hidden state)."""
+    out = []
+    for e in events:
+        if e["kind"] == "user":        out.append(f"USER: {e['text']}")
+        elif e["kind"] == "assistant": out.append("ASSISTANT: " + (e.get("text") or f"call {e['tool_call']['name']}"))
+        elif e["kind"] == "tool.result": out.append(f"TOOL[{e['name']}]: {e['output']}")
+    return out
+
+def fork(events, at_seq):
+    """A fork is just the prefix; the new branch appends from here."""
+    return [e for e in events if e["seq"] <= at_seq]
+
+print("\n".join(transcript(log)))
+print("steps in turn:", sum(1 for e in log if e["kind"] == "step.open"))
+branch = fork(log, at_seq=5)   # branch after the first tool result
+print("fork replays", len(branch), "events; last =", branch[-1]["kind"])
+# expected:
+# USER: fix the failing test
+# ASSISTANT: call bash
+# TOOL[bash]: FAILED tests/test_parse.py::test_parse
+# ASSISTANT: call str_replace_editor
+# TOOL[str_replace_editor]: edited 1 hunk
+# ASSISTANT: Fixed test_parse: off-by-one in the tokenizer.
+# steps in turn: 3
+# fork replays 6 events; last = step.close</textarea>
+        <pre class="output"></pre>
+      </div>
+
+      <div class="quiz">
+        <p class="q">You deploy a headless dsh job in CI. The agent tries to run a command your permission policy marks as "ask". What happens?</p>
+        <ul class="options">
+          <li>The job blocks waiting for an approval that never comes, until the shell timeout.</li>
+          <li data-correct="true">The call is denied: in a headless composition "ask" resolves to "deny" by design, because an unattended agent cannot approve itself.</li>
+          <li>The call runs, because headless mode disables the approval plane.</li>
+        </ul>
+        <div class="explain">Neither hanging nor auto-approving is acceptable for automation, so dsh maps ask to deny when no human is attached. The operational consequence: whatever a CI job legitimately needs must be allowed explicitly in the profile's policy, and everything else should be denied rather than left as ask.</div>
+      </div>
+    </section>
+
+    <section id="pitfalls">
+      <h2>Where people go wrong</h2>
+      <div class="callout pitfall"><span class="tag">Pitfall</span>
+        <p><strong>Treating a preview as a platform.</strong> The README shouts that there will be compatibility-breaking changes; one release candidate moved twice in a week, and v0.1.3-alpha.1 already broke the session persistence API. Pin the exact version everywhere and keep a rollback path.</p></div>
+      <div class="callout pitfall"><span class="tag">Pitfall</span>
+        <p><strong>Assuming the sandbox isolates the agent.</strong> It confines filesystem effects only. Network, processes and credentials in the environment are all reachable in every mode. The SAFETY notice recommends disposable VMs or containers, minimal privileges, and backups. A day-two fix closed a <code>/proc/&lt;pid&gt;/root</code> escape, which tells you the surface is still being explored.</p></div>
+      <div class="callout pitfall"><span class="tag">Pitfall</span>
+        <p><strong>Installing plugins on trust.</strong> Plugins are arbitrary TypeScript with access to everything the process has. The <code>dsh-plugin</code> GitHub topic is a discovery mechanism, not a security certification. Read the code, install into a test profile first, and restart after profile changes (a missing tool after install is usually a stale process).</p></div>
+      <div class="callout pitfall"><span class="tag">Pitfall</span>
+        <p><strong>Reaching for the <code>cordis</code> preset by default.</strong> It hands the model JavaScript execution against the live process. It is a creator tool for building presets, and it is deliberately not selected unless you choose it.</p></div>
+      <div class="callout pitfall"><span class="tag">Pitfall</span>
+        <p><strong>Reading benchmark numbers as model numbers.</strong> DeepSeek's V4-Pro agent results were measured with dsh in <code>minimal</code> mode. They are model-plus-harness numbers, which is the honest way to measure, but it means comparisons against other vendors' harnesses are not apples to apples.</p></div>
+      <div class="callout pitfall"><span class="tag">Pitfall</span>
+        <p><strong>Budgeting on the old API prices.</strong> DeepSeek moved to peak / off-peak pricing on 16 August 2026, roughly doubling standard rates and raising cached-input prices by more than tenfold. Still cheap relative to frontier competitors, but re-run the numbers.</p></div>
+      <p>Smaller gotchas: GitHub Issues are disabled (bugs go to Discussions or Discord); the narrowest sandbox mode is not in any shipped preset, so you compose it yourself; and the web UI is the only fully interactive surface, with no hosted background-agent service like Claude Code or Codex offer.</p>
+    </section>
+
+    <section id="cheatsheet">
+      <h2>Cheat-sheet</h2>
+      <div class="tblwrap"><table>
+        <tr><th>Question</th><th>Answer</th></tr>
+        <tr><td>What is it</td><td>MIT-licensed agent runtime from DeepSeek, Node/TypeScript, released 13 Aug 2026 as a developer preview. Everything, including the loop, is a Cordis plugin.</td></tr>
+        <tr><td>Problem</td><td>Harnesses decide cost and capability as much as models, but existing ones are monolithic. dsh unbundles model, tools, loop, sandbox, session and UI into swappable, configurable parts with a traceable log.</td></tr>
+        <tr><td>Kernel</td><td>Cordis: reversible effects (temporal) + reactive dependency injection (spatial). Fibers: pending → active → disposed.</td></tr>
+        <tr><td>Composition</td><td>bundles → profiles (<code>web</code>, <code>headless</code>, <code>sdk</code>, <code>sdk-minimal</code>, <code>acp</code>) → <code>cordis.patch.yml</code> → agent presets (<code>standard</code>, <code>code</code>, <code>minimal</code>, <code>cordis</code>).</td></tr>
+        <tr><td>Models</td><td>DeepSeek native; Anthropic, OpenAI, Bedrock, Vertex, Azure, Codex; any OpenAI-compatible endpoint via <code>llm-pi-ai</code> config.</td></tr>
+        <tr><td>Surfaces</td><td>Web UI on :3080, headless one-shot, Python SDK over stdio JSON-RPC, ACP server, MCP client, hooks, reads AGENTS.md / CLAUDE.md.</td></tr>
+        <tr><td>Sub-agents</td><td>Claude Code (Agent SDK), Codex (app-server), ACP agents, peer dsh, in-process children; parent–child <code>send_message</code>.</td></tr>
+        <tr><td>Sandbox</td><td><code>read-only</code> / <code>workspace-write</code> / <code>danger-full-access</code>. Filesystem only. Network unconfined.</td></tr>
+        <tr><td>Session log</td><td>Append-only; step = one model call + its tools; turn = steps until obligations met. Format v0, no migration.</td></tr>
+        <tr><td>Use it for</td><td>Agent products needing custom composition, multi-harness evaluation, long headless runs, harness research.</td></tr>
+        <tr><td>Avoid for now</td><td>Upgrade-stable production, network isolation, a polished daily-driver TUI, Python-native agents, explicit agent graphs.</td></tr>
+        <tr><td>Nearest alternatives</td><td>OpenCode (stable open daily driver), OpenHands (containerised batch), Claude Code / Codex (managed, vendor-native), Pi (tiny), LangGraph (graphs, sits above).</td></tr>
+      </table></div>
+    </section>
+
+    <section id="reading">
+      <h2>Further reading</h2>
+      <ul>
+        <li><a class="ref" href="https://github.com/deepseek-ai/deepseek-harness">deepseek-ai/deepseek-harness</a> — the repo: README, SAFETY.md, BENCHMARK.md, and the <code>packages/</code> tree that is the real map of what exists.</li>
+        <li><a class="ref" href="https://deepseek.com/harness/en/">DeepSeek Harness developer preview</a> — the launch page; the two principles and the four modes in DeepSeek's own words.</li>
+        <li><a class="ref" href="https://deepseek-harness.github.io/deepseek-harness/en/develop/basic/">Your first plugin</a> and <a class="ref" href="https://deepseek-harness.github.io/deepseek-harness/en/develop/basic/tool">Build a tool</a> — the official developer guide; the code in this module follows it.</li>
+        <li><a class="ref" href="https://deepseek-harness.github.io/deepseek-harness/en/develop/framework/">Plugins and lifecycle</a> — fibers, inject, effects and hot reload; read this before writing anything non-trivial.</li>
+        <li><a class="ref" href="https://deepseek-harness.github.io/deepseek-harness/en/reference/cookbook/adding-a-tool">Tool authoring reference</a> — the full pipeline contract: pre-execute, guard, execute, post-execute, result.</li>
+        <li><a class="ref" href="https://deepseek-harness.github.io/deepseek-harness/en/guide/python-sdk">Python SDK guide</a> and <a class="ref" href="https://deepseek-harness.github.io/deepseek-harness/en/guide/providers">Model configuration</a> — the SDK snippet and the provider YAML above come from here.</li>
+        <li><a class="ref" href="https://github.com/deepseek-ai/deepseek-harness/blob/master/apps/cli/README.md">CLI README</a> — the profile launcher, flags and exit behaviour.</li>
+        <li><a class="ref" href="https://arxiv.org/abs/2608.25512">A Programming Paradigm for Spatiotemporal Composability</a> — the Cordis paper; the theory behind reversible effects and reactive dependencies.</li>
+        <li><a class="ref" href="https://github.com/deepseek-ai/deepseek-harness/releases">Releases</a> — read every note before upgrading; breaking changes are called out per version.</li>
+        <li><a class="ref" href="https://www.infoq.com/news/2026/08/deep-seek-harness/">InfoQ: modular, unbundled agent infrastructure</a> — the industry framing and community reaction.</li>
+        <li><a class="ref" href="https://venturebeat.com/technology/deepseek-harness-launches-as-open-source-rival-to-claude-code-alongside-v4-pro-on-api-with-higher-prices">VentureBeat on the launch and pricing change</a> — the Claude Code / Codex comparison and the August 2026 price table.</li>
+        <li><a class="ref" href="https://winder.ai/ai-agent-harness-comparison/">Winder.ai: a comparison of agent harnesses in 2026</a> — nine harnesses across model lock-in, governance and deployment; the source for the harness-beats-model finding.</li>
+        <li><a class="ref" href="https://www.tencentcloud.com/techpedia/147665">Tencent Cloud: dsh vs Pi vs OpenCode vs Hermes vs Claude Code</a> — system-prompt sizes and resource-tier recommendations.</li>
+        <li><a class="ref" href="https://atomicbot.ai/blog/what-is-deepseek-harness">What is DeepSeek Harness</a> — the most detailed third-party walkthrough of presets, sandbox modes, sub-agent providers and limitations.</li>
+      </ul>
+    </section>
+
+    <footer>Generated for on-demand learning · state of the project as of 8 September 2026 (v0.1.3-alpha.2) · open in any browser · edit the code cells freely.</footer>
+  </main>
+</div>
+
+<script>
+/* ---------- theme ---------- */
+const root=document.documentElement;
+document.getElementById('themeBtn').onclick=()=>{
+  root.dataset.theme = root.dataset.theme==='dark' ? '' : 'dark';
+};
+
+/* ---------- depth toggle ---------- */
+const depthBtn=document.getElementById('depthBtn'), depthNote=document.getElementById('depthNote');
+depthBtn.onclick=()=>{
+  const skim=root.classList.toggle('skim');
+  depthBtn.textContent = skim ? 'Mode: Skim' : 'Mode: Full detail';
+  depthBtn.dataset.mode = skim ? 'skim' : 'full';
+  depthNote.textContent = skim ? 'Skim mode — deep-dive blocks hidden' : 'Full mode — deep-dive blocks visible';
+};
+
+/* ---------- build TOC + scroll-spy ---------- */
+const toc=document.getElementById('toc'), secs=[...document.querySelectorAll('main section[id]')];
+secs.forEach(s=>{
+  const h=s.querySelector('h2'); if(!h) return;
+  const a=document.createElement('a'); a.href='#'+s.id; a.textContent=h.textContent; a.dataset.for=s.id;
+  toc.appendChild(a);
+});
+const spy=new IntersectionObserver(es=>{
+  es.forEach(e=>{ if(e.isIntersecting){
+    toc.querySelectorAll('a').forEach(a=>a.classList.toggle('active',a.dataset.for===e.target.id));
+  }});
+},{rootMargin:'-20% 0px -70% 0px'});
+secs.forEach(s=>spy.observe(s));
+
+/* ---------- in-page fragment links (srcdoc-safe) ---------- */
+/* When this file is embedded via <iframe srcdoc>, its document base URL is the
+   PARENT page, so a bare "#id" link would navigate the frame to <parent>#id and
+   reload the whole host page inside itself. Intercept fragment links (TOC and
+   any others) and scroll within this document instead. */
+document.addEventListener('click',e=>{
+  const a=e.target.closest?.('a[href^="#"]'); if(!a) return;
+  const id=decodeURIComponent(a.getAttribute('href').slice(1)); if(!id) return;
+  const el=document.getElementById(id); if(!el) return;
+  e.preventDefault(); el.scrollIntoView({behavior:'smooth',block:'start'});
+});
+
+/* ---------- progress bar ---------- */
+const prog=document.getElementById('progress');
+addEventListener('scroll',()=>{
+  const h=document.documentElement, max=h.scrollHeight-h.clientHeight;
+  prog.style.width=(max>0?(h.scrollTop/max*100):0)+'%';
+},{passive:true});
+
+/* ---------- quizzes ---------- */
+document.querySelectorAll('.quiz').forEach(q=>{
+  const opts=q.querySelectorAll('.options li');
+  opts.forEach(li=>li.onclick=()=>{
+    if(q.classList.contains('answered')) return;
+    q.classList.add('answered');
+    opts.forEach(o=>{o.classList.add('locked');
+      if(o.dataset.correct) o.classList.add('correct');});
+    if(!li.dataset.correct) li.classList.add('wrong');
+  });
+});
+
+/* ---------- code runners ---------- */
+function fmt(v){ if(typeof v==='object'){try{return JSON.stringify(v);}catch(e){return String(v);}} return String(v); }
+function runJS(code,out){
+  const logs=[]; const c={log:(...a)=>logs.push(a.map(fmt).join(' ')),
+    error:(...a)=>logs.push('⚠ '+a.map(fmt).join(' ')), warn:(...a)=>logs.push(a.map(fmt).join(' '))};
+  try{ const r=new Function('console',code)(c); if(r!==undefined) logs.push(fmt(r)); }
+  catch(e){ logs.push('⚠ '+e); }
+  out.textContent = logs.join('\n') || '(no output)';
+}
+let pyodide=null;
+function ensurePy(out){
+  if(pyodide) return pyodide;
+  out.textContent='Loading Python runtime…';
+  pyodide=new Promise((res,rej)=>{
+    const s=document.createElement('script');
+    s.src='https://cdn.jsdelivr.net/pyodide/v0.26.2/full/pyodide.js';
+    s.onload=async()=>{ try{ res(await loadPyodide()); }catch(e){ rej(e); } };
+    s.onerror=()=>rej(new Error('Could not load Pyodide (needs internet).'));
+    document.head.appendChild(s);
+  });
+  return pyodide;
+}
+async function runPy(code,out){
+  try{
+    const py=await ensurePy(out);
+    py.runPython('import sys,io\nsys.stdout=io.StringIO()\nsys.stderr=sys.stdout');
+    py.runPython(code);
+    out.textContent = py.runPython('sys.stdout.getvalue()') || '(no output)';
+  }catch(e){ out.textContent='⚠ '+e; }
+}
+document.querySelectorAll('.code-runner').forEach(cr=>{
+  const ta=cr.querySelector('textarea'), out=cr.querySelector('.output'),
+        lang=cr.dataset.lang||'js';
+  cr.querySelector('.run').onclick=()=> lang==='python' ? runPy(ta.value,out) : runJS(ta.value,out);
+  cr.querySelector('.copy').onclick=()=>{ navigator.clipboard?.writeText(ta.value);
+    const b=cr.querySelector('.copy'), t=b.textContent; b.textContent='Copied'; setTimeout(()=>b.textContent=t,1000); };
+});
+
+/* ---------- visual explainer: one turn through the plugin pipeline ---------- */
+(function(){
+  const cv=document.getElementById('viz'); if(!cv) return;
+  const ctx=cv.getContext('2d'); let raf=null, tick=0, i=0, swapFlash=0;
+  const W=cv.width, H=cv.height;
+  const adapters=[{label:'llm-pi-ai',model:'deepseek-v4-flash'},{label:'llm-pi-ai',model:'claude (anthropic)'}];
+  let adapter=0;
+
+  // plugin boxes (kernel is the background)
+  const box={
+    input:  {x:20,  y:70,  w:170,h:70, title:'Input',    sub:'web UI / SDK / ACP'},
+    loop:   {x:275, y:30,  w:170,h:70, title:'Agent loop', sub:'preset: standard'},
+    llm:    {x:530, y:70,  w:170,h:70, title:'LLM adapter', sub:''},
+    tools:  {x:530, y:200, w:170,h:70, title:'Tool registry', sub:'policy · sandbox'},
+    session:{x:275, y:200, w:170,h:70, title:'Session service', sub:'append-only log'},
+  };
+  // the hops of one turn: which box is active, what gets logged, a caption
+  const hops=[
+    {at:'input',   log:null,           cap:'User prompt arrives through a UI plugin'},
+    {at:'session', log:'turn.open',    cap:'Session opens a turn'},
+    {at:'session', log:'user',         cap:'Prompt is logged before the model sees it'},
+    {at:'loop',    log:null,           cap:'Loop fires agent/pre-step hooks, builds context from the log'},
+    {at:'llm',     log:'assistant',    cap:'Adapter sends the request; reply = a tool call'},
+    {at:'tools',   log:null,           cap:'tools/pre-execute policy → allow'},
+    {at:'tools',   log:'tool.result',  cap:'bash runs inside the sandbox; result logged'},
+    {at:'loop',    log:null,           cap:'Loop: obligations not met → another step'},
+    {at:'llm',     log:'assistant',    cap:'Second request; reply = an edit tool call'},
+    {at:'tools',   log:'tool.result',  cap:'str_replace_editor runs; result logged'},
+    {at:'loop',    log:null,           cap:'Loop: one more step'},
+    {at:'llm',     log:'assistant',    cap:'Final text answer'},
+    {at:'session', log:'turn.close',   cap:'Turn closes; log is the whole record'},
+    {at:'input',   log:null,           cap:'Answer rendered from the log. Done.'},
+  ];
+  let logged=[];
+
+  function reset(){ i=0; tick=0; logged=[]; swapFlash=0; draw(); }
+  function step(){
+    if(i>=hops.length){ i=0; logged=[]; }
+    const h=hops[i]; if(h.log) logged.push(h.log); i++; tick++; draw();
+  }
+  function swap(){ adapter=(adapter+1)%adapters.length; swapFlash=18; draw(); }
+
+  function rr(x,y,w,h,r){ ctx.beginPath(); ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r);
+    ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath(); }
+  function arrow(a,b,color){
+    const ax=a.x+a.w/2, ay=a.y+a.h/2, bx=b.x+b.w/2, by=b.y+b.h/2;
+    ctx.strokeStyle=color; ctx.lineWidth=1.5; ctx.setLineDash([5,5]);
+    ctx.beginPath(); ctx.moveTo(ax,ay); ctx.lineTo(bx,by); ctx.stroke(); ctx.setLineDash([]);
+  }
+  function draw(){
+    const cs=getComputedStyle(document.body);
+    const ink=cs.getPropertyValue('--ink').trim(), muted=cs.getPropertyValue('--muted').trim(),
+          line=cs.getPropertyValue('--line').trim(), accent=cs.getPropertyValue('--accent').trim(),
+          soft=cs.getPropertyValue('--accent-soft').trim(), panel=cs.getPropertyValue('--panel').trim();
+    ctx.clearRect(0,0,W,H);
+
+    // kernel background
+    ctx.fillStyle=soft; ctx.globalAlpha=.35; rr(8,14,W-16,276,16); ctx.fill(); ctx.globalAlpha=1;
+    ctx.fillStyle=muted; ctx.font='600 13px '+cs.getPropertyValue('--sans');
+    ctx.fillText('CORDIS KERNEL  ·  services + events + fibers', 22, 32);
+
+    // wiring
+    arrow(box.input,box.session,line); arrow(box.session,box.loop,line); arrow(box.loop,box.llm,line);
+    arrow(box.llm,box.tools,line); arrow(box.tools,box.session,line); arrow(box.loop,box.session,line);
+
+    box.llm.sub=adapters[adapter].model;
+    const cur=i>0?hops[i-1].at:null;
+    for(const k in box){
+      const b=box[k], on=k===cur, flash=(k==='llm'&&swapFlash>0);
+      ctx.fillStyle=panel; rr(b.x,b.y,b.w,b.h,10); ctx.fill();
+      ctx.lineWidth=on?3:1.5; ctx.strokeStyle= flash ? '#c7a34d' : (on?accent:line); ctx.stroke();
+      ctx.fillStyle=ink; ctx.font='600 15px '+cs.getPropertyValue('--sans');
+      ctx.fillText(b.title, b.x+12, b.y+26);
+      ctx.fillStyle=muted; ctx.font='13px '+cs.getPropertyValue('--mono');
+      ctx.fillText(flash ? (swapFlash>9?'unloading fiber…':'loading fiber…') : b.sub, b.x+12, b.y+50);
+    }
+    // moving token along the last hop
+    if(cur){ const b=box[cur]; ctx.fillStyle=accent; ctx.beginPath(); ctx.arc(b.x+b.w-14,b.y+14,6,0,7); ctx.fill(); }
+
+    // caption
+    ctx.fillStyle=ink; ctx.font='15px '+cs.getPropertyValue('--sans');
+    const cap = i===0 ? 'Press Play or Step to run one turn.' : `${i}/${hops.length}  ${hops[i-1].cap}`;
+    ctx.fillText(cap, 20, 318);
+
+    // log strip
+    ctx.fillStyle=muted; ctx.font='600 12px '+cs.getPropertyValue('--sans');
+    ctx.fillText('SESSION LOG (append-only)', 20, 345);
+    let x=20;
+    logged.forEach((l,idx)=>{
+      ctx.font='12px '+cs.getPropertyValue('--mono');
+      const w=ctx.measureText(l).width+16;
+      const last=idx===logged.length-1;
+      ctx.fillStyle= last?accent:soft; rr(x,355,w,26,7); ctx.fill();
+      ctx.fillStyle= last?'#fff':ink; ctx.fillText(l, x+8, 373);
+      x+=w+6;
+    });
+    if(swapFlash>0){ swapFlash--; requestAnimationFrame(draw); }
+  }
+  let acc=0;
+  function loop(){ acc++; if(acc%45===0) step(); raf=requestAnimationFrame(loop); }
+  const playBtn=document.getElementById('vizPlay');
+  function stop(){ if(raf){cancelAnimationFrame(raf);raf=null;playBtn.textContent='▶ Play';} }
+  playBtn.onclick=()=>{ if(raf){ stop(); } else { playBtn.textContent='⏸ Pause'; loop(); } };
+  document.getElementById('vizStep').onclick=()=>{ stop(); step(); };
+  document.getElementById('vizSwap').onclick=()=>{ swap(); };
+  document.getElementById('vizReset').onclick=()=>{ stop(); reset(); };
+  document.getElementById('themeBtn').addEventListener('click',()=>requestAnimationFrame(draw));
+  reset();
+})();
+</script>
+</body>
+</html>
