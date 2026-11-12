@@ -172,7 +172,7 @@
     line-height:1.62;padding:16px;border-radius:12px;overflow:auto;border:1px solid var(--line);
     box-shadow:var(--shadow);margin:1.2em 0;white-space:pre;-webkit-overflow-scrolling:touch;tab-size:4}
   pre.snippet.out{background:var(--panel);color:var(--muted);border-style:dashed;box-shadow:none;
-    font-size:12.5px;line-height:1.55;padding:12px 16px}
+    font-size:12px;line-height:1.6;padding:12px 16px}
   .snip-label{font-size:12px;color:var(--muted);font-family:var(--mono);text-transform:uppercase;
     letter-spacing:.06em;margin:1.6em 0 -.5em;display:block}
   .snippet .c{color:var(--tok-c)}.snippet .kw{color:var(--tok-kw)}.snippet .s{color:var(--tok-s)}
@@ -273,7 +273,7 @@
       <div class="callout pitfall"><span class="tag">Before you build: the trade</span>
         <p>Building this is a reasonable choice, and it is not free. Weigh it against the alternatives rather than treating it as the default:</p>
         <ul>
-          <li><strong>What you take on.</strong> The correctness of a distributed queue, and the long tail the server already has: assistants and versioning, crons, the store API, auth hooks, webhooks, Studio. The reference in this module is about a thousand lines, passes its tests, and is a subset.</li>
+          <li><strong>What you take on.</strong> The correctness of a distributed queue, and the long tail the server already has: assistants and versioning, crons, the store API, auth hooks, webhooks, Studio. The reference in this module is about 1,100 lines, passes its tests, and is a subset.</li>
           <li><strong>Buying the licence</strong> is the better answer if you need that long tail or a vendor to call.</li>
           <li><strong>Aegra</strong> is an Apache-2.0 FastAPI + Postgres server that speaks the same protocol. Its current README lists a Redis job queue and pub/sub, so it does not satisfy a no-Redis rule as shipped.</li>
           <li><strong>Is "no Redis" a hard rule?</strong> One small Redis would remove the most delicate part of this design. If the rule is policy, Postgres does the job at the scale most internal agent platforms run at; <a href="#capacity">the capacity section</a> puts numbers and limits on that.</li>
@@ -404,7 +404,7 @@ pool = AsyncConnectionPool(
 <span class="kw">await</span> pool.open()
 
 saver = AsyncPostgresSaver(pool)
-<span class="kw">await</span> saver.setup()                      <span class="c"># once per database: creates tables, runs migrations</span>
+<span class="kw">await</span> saver.setup()                      <span class="c"># once per database: tables and migrations</span>
 graph = builder.compile(checkpointer=saver)</pre>
 
       <p>The three connection options are not decoration:</p>
@@ -419,12 +419,13 @@ graph = builder.compile(checkpointer=saver)</pre>
       <h3>One saver means one query at a time</h3>
       <p>This is the setting that quietly decides your throughput. <code>AsyncPostgresSaver</code> wraps every database call in a single <code>asyncio.Lock</code>. Handing it a pool does not change that: one saver instance issues one query at a time, whatever the pool size.</p>
 
-      <span class="snip-label">measured: 60 concurrent runs, pool max_size=20</span>
-<pre class="snippet out">ONE shared saver                   60 runs in  0.98s | peak concurrent DB connections in use: 1
-a saver per run (same pool)        60 runs in  0.74s | peak concurrent DB connections in use: 20
-graph.copy(update=checkpointer)    60 runs in  0.58s | peak concurrent DB connections in use: 20
-compile() cost: 0.29 ms each
-copy()    cost: 0.029 ms each</pre>
+      <table class="cmp">
+        <tr><th>60 concurrent runs, pool <code>max_size=20</code></th><th>Wall time</th><th>Peak connections in use</th></tr>
+        <tr><td>One shared saver</td><td>0.98 s</td><td><strong>1</strong></td></tr>
+        <tr><td>A saver per run, same pool, via <code>compile()</code></td><td>0.74 s</td><td>20</td></tr>
+        <tr><td>A saver per run, same pool, via <code>copy()</code></td><td>0.58 s</td><td>20</td></tr>
+      </table>
+      <p class="measured"><b>Measured.</b> Creating the per-run graph costs <b>0.29 ms</b> with <code>builder.compile()</code> and <b>0.029 ms</b> with <code>graph.copy()</code>.</p>
 
       <p>On localhost each query takes well under a millisecond, so the wall-clock gap looks small. Put 2 to 5 ms of network between the pod and the database and a shared saver caps the whole pod at a few hundred checkpoint operations per second, in series. The fix is a saver per run on the same pool:</p>
 
@@ -481,15 +482,18 @@ copy()    cost: 0.029 ms each</pre>
 <span class="kw">await</span> graph.ainvoke({<span class="s">"topic"</span>: <span class="s">"postgres"</span>, <span class="s">"notes"</span>: []}, cfg)
 
 snap = <span class="kw">await</span> graph.aget_state(cfg)
-snap.values      <span class="c"># {'topic': 'postgres', 'notes': ['fact about postgres'], 'draft': 'postgres: fact about postgres'}</span>
+snap.values      <span class="c"># {'topic': 'postgres', 'notes': ['fact about postgres'],</span>
+                 <span class="c">#  'draft': 'postgres: fact about postgres'}</span>
 snap.next        <span class="c"># ()   nothing left to run</span>
 snap.metadata    <span class="c"># {'step': 2, 'source': 'loop', 'parents': {}}</span>
-snap.config      <span class="c"># {'configurable': {'thread_id': …, 'checkpoint_ns': '', 'checkpoint_id': '1f1de523-6a66-…'}}</span>
+snap.config      <span class="c"># {'configurable': {'thread_id': …, 'checkpoint_ns': '',</span>
+                 <span class="c">#                   'checkpoint_id': '1f1de523-6a66-…'}}</span>
 
 <span class="kw">async</span> <span class="kw">for</span> s <span class="kw">in</span> graph.aget_state_history(cfg):
     print(s.metadata[<span class="s">"step"</span>], s.metadata[<span class="s">"source"</span>], s.next, s.values)</pre>
-      <span class="snip-label">output</span>
-<pre class="snippet out"> 2 loop   ()             {'topic': 'postgres', 'notes': ['fact about postgres'], 'draft': 'postgres: fact about postgres'}
+      <span class="snip-label">output (the first line is wrapped)</span>
+<pre class="snippet out"> 2 loop   ()             {'topic': 'postgres', 'notes': ['fact about postgres'],
+                          'draft': 'postgres: fact about postgres'}
  1 loop   ('write',)     {'topic': 'postgres', 'notes': ['fact about postgres']}
  0 loop   ('research',)  {'topic': 'postgres', 'notes': []}
 -1 input  ('__start__',) {'notes': []}</pre>
@@ -497,7 +501,7 @@ snap.config      <span class="c"># {'configurable': {'thread_id': …, 'checkpoi
       <p>A <code>StateSnapshot</code> also carries <code>created_at</code>, <code>parent_config</code>, <code>tasks</code> (what is due, with any error or interrupt attached) and <code>interrupts</code>. Its <code>config</code> is the address of that exact checkpoint, which is what makes updates and forks possible.</p>
 
       <span class="snip-label">update, then continue</span>
-<pre class="snippet"><span class="kw">await</span> graph.ainvoke({<span class="s">"topic"</span>: <span class="s">"redis"</span>}, cfg)     <span class="c"># a second turn: same thread, state accumulates</span>
+<pre class="snippet"><span class="kw">await</span> graph.ainvoke({<span class="s">"topic"</span>: <span class="s">"redis"</span>}, cfg)     <span class="c"># a second turn on the same thread</span>
 
 <span class="kw">await</span> graph.aupdate_state(cfg, {<span class="s">"notes"</span>: [<span class="s">"human-added fact"</span>]}, as_node=<span class="s">"research"</span>)
 
@@ -518,11 +522,12 @@ snap.metadata[<span class="s">"source"</span>]   <span class="c"># 'update'</spa
       <span class="snip-label">fork from an old checkpoint</span>
 <pre class="snippet">old = [s <span class="kw">async</span> <span class="kw">for</span> s <span class="kw">in</span> graph.aget_state_history(cfg) <span class="kw">if</span> s.next == (<span class="s">"write"</span>,)][-<span class="n">1</span>]
 
-fork = <span class="kw">await</span> graph.aupdate_state(old.config, {<span class="s">"notes"</span>: [<span class="s">"forked fact"</span>]})   <span class="c"># a sibling branch</span>
-<span class="kw">await</span> graph.ainvoke(<span class="kw">None</span>, fork)                                            <span class="c"># run it</span>
+fork = <span class="kw">await</span> graph.aupdate_state(old.config, {<span class="s">"notes"</span>: [<span class="s">"forked fact"</span>]})  <span class="c"># a sibling branch</span>
+<span class="kw">await</span> graph.ainvoke(<span class="kw">None</span>, fork)                                           <span class="c"># run it</span>
 
 (<span class="kw">await</span> graph.aget_state(cfg)).values
-<span class="c"># {'topic': 'postgres', 'notes': ['fact about postgres', 'forked fact'], 'draft': 'postgres: fact about postgres; forked fact'}</span></pre>
+<span class="c"># {'topic': 'postgres', 'notes': ['fact about postgres', 'forked fact'],</span>
+<span class="c">#  'draft': 'postgres: fact about postgres; forked fact'}</span></pre>
 
       <p>The branch is now the newest checkpoint, so it <em>is</em> the thread's state. The earlier branch is still in the history; nothing was overwritten.</p>
 
@@ -570,18 +575,19 @@ fork = <span class="kw">await</span> graph.aupdate_state(old.config, {<span clas
     msg = <span class="kw">await</span> llm.ainvoke(state[<span class="s">"messages"</span>])        <span class="c"># tokens show up in "messages"</span>
     <span class="kw">return</span> {<span class="s">"messages"</span>: [msg]}
 
-<span class="kw">async</span> <span class="kw">for</span> part <span class="kw">in</span> graph.astream(inp, cfg, stream_mode=[<span class="s">"updates"</span>, <span class="s">"messages"</span>, <span class="s">"custom"</span>], version=<span class="s">"v2"</span>):
+modes = [<span class="s">"updates"</span>, <span class="s">"messages"</span>, <span class="s">"custom"</span>]
+<span class="kw">async</span> <span class="kw">for</span> part <span class="kw">in</span> graph.astream(inp, cfg, stream_mode=modes, version=<span class="s">"v2"</span>):
     print(part[<span class="s">"type"</span>], part[<span class="s">"ns"</span>], part[<span class="s">"data"</span>])</pre>
       <span class="snip-label">output (ids and metadata trimmed)</span>
 <pre class="snippet out">custom   () {'progress': 'planning', 'pct': 10}
 custom   () {'progress': 'planned', 'pct': 100}
 updates  () {'plan': {'plan': 'answer briefly'}}
-messages () (AIMessageChunk(content='Postgres', id='lc_run--01a1ce08-…'), {'langgraph_node': 'answer', 'langgraph_step': 2, …})
-messages () (AIMessageChunk(content=' ',        id='lc_run--01a1ce08-…'), {…})
-messages () (AIMessageChunk(content='is',       id='lc_run--01a1ce08-…'), {…})
-messages () (AIMessageChunk(content=' ',        id='lc_run--01a1ce08-…'), {…})
-messages () (AIMessageChunk(content='enough',   id='lc_run--01a1ce08-…'), {…})
-updates  () {'answer': {'messages': [AIMessage(content='Postgres is enough', id='lc_run--01a1ce08-…')]}}</pre>
+messages () (AIMessageChunk(content='Postgres', id='lc_run--01…'), {'langgraph_node': 'answer', …})
+messages () (AIMessageChunk(content=' ',        id='lc_run--01…'), {…})
+messages () (AIMessageChunk(content='is',       id='lc_run--01…'), {…})
+messages () (AIMessageChunk(content=' ',        id='lc_run--01…'), {…})
+messages () (AIMessageChunk(content='enough',   id='lc_run--01…'), {…})
+updates  () {'answer': {'messages': [AIMessage(content='Postgres is enough', id='lc_run--01…')]}}</pre>
 
       <h3>Ask for <code>version="v2"</code></h3>
       <p>Without it, the shape of each item depends on the arguments: a bare chunk for one mode, <code>(mode, chunk)</code> for a list of modes, <code>(namespace, mode, chunk)</code> once <code>subgraphs=True</code>. With <code>version="v2"</code>, available since 1.1, every item is a dict with <code>type</code>, <code>ns</code> and <code>data</code>, and <code>values</code> items also carry <code>interrupts</code>. A server has to serialize whatever comes out, so one shape is worth having.</p>
@@ -624,14 +630,15 @@ updates  () {'answer': {'messages': [AIMessage(content='Postgres is enough', id=
 
 <span class="kw">async</span> <span class="kw">for</span> chunk <span class="kw">in</span> graph.astream({<span class="s">"amount"</span>: <span class="n">42</span>, <span class="s">"log"</span>: []}, cfg, stream_mode=<span class="s">"updates"</span>):
     print(chunk)</pre>
-      <span class="snip-label">output</span>
+      <span class="snip-label">output (the second line is wrapped)</span>
 <pre class="snippet out">{'propose': {'log': ['proposed refund of 42']}}
-{'__interrupt__': (Interrupt(value={'question': 'Approve refund?', 'amount': 42}, id='0f3da91326634f13fabe01a5a5b68993', response_schema=None),)}</pre>
+{'__interrupt__': (Interrupt(value={'question': 'Approve refund?', 'amount': 42},
+                             id='0f3da91326634f13fabe01a5a5b68993', response_schema=None),)}</pre>
 
       <span class="snip-label">process B, later: another pool, another saver, another compiled graph</span>
 <pre class="snippet">snap = <span class="kw">await</span> graph_b.aget_state(cfg)
 snap.next          <span class="c"># ('approve',)</span>
-snap.interrupts    <span class="c"># (Interrupt(value={'question': 'Approve refund?', 'amount': 42}, id='0f3da913…'),)</span>
+snap.interrupts    <span class="c"># (Interrupt(value={'question': 'Approve refund?', 'amount': 42}, id=…),)</span>
 
 <span class="kw">async</span> <span class="kw">for</span> chunk <span class="kw">in</span> graph_b.astream(Command(resume=<span class="s">"yes"</span>), cfg, stream_mode=<span class="s">"updates"</span>):
     print(chunk)</pre>
@@ -663,7 +670,8 @@ snap.interrupts    <span class="c"># (Interrupt(value={'question': 'Approve refu
       <p>If a thread is waiting on a question and the caller sends ordinary input, LangGraph does not complain. It starts a new turn from <code>START</code>, and the pending question is dropped:</p>
       <span class="snip-label">output</span>
 <pre class="snippet out">== thread 3 interrupted, next: ('approve',)
-after sending fresh input: next: ('approve',) | log: ['proposed refund of 1', 'proposed refund of 2'] | amount: 2</pre>
+after sending fresh input: next: ('approve',) | amount: 2
+                           log: ['proposed refund of 1', 'proposed refund of 2']</pre>
       <p>That is a product decision for your server. Either reject plain input while a thread is <code>interrupted</code>, or treat it as "the user changed the subject".</p>
 
       <div class="deep-dive">
@@ -694,7 +702,8 @@ task.cancel()                     <span class="c"># CancelledError is raised ins
       <span class="snip-label">output</span>
 <pre class="snippet out">  [b] got CancelledError -&gt; cleaning up
 run task raised CancelledError
-after cancel: log=['a', 'fast'] next=('b',) step=1 tasks=[('b', 'pending'), ('fast', 'has-result')]
+after cancel: log=['a', 'fast'] next=('b',) step=1
+              tasks=[('b', 'pending'), ('fast', 'has-result')]
 resumed with invoke(None): {'log': ['a', 'b', 'fast', 'c']}</pre>
 
       <span class="snip-label">2. drain: stop at the next step boundary (since 1.2)</span>
@@ -735,10 +744,12 @@ resumed with invoke(None): {'log': ['a', 'b', 'fast', 'c']}</pre>
       <span class="snip-label">output</span>
 <pre class="snippet out">== A. retry with the SAME metadata.run_id and the SAME input ==
   after crash: next ('b',) | inbox ['hello'] | checkpoint.metadata.run_id == rid: True
-  attempt 2 result: {'inbox': ['hello'], 'log': ['a', 'b', 'c']} | node executions: ['a', 'b', 'b', 'c']
+  attempt 2 result: {'inbox': ['hello'], 'log': ['a', 'b', 'c']}
+  node executions:  ['a', 'b', 'b', 'c']
 
 == B. same input but a NEW run_id (what a naive client retry does) ==
-  result: {'inbox': ['hello', 'hello'], 'log': ['a', 'a', 'b', 'c']} | node executions: ['a', 'b', 'a', 'b', 'c']</pre>
+  result:           {'inbox': ['hello', 'hello'], 'log': ['a', 'a', 'b', 'c']}
+  node executions:  ['a', 'b', 'a', 'b', 'c']</pre>
 
       <p>Every checkpoint records the <code>run_id</code> found in <code>config["metadata"]</code>. When a call arrives whose <code>run_id</code> matches the newest checkpoint, LangGraph treats it as the same run coming back: it continues from that checkpoint and does not apply the input again. With a different id, the same input is a new turn. The message is appended twice and the graph starts over on top of half-finished state.</p>
 
@@ -790,7 +801,7 @@ resumed with invoke(None): {'log': ['a', 'b', 'fast', 'c']}</pre>
           <button class="btn" data-scn="cancel">Stop button</button>
           <button class="btn" data-scn="crash">A pod dies</button>
         </div>
-        <canvas id="viz2" width="720" height="332" role="img" aria-label="Animated diagram: a browser, three pods and one Postgres database exchanging messages for the selected scenario. The caption below describes each step."></canvas>
+        <canvas id="viz2" width="720" height="342" role="img" aria-label="Animated diagram: a browser, three pods and one Postgres database exchanging messages for the selected scenario. The caption below describes each step."></canvas>
         <div class="legend">
           <span><i style="background:var(--accent);border-radius:3px"></i>event delivered to the browser</span>
           <span><i style="border:1.5px solid var(--accent);background:var(--accent-soft);border-radius:3px"></i>in the log, not read yet</span>
@@ -823,7 +834,7 @@ resumed with invoke(None): {'log': ['a', 'b', 'fast', 'c']}</pre>
       <span class="snip-label">schema</span>
 <pre class="snippet"><span class="kw">CREATE</span> <span class="kw">TABLE</span> <span class="kw">IF</span> <span class="kw">NOT</span> <span class="kw">EXISTS</span> threads (
     thread_id  text <span class="kw">PRIMARY</span> <span class="kw">KEY</span>,
-    status     text <span class="kw">NOT</span> <span class="kw">NULL</span> <span class="kw">DEFAULT</span> <span class="s">'idle'</span>,          <span class="c">-- idle | busy | interrupted | error
+    status     text <span class="kw">NOT</span> <span class="kw">NULL</span> <span class="kw">DEFAULT</span> <span class="s">'idle'</span>,   <span class="c">-- idle | busy | interrupted | error
 </span>    metadata   jsonb <span class="kw">NOT</span> <span class="kw">NULL</span> <span class="kw">DEFAULT</span> <span class="s">'{}'</span>,
     created_at timestamptz <span class="kw">NOT</span> <span class="kw">NULL</span> <span class="kw">DEFAULT</span> now(),
     updated_at timestamptz <span class="kw">NOT</span> <span class="kw">NULL</span> <span class="kw">DEFAULT</span> now());
@@ -832,29 +843,33 @@ resumed with invoke(None): {'log': ['a', 'b', 'fast', 'c']}</pre>
     run_id       text <span class="kw">PRIMARY</span> <span class="kw">KEY</span>,
     thread_id    text <span class="kw">NOT</span> <span class="kw">NULL</span> <span class="kw">REFERENCES</span> threads <span class="kw">ON</span> <span class="kw">DELETE</span> <span class="kw">CASCADE</span>,
     assistant_id text <span class="kw">NOT</span> <span class="kw">NULL</span>,
-    status       text <span class="kw">NOT</span> <span class="kw">NULL</span> <span class="kw">DEFAULT</span> <span class="s">'pending'</span>,     <span class="c">-- pending | running | success | error | interrupted
-</span>    kwargs       jsonb <span class="kw">NOT</span> <span class="kw">NULL</span>,                      <span class="c">-- input / command / config / stream_mode ...
-</span>    metadata     jsonb <span class="kw">NOT</span> <span class="kw">NULL</span> <span class="kw">DEFAULT</span> <span class="s">'{}'</span>,
+    <span class="c">-- pending | running | success | error | interrupted
+</span>    status       text <span class="kw">NOT</span> <span class="kw">NULL</span> <span class="kw">DEFAULT</span> <span class="s">'pending'</span>,
+    <span class="c">-- everything needed to start the run: input / command / config / stream_mode
+</span>    kwargs       jsonb <span class="kw">NOT</span> <span class="kw">NULL</span>,
+    metadata     jsonb <span class="kw">NOT</span> <span class="kw">NULL</span> <span class="kw">DEFAULT</span> <span class="s">'{}'</span>,
     multitask_strategy text <span class="kw">NOT</span> <span class="kw">NULL</span> <span class="kw">DEFAULT</span> <span class="s">'enqueue'</span>,
-    cancel_requested   text,                          <span class="c">-- NULL | interrupt | rollback
-</span>    worker_id    text,                                <span class="c">-- the pod that holds the lease
+    cancel_requested   text,   <span class="c">-- NULL | interrupt | rollback
+</span>    worker_id    text,         <span class="c">-- the pod that holds the lease
 </span>    lease_until  timestamptz,
     attempt      int <span class="kw">NOT</span> <span class="kw">NULL</span> <span class="kw">DEFAULT</span> <span class="n">0</span>,
     error        text,
     created_at   timestamptz <span class="kw">NOT</span> <span class="kw">NULL</span> <span class="kw">DEFAULT</span> now(),
     updated_at   timestamptz <span class="kw">NOT</span> <span class="kw">NULL</span> <span class="kw">DEFAULT</span> now());
 
-<span class="kw">CREATE</span> <span class="kw">INDEX</span> <span class="kw">IF</span> <span class="kw">NOT</span> <span class="kw">EXISTS</span> runs_queue_idx <span class="kw">ON</span> runs (created_at) <span class="kw">WHERE</span> status = <span class="s">'pending'</span>;
+<span class="kw">CREATE</span> <span class="kw">INDEX</span> <span class="kw">IF</span> <span class="kw">NOT</span> <span class="kw">EXISTS</span> runs_queue_idx
+    <span class="kw">ON</span> runs (created_at) <span class="kw">WHERE</span> status = <span class="s">'pending'</span>;
 
 <span class="kw">CREATE</span> <span class="kw">INDEX</span> <span class="kw">IF</span> <span class="kw">NOT</span> <span class="kw">EXISTS</span> runs_thread_idx <span class="kw">ON</span> runs (thread_id, created_at <span class="kw">DESC</span>);
 
-<span class="kw">CREATE</span> <span class="kw">UNIQUE</span> <span class="kw">INDEX</span> <span class="kw">IF</span> <span class="kw">NOT</span> <span class="kw">EXISTS</span> runs_one_running_per_thread <span class="kw">ON</span> runs (thread_id) <span class="kw">WHERE</span> status = <span class="s">'running'</span>;
+<span class="kw">CREATE</span> <span class="kw">UNIQUE</span> <span class="kw">INDEX</span> <span class="kw">IF</span> <span class="kw">NOT</span> <span class="kw">EXISTS</span> runs_one_running_per_thread
+    <span class="kw">ON</span> runs (thread_id) <span class="kw">WHERE</span> status = <span class="s">'running'</span>;
 
 <span class="kw">CREATE</span> <span class="kw">TABLE</span> <span class="kw">IF</span> <span class="kw">NOT</span> <span class="kw">EXISTS</span> run_events (
     run_id     text   <span class="kw">NOT</span> <span class="kw">NULL</span> <span class="kw">REFERENCES</span> runs <span class="kw">ON</span> <span class="kw">DELETE</span> <span class="kw">CASCADE</span>,
-    seq        bigint <span class="kw">NOT</span> <span class="kw">NULL</span>,                       <span class="c">-- per run, gap-free, one writer
+    seq        bigint <span class="kw">NOT</span> <span class="kw">NULL</span>,   <span class="c">-- per run, gap-free, one writer
 </span>    <span class="kw">event</span>      text   <span class="kw">NOT</span> <span class="kw">NULL</span>,
-    <span class="kw">data</span>       text   <span class="kw">NOT</span> <span class="kw">NULL</span>,                       <span class="c">-- JSON exactly as it goes on the wire
+    <span class="kw">data</span>       text   <span class="kw">NOT</span> <span class="kw">NULL</span>,   <span class="c">-- JSON exactly as it goes on the wire
 </span>    created_at timestamptz <span class="kw">NOT</span> <span class="kw">NULL</span> <span class="kw">DEFAULT</span> now(),
     <span class="kw">PRIMARY</span> <span class="kw">KEY</span> (run_id, seq));</pre>
 
@@ -892,10 +907,12 @@ resumed with invoke(None): {'log': ['a', 'b', 'fast', 'c']}</pre>
     }
     to_cancel: list[str] = []
     <span class="kw">async</span> <span class="kw">with</span> pool.connection() <span class="kw">as</span> conn, conn.transaction():
-        <span class="c"># Lock the thread row: two concurrent creates on one thread are decided one after the other.</span>
+        <span class="c"># Lock the thread row: two concurrent creates on one thread are decided one after</span>
+        <span class="c"># the other.</span>
         thread = <span class="kw">await</span> (
             <span class="kw">await</span> conn.execute(
-                <span class="s">"SELECT thread_id FROM threads WHERE thread_id = %s FOR UPDATE"</span>, (thread_id,)
+                <span class="s">"SELECT thread_id FROM threads WHERE thread_id = %s FOR UPDATE"</span>,
+                (thread_id,),
             )
         ).fetchone()
         <span class="kw">if</span> thread <span class="kw">is</span> <span class="kw">None</span>:
@@ -904,18 +921,22 @@ resumed with invoke(None): {'log': ['a', 'b', 'fast', 'c']}</pre>
             <span class="kw">await</span> conn.execute(<span class="s">"INSERT INTO threads (thread_id) VALUES (%s)"</span>, (thread_id,))
         active = <span class="kw">await</span> (
             <span class="kw">await</span> conn.execute(
-                <span class="s">"SELECT run_id FROM runs WHERE thread_id = %s AND status IN ('pending','running')"</span>,
+                <span class="s">"SELECT run_id FROM runs WHERE thread_id = %s AND status IN "</span>
+                <span class="s">"('pending','running')"</span>,
                 (thread_id,),
             )
         ).fetchall()
         <span class="kw">if</span> active <span class="kw">and</span> strategy == <span class="s">"reject"</span>:
-            <span class="kw">raise</span> HTTPException(<span class="n">409</span>, <span class="s">"thread already has an active run (multitask_strategy=reject)"</span>)
+            <span class="kw">raise</span> HTTPException(
+                <span class="n">409</span>, <span class="s">"thread already has an active run (multitask_strategy=reject)"</span>
+            )
         <span class="kw">if</span> strategy <span class="kw">in</span> (<span class="s">"interrupt"</span>, <span class="s">"rollback"</span>):
             to_cancel = [row[<span class="s">"run_id"</span>] <span class="kw">for</span> row <span class="kw">in</span> active]
         run = <span class="kw">await</span> (
             <span class="kw">await</span> conn.execute(
-                <span class="c">"""INSERT INTO runs (run_id, thread_id, assistant_id, kwargs, metadata, multitask_strategy)
-               VALUES (%s, %s, %s, %s, %s, %s) RETURNING *"""</span>,
+                <span class="s">"""INSERT INTO runs
+                     (run_id, thread_id, assistant_id, kwargs, metadata, multitask_strategy)
+                   VALUES (%s, %s, %s, %s, %s, %s) RETURNING *"""</span>,
                 (
                     str(uuid.uuid4()),
                     thread_id,
@@ -927,7 +948,8 @@ resumed with invoke(None): {'log': ['a', 'b', 'fast', 'c']}</pre>
             )
         ).fetchone()
         <span class="kw">await</span> conn.execute(
-            <span class="s">"UPDATE threads SET status = 'busy', updated_at = now(), metadata = metadata || %s WHERE thread_id = %s"</span>,
+            <span class="s">"UPDATE threads SET status = 'busy', updated_at = now(), metadata = metadata "</span>
+            <span class="s">"|| %s WHERE thread_id = %s"</span>,
             (Jsonb({<span class="s">"graph_id"</span>: body.assistant_id}), thread_id),
         )
     <span class="kw">for</span> run_id <span class="kw">in</span> to_cancel:  <span class="c"># the new run starts when the old one has stopped</span>
@@ -955,7 +977,8 @@ WITH claimed AS (
   WHERE r.run_id = (
     SELECT c.run_id FROM runs c
     WHERE c.status = 'pending'
-      AND NOT EXISTS (SELECT 1 FROM runs x WHERE x.thread_id = c.thread_id AND x.status = 'running')
+      AND NOT EXISTS (SELECT 1 FROM runs x
+                      WHERE x.thread_id = c.thread_id AND x.status = 'running')
     ORDER BY c.created_at
     FOR UPDATE SKIP LOCKED
     LIMIT 1)
@@ -969,14 +992,17 @@ SELECT * FROM claimed
         <span class="kw">try</span>:
             <span class="kw">return</span> <span class="kw">await</span> fetchone(CLAIM, {<span class="s">"worker"</span>: WORKER_ID, <span class="s">"lease"</span>: LEASE_S})
         <span class="kw">except</span> errors.UniqueViolation:
-            <span class="kw">continue</span>  <span class="c"># another pod just started a different run of the same thread: pick again</span>
+            <span class="c"># another pod just started a different run of the same thread: pick again</span>
+            <span class="kw">continue</span>
 
 
 <span class="kw">async</span> <span class="kw">def</span> <span class="fn">worker_loop</span>() -&gt; <span class="kw">None</span>:
     <span class="kw">while</span> <span class="kw">not</span> draining.is_set():
         hub.queue_bell.clear()
         <span class="kw">try</span>:
-            <span class="kw">while</span> len(local) &lt; MAX_RUNS <span class="kw">and</span> <span class="kw">not</span> draining.is_set() <span class="kw">and</span> (run := <span class="kw">await</span> claim()):
+            <span class="kw">while</span> (
+                len(local) &lt; MAX_RUNS <span class="kw">and</span> <span class="kw">not</span> draining.is_set() <span class="kw">and</span> (run := <span class="kw">await</span> claim())
+            ):
                 local[run[<span class="s">"run_id"</span>]] = me = LocalRun(control=RunControl())
                 me.runner = asyncio.create_task(execute(run))
         <span class="kw">except</span> Exception:
@@ -1049,7 +1075,7 @@ simulate()
         <span class="kw">try</span>:
             <span class="c"># renew the leases of runs that are alive HERE, and read their cancel flags</span>
             mine = <span class="kw">await</span> fetchall(
-                <span class="c">"""UPDATE runs SET lease_until = now() + %s * interval '1 second'
+                <span class="s">"""UPDATE runs SET lease_until = now() + %s * interval '1 second'
                    WHERE worker_id = %s AND status = 'running' AND run_id = ANY(%s)
                    RETURNING run_id, cancel_requested"""</span>,
                 (LEASE_S, WORKER_ID, list(local)),
@@ -1059,21 +1085,27 @@ simulate()
                     cancel_local(row[<span class="s">"run_id"</span>], row[<span class="s">"cancel_requested"</span>])
             <span class="kw">for</span> run_id <span class="kw">in</span> set(local) - {row[<span class="s">"run_id"</span>] <span class="kw">for</span> row <span class="kw">in</span> mine}:
                 me = local[run_id]
-                <span class="kw">if</span> me.task <span class="kw">and</span> <span class="kw">not</span> me.task.done():  <span class="c"># we no longer own it: stop and stay silent</span>
+                <span class="kw">if</span> (
+                    me.task <span class="kw">and</span> <span class="kw">not</span> me.task.done()
+                ):  <span class="c"># we no longer own it: stop and stay silent</span>
                     me.fenced = <span class="kw">True</span>
                     me.task.cancel()
-            expired = <span class="kw">await</span> fetchall(  <span class="c"># any pod may take over runs whose owner stopped renewing</span>
-                <span class="c">"""UPDATE runs SET worker_id = NULL, lease_until = NULL, updated_at = now(),
-                          status = CASE WHEN attempt &gt;= %s THEN 'error' ELSE 'pending' END,
-                          error  = CASE WHEN attempt &gt;= %s THEN 'worker lost' ELSE error END
-                   WHERE status = 'running' AND lease_until &lt; now()
-                   RETURNING run_id, thread_id, assistant_id, status"""</span>,
-                (MAX_ATTEMPTS, MAX_ATTEMPTS),
+            expired = (
+                <span class="kw">await</span> fetchall(  <span class="c"># any pod may take over runs whose owner stopped renewing</span>
+                    <span class="s">"""UPDATE runs
+                       SET worker_id = NULL, lease_until = NULL, updated_at = now(),
+                         status = CASE WHEN attempt &gt;= %s THEN 'error' ELSE 'pending' END,
+                         error = CASE WHEN attempt &gt;= %s THEN 'worker lost' ELSE error END
+                       WHERE status = 'running' AND lease_until &lt; now()
+                       RETURNING run_id, thread_id, assistant_id, status"""</span>,
+                    (MAX_ATTEMPTS, MAX_ATTEMPTS),
+                )
             )
             <span class="kw">for</span> row <span class="kw">in</span> expired:
                 <span class="kw">if</span> row[<span class="s">"status"</span>] == <span class="s">"error"</span>:  <span class="c"># crashed its worker too often: stop retrying</span>
                     <span class="kw">await</span> fetchall(
-                        <span class="s">"UPDATE threads SET status = 'error', updated_at = now() WHERE thread_id = %s RETURNING 1"</span>,
+                        <span class="s">"UPDATE threads SET status = 'error', updated_at = now() WHERE "</span>
+                        <span class="s">"thread_id = %s RETURNING 1"</span>,
                         (row[<span class="s">"thread_id"</span>],),
                     )
                     <span class="kw">await</span> close_unowned(row[<span class="s">"run_id"</span>], <span class="s">"error"</span>)
@@ -1081,7 +1113,7 @@ simulate()
                 <span class="kw">await</span> notify(<span class="s">"run_queue"</span>)
             <span class="kw">if</span> tick % <span class="n">60</span> == <span class="n">0</span>:  <span class="c"># the log is for replay, not for history</span>
                 <span class="kw">await</span> fetchall(
-                    <span class="c">"""DELETE FROM run_events e USING runs r
+                    <span class="s">"""DELETE FROM run_events e USING runs r
                        WHERE e.run_id = r.run_id AND r.status NOT IN ('pending','running')
                          AND r.updated_at &lt; now() - %s * interval '1 second' RETURNING 1"""</span>,
                     (EVENT_TTL_S,),
@@ -1121,8 +1153,8 @@ simulate()
 
 
 <span class="kw">def</span> <span class="fn">graph_for</span>(assistant_id: str):
-    <span class="c"># A saver per run/request: one AsyncPostgresSaver serializes all its DB calls behind</span>
-    <span class="c"># an internal lock, so sharing a single instance would cap the pod at one query at a time.</span>
+    <span class="c"># A saver per run/request: one AsyncPostgresSaver serializes all its DB calls behind an</span>
+    <span class="c"># internal lock, so sharing a single instance would cap the pod at one query at a time.</span>
     <span class="kw">return</span> GRAPHS[assistant_id].copy(update={<span class="s">"checkpointer"</span>: AsyncPostgresSaver(pool)})
 
 
@@ -1135,14 +1167,16 @@ simulate()
         config = {
             **user,
             <span class="s">"configurable"</span>: {**user.get(<span class="s">"configurable"</span>, {}), <span class="s">"thread_id"</span>: thread_id},
-            <span class="c"># The SAME run_id on every attempt: LangGraph sees that the thread's last checkpoint</span>
-            <span class="c"># belongs to this run and resumes from it instead of applying the input again.</span>
+            <span class="c"># The SAME run_id on every attempt: LangGraph sees that the thread's last</span>
+            <span class="c"># checkpoint belongs to this run and resumes from it instead of applying the</span>
+            <span class="c"># input again.</span>
             <span class="s">"metadata"</span>: {**user.get(<span class="s">"metadata"</span>, {}), <span class="s">"run_id"</span>: run_id},
         }
         graph_input = Command(**kw[<span class="s">"command"</span>]) <span class="kw">if</span> kw.get(<span class="s">"command"</span>) <span class="kw">else</span> kw.get(<span class="s">"input"</span>)
         modes = [<span class="s">"messages"</span> <span class="kw">if</span> m == <span class="s">"messages-tuple"</span> <span class="kw">else</span> m <span class="kw">for</span> m <span class="kw">in</span> kw[<span class="s">"stream_mode"</span>]]
         last = <span class="kw">await</span> fetchone(
-            <span class="s">"SELECT coalesce(max(seq), 0) AS seq FROM run_events WHERE run_id = %s"</span>, (run_id,)
+            <span class="s">"SELECT coalesce(max(seq), 0) AS seq FROM run_events WHERE run_id = %s"</span>,
+            (run_id,),
         )
         events.seq[run_id] = last[<span class="s">"seq"</span>]  <span class="c"># continue numbering after an earlier attempt</span>
         events.append(run_id, <span class="s">"metadata"</span>, {<span class="s">"run_id"</span>: run_id, <span class="s">"attempt"</span>: run[<span class="s">"attempt"</span>]})
@@ -1180,30 +1214,36 @@ simulate()
         <span class="kw">if</span> outcome == <span class="s">"drained"</span> <span class="kw">or</span> (outcome == <span class="s">"cancelled"</span> <span class="kw">and</span> me.cancel_action <span class="kw">is</span> <span class="kw">None</span>):
             <span class="kw">await</span> events.flush()  <span class="c"># shutdown: hand the run back to the queue</span>
             <span class="kw">await</span> fetchall(
-                <span class="c">"""UPDATE runs SET status = 'pending', worker_id = NULL, lease_until = NULL, updated_at = now()
-                   WHERE run_id = %s AND worker_id = %s AND status = 'running' RETURNING 1"""</span>,
+                <span class="s">"""UPDATE runs SET status = 'pending', worker_id = NULL, lease_until = NULL,
+                          updated_at = now()
+                   WHERE run_id = %s AND worker_id = %s AND status = 'running'
+                   RETURNING 1"""</span>,
                 (run_id, WORKER_ID),
             )
             <span class="kw">await</span> notify(<span class="s">"run_queue"</span>)
             <span class="kw">return</span>
         <span class="kw">if</span> outcome == <span class="s">"failed"</span>:
             status = <span class="s">"error"</span>
-            events.append(run_id, <span class="s">"error"</span>, {<span class="s">"error"</span>: type(error).__name__, <span class="s">"message"</span>: str(error)})
+            events.append(
+                run_id, <span class="s">"error"</span>, {<span class="s">"error"</span>: type(error).__name__, <span class="s">"message"</span>: str(error)}
+            )
         <span class="kw">elif</span> outcome == <span class="s">"cancelled"</span>:
             status = <span class="s">"interrupted"</span>
             <span class="kw">if</span> me.cancel_action == <span class="s">"rollback"</span>:
                 <span class="kw">await</span> rollback_checkpoints(thread_id, run_id)
         <span class="kw">else</span>:  <span class="c"># finished: done, or paused at an interrupt()</span>
             status = <span class="s">"interrupted"</span> <span class="kw">if</span> (<span class="kw">await</span> graph.aget_state(config)).next <span class="kw">else</span> <span class="s">"success"</span>
-        <span class="c"># Order matters: (1) every event is in the log, (2) the rows flip, (3) 'end' is appended.</span>
-        <span class="c"># A client that sees 'end' and immediately reads the thread finds its final status.</span>
+        <span class="c"># Order matters: (1) every event is in the log, (2) the rows flip, (3) 'end' is</span>
+        <span class="c"># appended. A client that sees 'end' and immediately reads the thread finds its</span>
+        <span class="c"># final status.</span>
         <span class="kw">await</span> events.flush()
         <span class="kw">if</span> <span class="kw">await</span> finish(run, status, str(error) <span class="kw">if</span> error <span class="kw">else</span> <span class="kw">None</span>):
             events.append(run_id, <span class="s">"end"</span>, {<span class="s">"run_id"</span>: run_id, <span class="s">"status"</span>: status})
             <span class="kw">await</span> events.flush()
     <span class="kw">except</span> Exception:
         log.exception(
-            <span class="s">"run %s crashed in the executor; the lease will expire and it is retried"</span>, run_id
+            <span class="s">"run %s crashed in the executor; the lease will expire and it is retried"</span>,
+            run_id,
         )
     <span class="kw">finally</span>:
         local.pop(run_id, <span class="kw">None</span>)
@@ -1243,7 +1283,7 @@ simulate()
       <h3>Writing</h3>
       <span class="snip-label">agent_server.py</span>
 <pre class="snippet"><span class="kw">class</span> <span class="fn">EventLog</span>:
-    <span class="c">"""Pod-wide batcher: every FLUSH_S one INSERT for all runs, then one NOTIFY."""</span>
+    <span class="s">"""Pod-wide batcher: every FLUSH_S one INSERT for all runs, then one NOTIFY."""</span>
 
     <span class="kw">def</span> <span class="fn">__init__</span>(self) -&gt; <span class="kw">None</span>:
         self.buf: list[tuple[str, int, str, str]] = []
@@ -1252,7 +1292,9 @@ simulate()
 
     <span class="kw">def</span> <span class="fn">append</span>(self, run_id: str, event: str, data: Any) -&gt; <span class="kw">None</span>:
         self.seq[run_id] = seq = self.seq[run_id] + <span class="n">1</span>
-        self.buf.append((run_id, seq, event, data <span class="kw">if</span> isinstance(data, str) <span class="kw">else</span> dumps(data)))
+        self.buf.append(
+            (run_id, seq, event, data <span class="kw">if</span> isinstance(data, str) <span class="kw">else</span> dumps(data))
+        )
 
     <span class="kw">def</span> <span class="fn">discard</span>(self, run_id: str) -&gt; <span class="kw">None</span>:
         self.buf = [row <span class="kw">for</span> row <span class="kw">in</span> self.buf <span class="kw">if</span> row[<span class="n">0</span>] != run_id]
@@ -1266,16 +1308,18 @@ simulate()
             <span class="kw">try</span>:
                 run_ids, seqs, names, datas = (list(col) <span class="kw">for</span> col <span class="kw">in</span> zip(*rows, strict=<span class="kw">True</span>))
                 <span class="kw">await</span> fetchall(
-                    <span class="c">"""INSERT INTO run_events (run_id, seq, event, data)
-                       SELECT * FROM unnest(%s::text[], %s::bigint[], %s::text[], %s::text[])
-                       ON CONFLICT DO NOTHING RETURNING 1"""</span>,
+                    <span class="s">"""INSERT INTO run_events (run_id, seq, event, data)
+                    SELECT * FROM unnest(%s::text[], %s::bigint[], %s::text[], %s::text[])
+                    ON CONFLICT DO NOTHING RETURNING 1"""</span>,
                     (run_ids, seqs, names, datas),
                 )
             <span class="kw">except</span> Exception:
                 self.buf[:<span class="n">0</span>] = rows  <span class="c"># keep them for the next tick</span>
                 <span class="kw">raise</span>
             distinct = sorted(set(run_ids))  <span class="c"># committed first, doorbell second</span>
-            <span class="kw">for</span> i <span class="kw">in</span> range(<span class="n">0</span>, len(distinct), <span class="n">150</span>):  <span class="c"># NOTIFY payloads are capped at 8000 bytes</span>
+            <span class="kw">for</span> i <span class="kw">in</span> range(
+                <span class="n">0</span>, len(distinct), <span class="n">150</span>
+            ):  <span class="c"># NOTIFY payloads are capped at 8000 bytes</span>
                 <span class="kw">await</span> notify(<span class="s">"run_events"</span>, <span class="s">","</span>.join(distinct[i : i + <span class="n">150</span>]))
 
     <span class="kw">async</span> <span class="kw">def</span> <span class="fn">run</span>(self) -&gt; <span class="kw">None</span>:
@@ -1299,7 +1343,7 @@ events = EventLog()</pre>
       <h3>Hearing</h3>
       <span class="snip-label">agent_server.py</span>
 <pre class="snippet"><span class="kw">class</span> <span class="fn">Hub</span>:
-    <span class="c">"""One LISTEN connection per pod, fanned out to the coroutines waiting in this process."""</span>
+    <span class="c">"""One LISTEN connection per pod, fanned out to the coroutines waiting here."""</span>
 
     <span class="kw">def</span> <span class="fn">__init__</span>(self) -&gt; <span class="kw">None</span>:
         self.waiters: defaultdict[str, set[asyncio.Event]] = defaultdict(set)
@@ -1360,7 +1404,8 @@ hub = Hub()</pre>
         <span class="kw">while</span> <span class="kw">True</span>:
             bell.clear()  <span class="c"># clear, then read: no lost wake-up</span>
             rows = <span class="kw">await</span> fetchall(
-                <span class="s">"SELECT seq, event, data FROM run_events WHERE run_id = %s AND seq &gt; %s ORDER BY seq LIMIT 500"</span>,
+                <span class="s">"SELECT seq, event, data FROM run_events WHERE run_id = %s AND seq &gt; %s "</span>
+                <span class="s">"ORDER BY seq LIMIT 500"</span>,
                 (run_id, after),
             )
             <span class="kw">for</span> row <span class="kw">in</span> rows:
@@ -1442,7 +1487,9 @@ print("Last-Event-ID: 5 -&gt;", join(5))
 
       <h3>On the wire</h3>
       <span class="snip-label">agent_server.py</span>
-<pre class="snippet"><span class="kw">def</span> <span class="fn">stream_response</span>(run: dict, after: int, on_disconnect: str | <span class="kw">None</span> = <span class="kw">None</span>) -&gt; StreamingResponse:
+<pre class="snippet"><span class="kw">def</span> <span class="fn">stream_response</span>(
+    run: dict, after: int, on_disconnect: str | <span class="kw">None</span> = <span class="kw">None</span>
+) -&gt; StreamingResponse:
     run_id, thread_id = run[<span class="s">"run_id"</span>], run[<span class="s">"thread_id"</span>]
 
     <span class="kw">async</span> <span class="kw">def</span> <span class="fn">body</span>():
@@ -1453,7 +1500,8 @@ print("Last-Event-ID: 5 -&gt;", join(5))
                 finished = finished <span class="kw">or</span> (row <span class="kw">is</span> <span class="kw">not</span> <span class="kw">None</span> <span class="kw">and</span> row[<span class="s">"event"</span>] == <span class="s">"end"</span>)
         <span class="kw">finally</span>:
             <span class="c"># Reached on a normal end AND when the client goes away. The run is not ours to</span>
-            <span class="c"># stop: it lives in the worker, unless the caller asked for on_disconnect=cancel.</span>
+            <span class="c"># stop: it lives in the worker, unless the caller asked for</span>
+            <span class="c"># on_disconnect=cancel.</span>
             <span class="kw">if</span> <span class="kw">not</span> finished <span class="kw">and</span> on_disconnect == <span class="s">"cancel"</span> <span class="kw">and</span> <span class="kw">not</span> draining.is_set():
                 spawn(request_cancel(run_id))
 
@@ -1469,7 +1517,7 @@ print("Last-Event-ID: 5 -&gt;", join(5))
         },
     )</pre>
 
-      <span class="snip-label">curl -i -N -X POST …/threads/{id}/runs/stream  (payloads shortened)</span>
+      <span class="snip-label">curl -i -N -X POST …/runs/stream (payloads shortened; one data line wrapped)</span>
 <pre class="snippet out">HTTP/1.1 200 OK
 cache-control: no-store
 x-accel-buffering: no
@@ -1487,11 +1535,12 @@ data: {"plan": {"plan": "answer the question"}}
 
 id: 4
 event: messages
-data: [{"content": "tok0 ", "type": "AIMessageChunk", "id": "lc_run--01a1ce6e-…", …}, {"langgraph_node": "answer", …}]
+data: [{"content": "tok0 ", "type": "AIMessageChunk", "id": "lc_run--01…", …},
+       {"langgraph_node": "answer", …}]
 
 id: 6
 event: messages
-data: [{"content": "", "type": "AIMessageChunk", "id": "lc_run--01a1ce6e-…", "chunk_position": "last", …}, {…}]
+data: [{"content": "", "type": "AIMessageChunk", "chunk_position": "last", …}, {…}]
 
 id: 8
 event: end
@@ -1583,22 +1632,27 @@ console.log('connection drops -&gt; reconnect with header  Last-Event-ID: ' + pa
       <span class="snip-label">agent_server.py: any pod</span>
 <pre class="snippet"><span class="kw">async</span> <span class="kw">def</span> <span class="fn">request_cancel</span>(run_id: str, action: str = <span class="s">"interrupt"</span>) -&gt; dict | <span class="kw">None</span>:
     run = <span class="kw">await</span> fetchone(  <span class="c"># one atomic statement decides the race against a worker's claim</span>
-        <span class="c">"""UPDATE runs SET cancel_requested = %s, updated_at = now(),
+        <span class="s">"""UPDATE runs SET cancel_requested = %s, updated_at = now(),
                   status = CASE WHEN status = 'pending' THEN 'interrupted' ELSE status END
            WHERE run_id = %s AND status IN ('pending','running') RETURNING *"""</span>,
         (action, run_id),
     )
     <span class="kw">if</span> run <span class="kw">is</span> <span class="kw">None</span>:
         <span class="kw">return</span> <span class="kw">None</span>  <span class="c"># already finished</span>
-    <span class="kw">if</span> run[<span class="s">"status"</span>] == <span class="s">"interrupted"</span>:  <span class="c"># it never started: nobody else will close its stream</span>
+    <span class="kw">if</span> (
+        run[<span class="s">"status"</span>] == <span class="s">"interrupted"</span>
+    ):  <span class="c"># it never started: nobody else will close its stream</span>
         status = <span class="kw">await</span> thread_status(run[<span class="s">"thread_id"</span>], run[<span class="s">"assistant_id"</span>])
         <span class="kw">await</span> fetchall(
-            <span class="s">"UPDATE threads SET status = %s, updated_at = now() WHERE thread_id = %s RETURNING 1"</span>,
+            <span class="s">"UPDATE threads SET status = %s, updated_at = now() WHERE thread_id = %s "</span>
+            <span class="s">"RETURNING 1"</span>,
             (status, run[<span class="s">"thread_id"</span>]),
         )
         <span class="kw">await</span> close_unowned(run_id, <span class="s">"interrupted"</span>)
     <span class="kw">else</span>:
-        <span class="kw">await</span> notify(<span class="s">"run_cancel"</span>, <span class="s">f"{</span>action<span class="s">}:{</span>run_id<span class="s">}"</span>)  <span class="c"># every pod hears it; the owner acts</span>
+        <span class="kw">await</span> notify(
+            <span class="s">"run_cancel"</span>, <span class="s">f"{</span>action<span class="s">}:{</span>run_id<span class="s">}"</span>
+        )  <span class="c"># every pod hears it; the owner acts</span>
     <span class="kw">return</span> run</pre>
       <span class="snip-label">agent_server.py: the owning pod</span>
 <pre class="snippet"><span class="kw">def</span> <span class="fn">cancel_local</span>(run_id: str, action: str = <span class="s">"interrupt"</span>) -&gt; <span class="kw">None</span>:
@@ -1627,13 +1681,16 @@ continue (input=None): messages [('human', 2), ('ai', 200)] | thread idle</pre>
       <p><code>action=rollback</code> stops the run and erases it. <code>AsyncPostgresSaver</code> does not implement <code>adelete_for_runs</code>, so the server does it with the <code>run_id</code> that every checkpoint carries in its metadata:</p>
       <span class="snip-label">agent_server.py</span>
 <pre class="snippet"><span class="kw">async</span> <span class="kw">def</span> <span class="fn">rollback_checkpoints</span>(thread_id: str, run_id: str) -&gt; <span class="kw">None</span>:
-    <span class="c"># AsyncPostgresSaver has no adelete_for_runs: every checkpoint carries metadata.run_id, so</span>
-    <span class="c"># we delete this run's checkpoints (and their pending writes) and the thread is as before.</span>
+    <span class="c"># AsyncPostgresSaver has no adelete_for_runs: every checkpoint carries metadata.run_id,</span>
+    <span class="c"># so we delete this run's checkpoints (and their pending writes) and the thread is as</span>
+    <span class="c"># before.</span>
     <span class="kw">await</span> fetchall(
-        <span class="c">"""WITH gone AS (DELETE FROM checkpoints WHERE thread_id = %s AND metadata-&gt;&gt;'run_id' = %s
-                         RETURNING checkpoint_ns, checkpoint_id)
+        <span class="s">"""WITH gone AS (
+               DELETE FROM checkpoints WHERE thread_id = %s AND metadata-&gt;&gt;'run_id' = %s
+               RETURNING checkpoint_ns, checkpoint_id)
            DELETE FROM checkpoint_writes w USING gone g
-           WHERE w.thread_id = %s AND w.checkpoint_ns = g.checkpoint_ns AND w.checkpoint_id = g.checkpoint_id
+           WHERE w.thread_id = %s AND w.checkpoint_ns = g.checkpoint_ns
+             AND w.checkpoint_id = g.checkpoint_id
            RETURNING 1"""</span>,
         (thread_id, run_id, thread_id),
     )</pre>
@@ -1670,9 +1727,10 @@ continue (input=None): messages [('human', 2), ('ai', 200)] | thread idle</pre>
       </ol>
 
       <span class="snip-label">test: kill -9 the owner while node b runs (LEASE_S=6, HEARTBEAT_S=2)</span>
-<pre class="snippet out">   owner pod-a killed while 'b' was running; reading through pod-b
+<pre class="snippet out">owner pod-a killed while 'b' was running; reading through pod-b
 [PASS] stream ended with 'end'
-[PASS] another pod took over new owner=pod-c, attempt=2, takeover after 5.7s (lease 6s + heartbeat 2s)
+[PASS] another pod took over new owner=pod-c, attempt=2, takeover after 5.7s
+       (lease 6s + heartbeat 2s)
 [PASS] event ids contiguous across the crash
 [PASS] node b executed twice, a and c once (at-least-once) ['a', 'b', 'b', 'c']
 [PASS] state has each step exactly once ['a', 'b', 'c']</pre>
@@ -1695,15 +1753,24 @@ continue (input=None): messages [('human', 2), ('ai', 200)] | thread idle</pre>
 <span class="kw">async</span> <span class="kw">def</span> <span class="fn">lifespan</span>(app: FastAPI):
     <span class="kw">global</span> pool
     pool = AsyncConnectionPool(
-        DSN, min_size=<span class="n">2</span>, max_size=int(os.environ.get(<span class="s">"POOL_MAX"</span>, <span class="s">"10"</span>)), open=<span class="kw">False</span>, kwargs=CONN_KW
+        DSN,
+        min_size=<span class="n">2</span>,
+        max_size=int(os.environ.get(<span class="s">"POOL_MAX"</span>, <span class="s">"10"</span>)),
+        open=<span class="kw">False</span>,
+        kwargs=CONN_KW,
     )
     <span class="kw">await</span> pool.open()
-    <span class="kw">async</span> <span class="kw">with</span> pool.connection() <span class="kw">as</span> conn:  <span class="c"># in production: a migration job, not pod start-up</span>
-        <span class="c"># One pod migrates at a time. Poll with try-lock instead of blocking in pg_advisory_lock():</span>
-        <span class="c"># setup() runs CREATE INDEX CONCURRENTLY, which waits for every open transaction, including</span>
-        <span class="c"># a session that is blocked waiting for this very lock. That is a deadlock.</span>
+    <span class="kw">async</span> <span class="kw">with</span> (
+        pool.connection() <span class="kw">as</span> conn
+    ):  <span class="c"># in production: a migration job, not pod start-up</span>
+        <span class="c"># One pod migrates at a time. Poll with try-lock instead of blocking in</span>
+        <span class="c"># pg_advisory_lock(): setup() runs CREATE INDEX CONCURRENTLY, which waits for every</span>
+        <span class="c"># open transaction, including a session that is blocked waiting for this very lock.</span>
+        <span class="c"># That is a deadlock.</span>
         <span class="kw">while</span> <span class="kw">not</span> (
-            <span class="kw">await</span> (<span class="kw">await</span> conn.execute(<span class="s">"SELECT pg_try_advisory_lock(727274) AS ok"</span>)).fetchone()
+            <span class="kw">await</span> (
+                <span class="kw">await</span> conn.execute(<span class="s">"SELECT pg_try_advisory_lock(727274) AS ok"</span>)
+            ).fetchone()
         )[<span class="s">"ok"</span>]:
             <span class="kw">await</span> asyncio.sleep(<span class="n">0.2</span>)
         <span class="kw">try</span>:
@@ -1713,7 +1780,8 @@ continue (input=None): messages [('human', 2), ('ai', 200)] | thread idle</pre>
         <span class="kw">finally</span>:
             <span class="kw">await</span> conn.execute(<span class="s">"SELECT pg_advisory_unlock(727274)"</span>)
     background = [
-        asyncio.create_task(job()) <span class="kw">for</span> job <span class="kw">in</span> (hub.run, events.run, worker_loop, heartbeat_loop)
+        asyncio.create_task(job())
+        <span class="kw">for</span> job <span class="kw">in</span> (hub.run, events.run, worker_loop, heartbeat_loop)
     ]
 
     loop = asyncio.get_running_loop()
@@ -1752,7 +1820,8 @@ continue (input=None): messages [('human', 2), ('ai', 200)] | thread idle</pre>
 <pre class="snippet out">[PASS] the draining pod closed the stream without 'end' closed 0.00s after SIGTERM, last id 4
 [PASS] reconnected elsewhere and reached 'end' 5 more events via pod-a
 [PASS] ids contiguous across the reconnect
-[PASS] b finished on the old pod, c ran on the new one: nothing re-executed ['a', 'b', 'c'], new owner=pod-b
+[PASS] b finished on the old pod, c ran on the new one: nothing re-executed
+       ['a', 'b', 'c'], new owner=pod-b
 [PASS] handoff did not wait for a lease to expire 1.20s after SIGTERM
 [PASS] old pod exited cleanly</pre>
 
@@ -1813,9 +1882,9 @@ thread = <span class="kw">await</span> client.threads.create(metadata={<span cla
 ):
     print(part.id, part.event, part.data)
 
-<span class="kw">await</span> client.runs.cancel(thread_id, run_id, wait=<span class="kw">True</span>)                    <span class="c"># Stop, from anywhere</span>
-<span class="kw">await</span> client.runs.wait(thread_id, <span class="s">"agent"</span>, command={<span class="s">"resume"</span>: <span class="s">"yes"</span>})     <span class="c"># answer an interrupt()</span>
-<span class="kw">await</span> client.runs.wait(thread_id, <span class="s">"agent"</span>, input=<span class="kw">None</span>)                    <span class="c"># Continue after a Stop</span>
+<span class="kw">await</span> client.runs.cancel(thread_id, run_id, wait=<span class="kw">True</span>)                 <span class="c"># Stop, from anywhere</span>
+<span class="kw">await</span> client.runs.wait(thread_id, <span class="s">"agent"</span>, command={<span class="s">"resume"</span>: <span class="s">"yes"</span>})  <span class="c"># answer a question</span>
+<span class="kw">await</span> client.runs.wait(thread_id, <span class="s">"agent"</span>, input=<span class="kw">None</span>)                 <span class="c"># Continue after Stop</span>
 state = <span class="kw">await</span> client.threads.get_state(thread_id)</pre>
 
       <p>The real server persists stream chunks only for runs created with <code>stream_resumable=true</code>. Here every run is resumable, because the log is the only transport there is.</p>
@@ -1854,10 +1923,10 @@ state = <span class="kw">await</span> client.threads.get_state(thread_id)</pre>
       <p>A transaction that issued <code>NOTIFY</code> takes a database-wide lock while it commits, so those commits happen one at a time. The effect is easy to reproduce:</p>
 
       <span class="snip-label">measured: 16 connections, 3 s each, fsync on</span>
-<pre class="snippet out">INSERT only (autocommit)                                      11587 /s
-INSERT + NOTIFY in ONE transaction                             2460 /s
-INSERT, then NOTIFY as its own statement                       4964 /s   (two round trips per iteration)
-NOTIFY only (no row written)                                  10771 /s</pre>
+<pre class="snippet out">INSERT only (autocommit)                       11587 /s
+INSERT + NOTIFY in ONE transaction              2460 /s
+INSERT, then NOTIFY as its own statement        4964 /s   (two round trips per iteration)
+NOTIFY only (no row written)                   10771 /s</pre>
 
       <p>Recall.ai traced production outages to this lock in 2025. DBOS showed in 2026 that buffering notifications and sending them in batches sidesteps it, reaching 60,000 writes a second in their test. The two disagree on whether a recent change in Postgres core removes the bottleneck. This design does not need to know who is right:</p>
       <ul>
@@ -1977,7 +2046,8 @@ async node (async def) + time.sleep(0.5): event loop stalled for at most 490 ms<
       <p>Two files. <code>agent_server.py</code> is the serving layer every excerpt above was cut from. <code>graphs.py</code> holds two demo graphs and a fake chat model that streams tokens slowly, so nothing here needs an API key.</p>
 
       <span class="snip-label">run three pods on one machine</span>
-<pre class="snippet">pip install <span class="s">"langgraph&gt;=1.2"</span> langgraph-checkpoint-postgres <span class="s">"psycopg[binary,pool]"</span> fastapi uvicorn langgraph-sdk
+<pre class="snippet">pip install <span class="s">"langgraph&gt;=1.2"</span> langgraph-checkpoint-postgres <span class="s">"psycopg[binary,pool]"</span> <span class="s">\
+</span>            fastapi uvicorn langgraph-sdk
 
 export DATABASE_URL=postgresql://postgres:postgres@127.0.0.1:5432/agents
 WORKER_ID=pod-a uvicorn agent_server:app --port <span class="n">8101</span> &amp;
@@ -1985,9 +2055,13 @@ WORKER_ID=pod-b uvicorn agent_server:app --port <span class="n">8102</span> &amp
 WORKER_ID=pod-c uvicorn agent_server:app --port <span class="n">8103</span> &amp;
 
 <span class="c"># create a thread on one pod, stream a run from another
-</span>TID=<span class="kw">$(</span>curl -s -X POST localhost:8101/threads -H <span class="s">'content-type: application/json'</span> -d <span class="s">'{}'</span> | jq -r .thread_id<span class="kw">)</span>
-curl -N -X POST localhost:8102/threads/$TID/runs/stream -H <span class="s">'content-type: application/json'</span> <span class="s">\
-</span>  -d <span class="s">'{"assistant_id":"agent","input":{"messages":[{"role":"user","content":"hi"}],"words":40},"stream_mode":["messages-tuple"]}'</span></pre>
+</span>JSON=<span class="s">'content-type: application/json'</span>
+TID=<span class="kw">$(</span>curl -s -X POST localhost:8101/threads -H <span class="s">"</span>$JSON<span class="s">"</span> -d <span class="s">'{}'</span> | jq -r .thread_id<span class="kw">)</span>
+curl -N -X POST localhost:8102/threads/$TID/runs/stream -H <span class="s">"</span>$JSON<span class="s">"</span> -d <span class="s">'{
+  "assistant_id": "agent",
+  "input": {"messages": [{"role": "user", "content": "hi"}], "words": 40},
+  "stream_mode": ["messages-tuple"]
+}'</span></pre>
 
       <h3>What it was tested against</h3>
       <p>Three processes on ports 8101 to 8103, one PostgreSQL 16, driven by the official <code>langgraph_sdk</code> client and by raw HTTP:</p>
@@ -2007,9 +2081,9 @@ curl -N -X POST localhost:8102/threads/$TID/runs/stream -H <span class="s">'cont
       </ul>
       <p>It is a reference, not a product. It has no authentication, no metrics and no migration tooling, it assumes one graph per thread, and it has only seen sandbox-scale load. Read it, then own what you ship.</p>
 
-      <details class="src"><summary><code>agent_server.py</code> <span class="dim">· 1024 lines</span></summary>
+      <details class="src"><summary><code>agent_server.py</code> <span class="dim">· 1110 lines</span></summary>
 <div class="src-actions"><button class="btn copy-src" data-src="agent_server_py">Copy file</button></div>
-<pre class="snippet src-body" id="agent_server_py"><span class="c">"""agent_server.py — a LangGraph serving layer on FastAPI + Postgres only (no Redis).
+<pre class="snippet src-body" id="agent_server_py"><span class="s">"""agent_server.py — a LangGraph serving layer on FastAPI + Postgres only (no Redis).
 
 Every pod runs this same process: HTTP API + run worker + one LISTEN connection.
 
@@ -2051,7 +2125,8 @@ Routes follow the Agent Server's shapes, so the official `langgraph_sdk` client 
 <span class="kw">from</span> graphs <span class="kw">import</span> GRAPHS  <span class="c"># {"agent": &lt;compiled graph without a checkpointer&gt;, ...}</span>
 
 DSN = os.environ.get(<span class="s">"DATABASE_URL"</span>, <span class="s">"postgresql://postgres:postgres@127.0.0.1:5432/lab"</span>)
-<span class="c"># unique per process incarnation: a restarted container must not be mistaken for its previous life</span>
+<span class="c"># unique per process incarnation: a restarted container must not be mistaken for its</span>
+<span class="c"># previous life</span>
 WORKER_ID = os.environ.get(<span class="s">"WORKER_ID"</span>) <span class="kw">or</span> <span class="s">f"{</span>socket.gethostname()<span class="s">}-{</span>uuid.uuid4().hex[:<span class="n">8</span>]<span class="s">}"</span>
 MAX_RUNS = int(os.environ.get(<span class="s">"MAX_RUNS"</span>, <span class="s">"20"</span>))  <span class="c"># concurrent runs per pod</span>
 LEASE_S = float(os.environ.get(<span class="s">"LEASE_S"</span>, <span class="s">"20"</span>))  <span class="c"># a run whose lease expires is taken over</span>
@@ -2066,36 +2141,40 @@ CONN_KW = {<span class="s">"autocommit"</span>: <span class="kw">True</span>, <s
 log = logging.getLogger(<span class="s">"agent_server"</span>)
 
 SCHEMA = [
-    <span class="c">"""CREATE TABLE IF NOT EXISTS threads (
+    <span class="s">"""CREATE TABLE IF NOT EXISTS threads (
         thread_id  text PRIMARY KEY,
-        status     text NOT NULL DEFAULT 'idle',          -- idle | busy | interrupted | error
+        status     text NOT NULL DEFAULT 'idle',   -- idle | busy | interrupted | error
         metadata   jsonb NOT NULL DEFAULT '{}',
         created_at timestamptz NOT NULL DEFAULT now(),
         updated_at timestamptz NOT NULL DEFAULT now())"""</span>,
-    <span class="c">"""CREATE TABLE IF NOT EXISTS runs (
+    <span class="s">"""CREATE TABLE IF NOT EXISTS runs (
         run_id       text PRIMARY KEY,
         thread_id    text NOT NULL REFERENCES threads ON DELETE CASCADE,
         assistant_id text NOT NULL,
-        status       text NOT NULL DEFAULT 'pending',     -- pending | running | success | error | interrupted
-        kwargs       jsonb NOT NULL,                      -- input / command / config / stream_mode ...
+        -- pending | running | success | error | interrupted
+        status       text NOT NULL DEFAULT 'pending',
+        -- everything needed to start the run: input / command / config / stream_mode
+        kwargs       jsonb NOT NULL,
         metadata     jsonb NOT NULL DEFAULT '{}',
         multitask_strategy text NOT NULL DEFAULT 'enqueue',
-        cancel_requested   text,                          -- NULL | interrupt | rollback
-        worker_id    text,                                -- the pod that holds the lease
+        cancel_requested   text,   -- NULL | interrupt | rollback
+        worker_id    text,         -- the pod that holds the lease
         lease_until  timestamptz,
         attempt      int NOT NULL DEFAULT 0,
         error        text,
         created_at   timestamptz NOT NULL DEFAULT now(),
         updated_at   timestamptz NOT NULL DEFAULT now())"""</span>,
-    <span class="s">"CREATE INDEX IF NOT EXISTS runs_queue_idx ON runs (created_at) WHERE status = 'pending'"</span>,
+    <span class="s">"""CREATE INDEX IF NOT EXISTS runs_queue_idx
+        ON runs (created_at) WHERE status = 'pending'"""</span>,
     <span class="s">"CREATE INDEX IF NOT EXISTS runs_thread_idx ON runs (thread_id, created_at DESC)"</span>,
     <span class="c"># the invariant, enforced by the database: at most ONE running run per thread</span>
-    <span class="s">"CREATE UNIQUE INDEX IF NOT EXISTS runs_one_running_per_thread ON runs (thread_id) WHERE status = 'running'"</span>,
-    <span class="c">"""CREATE TABLE IF NOT EXISTS run_events (
+    <span class="s">"""CREATE UNIQUE INDEX IF NOT EXISTS runs_one_running_per_thread
+        ON runs (thread_id) WHERE status = 'running'"""</span>,
+    <span class="s">"""CREATE TABLE IF NOT EXISTS run_events (
         run_id     text   NOT NULL REFERENCES runs ON DELETE CASCADE,
-        seq        bigint NOT NULL,                       -- per run, gap-free, one writer
+        seq        bigint NOT NULL,   -- per run, gap-free, one writer
         event      text   NOT NULL,
-        data       text   NOT NULL,                       -- JSON exactly as it goes on the wire
+        data       text   NOT NULL,   -- JSON exactly as it goes on the wire
         created_at timestamptz NOT NULL DEFAULT now(),
         PRIMARY KEY (run_id, seq))"""</span>,
 ]
@@ -2103,7 +2182,7 @@ SCHEMA = [
 pool: AsyncConnectionPool
 
 
-<span class="c"># ------------------------------------------------------------------ JSON ---------------------</span>
+<span class="c"># ---------- JSON ----------</span>
 <span class="kw">def</span> <span class="fn">_default</span>(o: Any) -&gt; Any:
     <span class="kw">if</span> hasattr(o, <span class="s">"model_dump"</span>):  <span class="c"># LangChain messages, pydantic state</span>
         <span class="kw">return</span> o.model_dump()
@@ -2149,9 +2228,9 @@ _background: set[asyncio.Task] = set()
     <span class="kw">await</span> fetchall(<span class="s">"SELECT pg_notify(%s, %s)"</span>, (channel, payload))
 
 
-<span class="c"># ------------------------------------------------------------------ doorbells ----------------</span>
+<span class="c"># ---------- doorbells ----------</span>
 <span class="kw">class</span> <span class="fn">Hub</span>:
-    <span class="c">"""One LISTEN connection per pod, fanned out to the coroutines waiting in this process."""</span>
+    <span class="c">"""One LISTEN connection per pod, fanned out to the coroutines waiting here."""</span>
 
     <span class="kw">def</span> <span class="fn">__init__</span>(self) -&gt; <span class="kw">None</span>:
         self.waiters: defaultdict[str, set[asyncio.Event]] = defaultdict(set)
@@ -2203,9 +2282,9 @@ _background: set[asyncio.Task] = set()
 hub = Hub()
 
 
-<span class="c"># ------------------------------------------------------------------ event log ----------------</span>
+<span class="c"># ---------- event log ----------</span>
 <span class="kw">class</span> <span class="fn">EventLog</span>:
-    <span class="c">"""Pod-wide batcher: every FLUSH_S one INSERT for all runs, then one NOTIFY."""</span>
+    <span class="s">"""Pod-wide batcher: every FLUSH_S one INSERT for all runs, then one NOTIFY."""</span>
 
     <span class="kw">def</span> <span class="fn">__init__</span>(self) -&gt; <span class="kw">None</span>:
         self.buf: list[tuple[str, int, str, str]] = []
@@ -2214,7 +2293,9 @@ hub = Hub()
 
     <span class="kw">def</span> <span class="fn">append</span>(self, run_id: str, event: str, data: Any) -&gt; <span class="kw">None</span>:
         self.seq[run_id] = seq = self.seq[run_id] + <span class="n">1</span>
-        self.buf.append((run_id, seq, event, data <span class="kw">if</span> isinstance(data, str) <span class="kw">else</span> dumps(data)))
+        self.buf.append(
+            (run_id, seq, event, data <span class="kw">if</span> isinstance(data, str) <span class="kw">else</span> dumps(data))
+        )
 
     <span class="kw">def</span> <span class="fn">discard</span>(self, run_id: str) -&gt; <span class="kw">None</span>:
         self.buf = [row <span class="kw">for</span> row <span class="kw">in</span> self.buf <span class="kw">if</span> row[<span class="n">0</span>] != run_id]
@@ -2228,16 +2309,18 @@ hub = Hub()
             <span class="kw">try</span>:
                 run_ids, seqs, names, datas = (list(col) <span class="kw">for</span> col <span class="kw">in</span> zip(*rows, strict=<span class="kw">True</span>))
                 <span class="kw">await</span> fetchall(
-                    <span class="c">"""INSERT INTO run_events (run_id, seq, event, data)
-                       SELECT * FROM unnest(%s::text[], %s::bigint[], %s::text[], %s::text[])
-                       ON CONFLICT DO NOTHING RETURNING 1"""</span>,
+                    <span class="s">"""INSERT INTO run_events (run_id, seq, event, data)
+                    SELECT * FROM unnest(%s::text[], %s::bigint[], %s::text[], %s::text[])
+                    ON CONFLICT DO NOTHING RETURNING 1"""</span>,
                     (run_ids, seqs, names, datas),
                 )
             <span class="kw">except</span> Exception:
                 self.buf[:<span class="n">0</span>] = rows  <span class="c"># keep them for the next tick</span>
                 <span class="kw">raise</span>
             distinct = sorted(set(run_ids))  <span class="c"># committed first, doorbell second</span>
-            <span class="kw">for</span> i <span class="kw">in</span> range(<span class="n">0</span>, len(distinct), <span class="n">150</span>):  <span class="c"># NOTIFY payloads are capped at 8000 bytes</span>
+            <span class="kw">for</span> i <span class="kw">in</span> range(
+                <span class="n">0</span>, len(distinct), <span class="n">150</span>
+            ):  <span class="c"># NOTIFY payloads are capped at 8000 bytes</span>
                 <span class="kw">await</span> notify(<span class="s">"run_events"</span>, <span class="s">","</span>.join(distinct[i : i + <span class="n">150</span>]))
 
     <span class="kw">async</span> <span class="kw">def</span> <span class="fn">run</span>(self) -&gt; <span class="kw">None</span>:
@@ -2259,7 +2342,8 @@ events = EventLog()
         <span class="kw">while</span> <span class="kw">True</span>:
             bell.clear()  <span class="c"># clear, then read: no lost wake-up</span>
             rows = <span class="kw">await</span> fetchall(
-                <span class="s">"SELECT seq, event, data FROM run_events WHERE run_id = %s AND seq &gt; %s ORDER BY seq LIMIT 500"</span>,
+                <span class="s">"SELECT seq, event, data FROM run_events WHERE run_id = %s AND seq &gt; %s "</span>
+                <span class="s">"ORDER BY seq LIMIT 500"</span>,
                 (run_id, after),
             )
             <span class="kw">for</span> row <span class="kw">in</span> rows:
@@ -2295,7 +2379,7 @@ events = EventLog()
     <span class="kw">return</span> <span class="s">f"id: {</span>row[<span class="s">'seq'</span>]<span class="s">}\nevent: {</span>row[<span class="s">'event'</span>]<span class="s">}\ndata: {</span>row[<span class="s">'data'</span>]<span class="s">}\n\n"</span>
 
 
-<span class="c"># ------------------------------------------------------------------ worker -------------------</span>
+<span class="c"># ---------- worker ----------</span>
 <span class="fn">@dataclasses</span>.dataclass
 <span class="kw">class</span> <span class="fn">LocalRun</span>:
     control: RunControl
@@ -2315,7 +2399,8 @@ WITH claimed AS (
   WHERE r.run_id = (
     SELECT c.run_id FROM runs c
     WHERE c.status = 'pending'
-      AND NOT EXISTS (SELECT 1 FROM runs x WHERE x.thread_id = c.thread_id AND x.status = 'running')
+      AND NOT EXISTS (SELECT 1 FROM runs x
+                      WHERE x.thread_id = c.thread_id AND x.status = 'running')
     ORDER BY c.created_at
     FOR UPDATE SKIP LOCKED
     LIMIT 1)
@@ -2329,14 +2414,17 @@ SELECT * FROM claimed
         <span class="kw">try</span>:
             <span class="kw">return</span> <span class="kw">await</span> fetchone(CLAIM, {<span class="s">"worker"</span>: WORKER_ID, <span class="s">"lease"</span>: LEASE_S})
         <span class="kw">except</span> errors.UniqueViolation:
-            <span class="kw">continue</span>  <span class="c"># another pod just started a different run of the same thread: pick again</span>
+            <span class="c"># another pod just started a different run of the same thread: pick again</span>
+            <span class="kw">continue</span>
 
 
 <span class="kw">async</span> <span class="kw">def</span> <span class="fn">worker_loop</span>() -&gt; <span class="kw">None</span>:
     <span class="kw">while</span> <span class="kw">not</span> draining.is_set():
         hub.queue_bell.clear()
         <span class="kw">try</span>:
-            <span class="kw">while</span> len(local) &lt; MAX_RUNS <span class="kw">and</span> <span class="kw">not</span> draining.is_set() <span class="kw">and</span> (run := <span class="kw">await</span> claim()):
+            <span class="kw">while</span> (
+                len(local) &lt; MAX_RUNS <span class="kw">and</span> <span class="kw">not</span> draining.is_set() <span class="kw">and</span> (run := <span class="kw">await</span> claim())
+            ):
                 local[run[<span class="s">"run_id"</span>]] = me = LocalRun(control=RunControl())
                 me.runner = asyncio.create_task(execute(run))
         <span class="kw">except</span> Exception:
@@ -2353,8 +2441,8 @@ SELECT * FROM claimed
 
 
 <span class="kw">def</span> <span class="fn">graph_for</span>(assistant_id: str):
-    <span class="c"># A saver per run/request: one AsyncPostgresSaver serializes all its DB calls behind</span>
-    <span class="c"># an internal lock, so sharing a single instance would cap the pod at one query at a time.</span>
+    <span class="c"># A saver per run/request: one AsyncPostgresSaver serializes all its DB calls behind an</span>
+    <span class="c"># internal lock, so sharing a single instance would cap the pod at one query at a time.</span>
     <span class="kw">return</span> GRAPHS[assistant_id].copy(update={<span class="s">"checkpointer"</span>: AsyncPostgresSaver(pool)})
 
 
@@ -2367,14 +2455,16 @@ SELECT * FROM claimed
         config = {
             **user,
             <span class="s">"configurable"</span>: {**user.get(<span class="s">"configurable"</span>, {}), <span class="s">"thread_id"</span>: thread_id},
-            <span class="c"># The SAME run_id on every attempt: LangGraph sees that the thread's last checkpoint</span>
-            <span class="c"># belongs to this run and resumes from it instead of applying the input again.</span>
+            <span class="c"># The SAME run_id on every attempt: LangGraph sees that the thread's last</span>
+            <span class="c"># checkpoint belongs to this run and resumes from it instead of applying the</span>
+            <span class="c"># input again.</span>
             <span class="s">"metadata"</span>: {**user.get(<span class="s">"metadata"</span>, {}), <span class="s">"run_id"</span>: run_id},
         }
         graph_input = Command(**kw[<span class="s">"command"</span>]) <span class="kw">if</span> kw.get(<span class="s">"command"</span>) <span class="kw">else</span> kw.get(<span class="s">"input"</span>)
         modes = [<span class="s">"messages"</span> <span class="kw">if</span> m == <span class="s">"messages-tuple"</span> <span class="kw">else</span> m <span class="kw">for</span> m <span class="kw">in</span> kw[<span class="s">"stream_mode"</span>]]
         last = <span class="kw">await</span> fetchone(
-            <span class="s">"SELECT coalesce(max(seq), 0) AS seq FROM run_events WHERE run_id = %s"</span>, (run_id,)
+            <span class="s">"SELECT coalesce(max(seq), 0) AS seq FROM run_events WHERE run_id = %s"</span>,
+            (run_id,),
         )
         events.seq[run_id] = last[<span class="s">"seq"</span>]  <span class="c"># continue numbering after an earlier attempt</span>
         events.append(run_id, <span class="s">"metadata"</span>, {<span class="s">"run_id"</span>: run_id, <span class="s">"attempt"</span>: run[<span class="s">"attempt"</span>]})
@@ -2412,30 +2502,36 @@ SELECT * FROM claimed
         <span class="kw">if</span> outcome == <span class="s">"drained"</span> <span class="kw">or</span> (outcome == <span class="s">"cancelled"</span> <span class="kw">and</span> me.cancel_action <span class="kw">is</span> <span class="kw">None</span>):
             <span class="kw">await</span> events.flush()  <span class="c"># shutdown: hand the run back to the queue</span>
             <span class="kw">await</span> fetchall(
-                <span class="c">"""UPDATE runs SET status = 'pending', worker_id = NULL, lease_until = NULL, updated_at = now()
-                   WHERE run_id = %s AND worker_id = %s AND status = 'running' RETURNING 1"""</span>,
+                <span class="s">"""UPDATE runs SET status = 'pending', worker_id = NULL, lease_until = NULL,
+                          updated_at = now()
+                   WHERE run_id = %s AND worker_id = %s AND status = 'running'
+                   RETURNING 1"""</span>,
                 (run_id, WORKER_ID),
             )
             <span class="kw">await</span> notify(<span class="s">"run_queue"</span>)
             <span class="kw">return</span>
         <span class="kw">if</span> outcome == <span class="s">"failed"</span>:
             status = <span class="s">"error"</span>
-            events.append(run_id, <span class="s">"error"</span>, {<span class="s">"error"</span>: type(error).__name__, <span class="s">"message"</span>: str(error)})
+            events.append(
+                run_id, <span class="s">"error"</span>, {<span class="s">"error"</span>: type(error).__name__, <span class="s">"message"</span>: str(error)}
+            )
         <span class="kw">elif</span> outcome == <span class="s">"cancelled"</span>:
             status = <span class="s">"interrupted"</span>
             <span class="kw">if</span> me.cancel_action == <span class="s">"rollback"</span>:
                 <span class="kw">await</span> rollback_checkpoints(thread_id, run_id)
         <span class="kw">else</span>:  <span class="c"># finished: done, or paused at an interrupt()</span>
             status = <span class="s">"interrupted"</span> <span class="kw">if</span> (<span class="kw">await</span> graph.aget_state(config)).next <span class="kw">else</span> <span class="s">"success"</span>
-        <span class="c"># Order matters: (1) every event is in the log, (2) the rows flip, (3) 'end' is appended.</span>
-        <span class="c"># A client that sees 'end' and immediately reads the thread finds its final status.</span>
+        <span class="c"># Order matters: (1) every event is in the log, (2) the rows flip, (3) 'end' is</span>
+        <span class="c"># appended. A client that sees 'end' and immediately reads the thread finds its</span>
+        <span class="c"># final status.</span>
         <span class="kw">await</span> events.flush()
         <span class="kw">if</span> <span class="kw">await</span> finish(run, status, str(error) <span class="kw">if</span> error <span class="kw">else</span> <span class="kw">None</span>):
             events.append(run_id, <span class="s">"end"</span>, {<span class="s">"run_id"</span>: run_id, <span class="s">"status"</span>: status})
             <span class="kw">await</span> events.flush()
     <span class="kw">except</span> Exception:
         log.exception(
-            <span class="s">"run %s crashed in the executor; the lease will expire and it is retried"</span>, run_id
+            <span class="s">"run %s crashed in the executor; the lease will expire and it is retried"</span>,
+            run_id,
         )
     <span class="kw">finally</span>:
         local.pop(run_id, <span class="kw">None</span>)
@@ -2445,26 +2541,32 @@ SELECT * FROM claimed
 
 <span class="kw">async</span> <span class="kw">def</span> <span class="fn">thread_status</span>(thread_id: str, assistant_id: str, failed: bool = <span class="kw">False</span>) -&gt; str:
     <span class="kw">if</span> <span class="kw">await</span> fetchone(
-        <span class="s">"SELECT 1 FROM runs WHERE thread_id = %s AND status IN ('pending','running') LIMIT 1"</span>,
+        <span class="s">"SELECT 1 FROM runs WHERE thread_id = %s AND status IN ('pending','running') "</span>
+        <span class="s">"LIMIT 1"</span>,
         (thread_id,),
     ):
         <span class="kw">return</span> <span class="s">"busy"</span>
     <span class="kw">if</span> failed:
         <span class="kw">return</span> <span class="s">"error"</span>
-    snap = <span class="kw">await</span> graph_for(assistant_id).aget_state({<span class="s">"configurable"</span>: {<span class="s">"thread_id"</span>: thread_id}})
+    snap = <span class="kw">await</span> graph_for(assistant_id).aget_state(
+        {<span class="s">"configurable"</span>: {<span class="s">"thread_id"</span>: thread_id}}
+    )
     <span class="kw">return</span> <span class="s">"interrupted"</span> <span class="kw">if</span> snap.next <span class="kw">else</span> <span class="s">"idle"</span>
 
 
 <span class="kw">async</span> <span class="kw">def</span> <span class="fn">finish</span>(run: dict, status: str, error: str | <span class="kw">None</span>) -&gt; bool:
     done = <span class="kw">await</span> fetchone(  <span class="c"># fenced by ownership: a pod that lost the lease changes nothing</span>
-        <span class="c">"""UPDATE runs SET status = %s, error = %s, lease_until = NULL, updated_at = now()
+        <span class="s">"""UPDATE runs SET status = %s, error = %s, lease_until = NULL, updated_at = now()
            WHERE run_id = %s AND worker_id = %s AND status = 'running' RETURNING run_id"""</span>,
         (status, error, run[<span class="s">"run_id"</span>], WORKER_ID),
     )
     <span class="kw">if</span> done:
-        new = <span class="kw">await</span> thread_status(run[<span class="s">"thread_id"</span>], run[<span class="s">"assistant_id"</span>], failed=status == <span class="s">"error"</span>)
+        new = <span class="kw">await</span> thread_status(
+            run[<span class="s">"thread_id"</span>], run[<span class="s">"assistant_id"</span>], failed=status == <span class="s">"error"</span>
+        )
         <span class="kw">await</span> fetchall(
-            <span class="s">"UPDATE threads SET status = %s, updated_at = now() WHERE thread_id = %s RETURNING 1"</span>,
+            <span class="s">"UPDATE threads SET status = %s, updated_at = now() WHERE thread_id = %s "</span>
+            <span class="s">"RETURNING 1"</span>,
             (new, run[<span class="s">"thread_id"</span>]),
         )
         <span class="kw">await</span> notify(<span class="s">"run_queue"</span>)  <span class="c"># an enqueued run of this thread can start now</span>
@@ -2472,13 +2574,16 @@ SELECT * FROM claimed
 
 
 <span class="kw">async</span> <span class="kw">def</span> <span class="fn">rollback_checkpoints</span>(thread_id: str, run_id: str) -&gt; <span class="kw">None</span>:
-    <span class="c"># AsyncPostgresSaver has no adelete_for_runs: every checkpoint carries metadata.run_id, so</span>
-    <span class="c"># we delete this run's checkpoints (and their pending writes) and the thread is as before.</span>
+    <span class="c"># AsyncPostgresSaver has no adelete_for_runs: every checkpoint carries metadata.run_id,</span>
+    <span class="c"># so we delete this run's checkpoints (and their pending writes) and the thread is as</span>
+    <span class="c"># before.</span>
     <span class="kw">await</span> fetchall(
-        <span class="c">"""WITH gone AS (DELETE FROM checkpoints WHERE thread_id = %s AND metadata-&gt;&gt;'run_id' = %s
-                         RETURNING checkpoint_ns, checkpoint_id)
+        <span class="s">"""WITH gone AS (
+               DELETE FROM checkpoints WHERE thread_id = %s AND metadata-&gt;&gt;'run_id' = %s
+               RETURNING checkpoint_ns, checkpoint_id)
            DELETE FROM checkpoint_writes w USING gone g
-           WHERE w.thread_id = %s AND w.checkpoint_ns = g.checkpoint_ns AND w.checkpoint_id = g.checkpoint_id
+           WHERE w.thread_id = %s AND w.checkpoint_ns = g.checkpoint_ns
+             AND w.checkpoint_id = g.checkpoint_id
            RETURNING 1"""</span>,
         (thread_id, run_id, thread_id),
     )
@@ -2494,8 +2599,9 @@ SELECT * FROM claimed
 <span class="kw">async</span> <span class="kw">def</span> <span class="fn">close_unowned</span>(run_id: str, status: str) -&gt; <span class="kw">None</span>:
     <span class="c">"""Write the final 'end' event for a run that no worker is executing."""</span>
     <span class="kw">await</span> fetchall(
-        <span class="c">"""INSERT INTO run_events (run_id, seq, event, data)
-           SELECT %s, coalesce(max(seq), 0) + 1, 'end', %s FROM run_events WHERE run_id = %s RETURNING 1"""</span>,
+        <span class="s">"""INSERT INTO run_events (run_id, seq, event, data)
+           SELECT %s, coalesce(max(seq), 0) + 1, 'end', %s FROM run_events WHERE run_id = %s
+           RETURNING 1"""</span>,
         (run_id, dumps({<span class="s">"run_id"</span>: run_id, <span class="s">"status"</span>: status}), run_id),
     )
     <span class="kw">await</span> notify(<span class="s">"run_events"</span>, run_id)
@@ -2509,7 +2615,7 @@ SELECT * FROM claimed
         <span class="kw">try</span>:
             <span class="c"># renew the leases of runs that are alive HERE, and read their cancel flags</span>
             mine = <span class="kw">await</span> fetchall(
-                <span class="c">"""UPDATE runs SET lease_until = now() + %s * interval '1 second'
+                <span class="s">"""UPDATE runs SET lease_until = now() + %s * interval '1 second'
                    WHERE worker_id = %s AND status = 'running' AND run_id = ANY(%s)
                    RETURNING run_id, cancel_requested"""</span>,
                 (LEASE_S, WORKER_ID, list(local)),
@@ -2519,21 +2625,27 @@ SELECT * FROM claimed
                     cancel_local(row[<span class="s">"run_id"</span>], row[<span class="s">"cancel_requested"</span>])
             <span class="kw">for</span> run_id <span class="kw">in</span> set(local) - {row[<span class="s">"run_id"</span>] <span class="kw">for</span> row <span class="kw">in</span> mine}:
                 me = local[run_id]
-                <span class="kw">if</span> me.task <span class="kw">and</span> <span class="kw">not</span> me.task.done():  <span class="c"># we no longer own it: stop and stay silent</span>
+                <span class="kw">if</span> (
+                    me.task <span class="kw">and</span> <span class="kw">not</span> me.task.done()
+                ):  <span class="c"># we no longer own it: stop and stay silent</span>
                     me.fenced = <span class="kw">True</span>
                     me.task.cancel()
-            expired = <span class="kw">await</span> fetchall(  <span class="c"># any pod may take over runs whose owner stopped renewing</span>
-                <span class="c">"""UPDATE runs SET worker_id = NULL, lease_until = NULL, updated_at = now(),
-                          status = CASE WHEN attempt &gt;= %s THEN 'error' ELSE 'pending' END,
-                          error  = CASE WHEN attempt &gt;= %s THEN 'worker lost' ELSE error END
-                   WHERE status = 'running' AND lease_until &lt; now()
-                   RETURNING run_id, thread_id, assistant_id, status"""</span>,
-                (MAX_ATTEMPTS, MAX_ATTEMPTS),
+            expired = (
+                <span class="kw">await</span> fetchall(  <span class="c"># any pod may take over runs whose owner stopped renewing</span>
+                    <span class="s">"""UPDATE runs
+                       SET worker_id = NULL, lease_until = NULL, updated_at = now(),
+                         status = CASE WHEN attempt &gt;= %s THEN 'error' ELSE 'pending' END,
+                         error = CASE WHEN attempt &gt;= %s THEN 'worker lost' ELSE error END
+                       WHERE status = 'running' AND lease_until &lt; now()
+                       RETURNING run_id, thread_id, assistant_id, status"""</span>,
+                    (MAX_ATTEMPTS, MAX_ATTEMPTS),
+                )
             )
             <span class="kw">for</span> row <span class="kw">in</span> expired:
                 <span class="kw">if</span> row[<span class="s">"status"</span>] == <span class="s">"error"</span>:  <span class="c"># crashed its worker too often: stop retrying</span>
                     <span class="kw">await</span> fetchall(
-                        <span class="s">"UPDATE threads SET status = 'error', updated_at = now() WHERE thread_id = %s RETURNING 1"</span>,
+                        <span class="s">"UPDATE threads SET status = 'error', updated_at = now() WHERE "</span>
+                        <span class="s">"thread_id = %s RETURNING 1"</span>,
                         (row[<span class="s">"thread_id"</span>],),
                     )
                     <span class="kw">await</span> close_unowned(row[<span class="s">"run_id"</span>], <span class="s">"error"</span>)
@@ -2541,7 +2653,7 @@ SELECT * FROM claimed
                 <span class="kw">await</span> notify(<span class="s">"run_queue"</span>)
             <span class="kw">if</span> tick % <span class="n">60</span> == <span class="n">0</span>:  <span class="c"># the log is for replay, not for history</span>
                 <span class="kw">await</span> fetchall(
-                    <span class="c">"""DELETE FROM run_events e USING runs r
+                    <span class="s">"""DELETE FROM run_events e USING runs r
                        WHERE e.run_id = r.run_id AND r.status NOT IN ('pending','running')
                          AND r.updated_at &lt; now() - %s * interval '1 second' RETURNING 1"""</span>,
                     (EVENT_TTL_S,),
@@ -2550,7 +2662,7 @@ SELECT * FROM claimed
             log.exception(<span class="s">"heartbeat failed"</span>)
 
 
-<span class="c"># ------------------------------------------------------------------ lifecycle ----------------</span>
+<span class="c"># ---------- lifecycle ----------</span>
 <span class="kw">def</span> <span class="fn">begin_drain</span>() -&gt; <span class="kw">None</span>:
     <span class="c">"""SIGTERM: stop claiming, end SSE responses, let runs stop at the next super-step."""</span>
     draining.set()
@@ -2563,15 +2675,24 @@ SELECT * FROM claimed
 <span class="kw">async</span> <span class="kw">def</span> <span class="fn">lifespan</span>(app: FastAPI):
     <span class="kw">global</span> pool
     pool = AsyncConnectionPool(
-        DSN, min_size=<span class="n">2</span>, max_size=int(os.environ.get(<span class="s">"POOL_MAX"</span>, <span class="s">"10"</span>)), open=<span class="kw">False</span>, kwargs=CONN_KW
+        DSN,
+        min_size=<span class="n">2</span>,
+        max_size=int(os.environ.get(<span class="s">"POOL_MAX"</span>, <span class="s">"10"</span>)),
+        open=<span class="kw">False</span>,
+        kwargs=CONN_KW,
     )
     <span class="kw">await</span> pool.open()
-    <span class="kw">async</span> <span class="kw">with</span> pool.connection() <span class="kw">as</span> conn:  <span class="c"># in production: a migration job, not pod start-up</span>
-        <span class="c"># One pod migrates at a time. Poll with try-lock instead of blocking in pg_advisory_lock():</span>
-        <span class="c"># setup() runs CREATE INDEX CONCURRENTLY, which waits for every open transaction, including</span>
-        <span class="c"># a session that is blocked waiting for this very lock. That is a deadlock.</span>
+    <span class="kw">async</span> <span class="kw">with</span> (
+        pool.connection() <span class="kw">as</span> conn
+    ):  <span class="c"># in production: a migration job, not pod start-up</span>
+        <span class="c"># One pod migrates at a time. Poll with try-lock instead of blocking in</span>
+        <span class="c"># pg_advisory_lock(): setup() runs CREATE INDEX CONCURRENTLY, which waits for every</span>
+        <span class="c"># open transaction, including a session that is blocked waiting for this very lock.</span>
+        <span class="c"># That is a deadlock.</span>
         <span class="kw">while</span> <span class="kw">not</span> (
-            <span class="kw">await</span> (<span class="kw">await</span> conn.execute(<span class="s">"SELECT pg_try_advisory_lock(727274) AS ok"</span>)).fetchone()
+            <span class="kw">await</span> (
+                <span class="kw">await</span> conn.execute(<span class="s">"SELECT pg_try_advisory_lock(727274) AS ok"</span>)
+            ).fetchone()
         )[<span class="s">"ok"</span>]:
             <span class="kw">await</span> asyncio.sleep(<span class="n">0.2</span>)
         <span class="kw">try</span>:
@@ -2581,7 +2702,8 @@ SELECT * FROM claimed
         <span class="kw">finally</span>:
             <span class="kw">await</span> conn.execute(<span class="s">"SELECT pg_advisory_unlock(727274)"</span>)
     background = [
-        asyncio.create_task(job()) <span class="kw">for</span> job <span class="kw">in</span> (hub.run, events.run, worker_loop, heartbeat_loop)
+        asyncio.create_task(job())
+        <span class="kw">for</span> job <span class="kw">in</span> (hub.run, events.run, worker_loop, heartbeat_loop)
     ]
 
     loop = asyncio.get_running_loop()
@@ -2613,7 +2735,7 @@ SELECT * FROM claimed
 app = FastAPI(title=<span class="s">"LangGraph on Postgres"</span>, lifespan=lifespan)
 
 
-<span class="c"># ------------------------------------------------------------------ threads ------------------</span>
+<span class="c"># ---------- threads ----------</span>
 <span class="kw">class</span> <span class="fn">ThreadCreate</span>(BaseModel):
     thread_id: str | <span class="kw">None</span> = <span class="kw">None</span>
     metadata: dict[str, Any] | <span class="kw">None</span> = <span class="kw">None</span>
@@ -2706,7 +2828,8 @@ app = FastAPI(title=<span class="s">"LangGraph on Postgres"</span>, lifespan=lif
 <span class="kw">async</span> <span class="kw">def</span> <span class="fn">create_thread</span>(body: ThreadCreate):
     thread_id = body.thread_id <span class="kw">or</span> str(uuid.uuid4())
     row = <span class="kw">await</span> fetchone(
-        <span class="s">"INSERT INTO threads (thread_id, metadata) VALUES (%s, %s) ON CONFLICT DO NOTHING RETURNING *"</span>,
+        <span class="s">"INSERT INTO threads (thread_id, metadata) VALUES (%s, %s) ON CONFLICT DO NOTHING "</span>
+        <span class="s">"RETURNING *"</span>,
         (thread_id, Jsonb(body.metadata <span class="kw">or</span> {})),
     )
     <span class="kw">if</span> row <span class="kw">is</span> <span class="kw">None</span>:
@@ -2727,7 +2850,8 @@ app = FastAPI(title=<span class="s">"LangGraph on Postgres"</span>, lifespan=lif
 <span class="fn">@app</span>.patch(<span class="s">"/threads/{thread_id}"</span>)
 <span class="kw">async</span> <span class="kw">def</span> <span class="fn">patch_thread</span>(thread_id: str, body: ThreadPatch):
     row = <span class="kw">await</span> fetchone(
-        <span class="s">"UPDATE threads SET metadata = metadata || %s, updated_at = now() WHERE thread_id = %s RETURNING *"</span>,
+        <span class="s">"UPDATE threads SET metadata = metadata || %s, updated_at = now() WHERE thread_id "</span>
+        <span class="s">"= %s RETURNING *"</span>,
         (Jsonb(body.metadata <span class="kw">or</span> {}), thread_id),
     )
     <span class="kw">if</span> row <span class="kw">is</span> <span class="kw">None</span>:
@@ -2739,7 +2863,8 @@ app = FastAPI(title=<span class="s">"LangGraph on Postgres"</span>, lifespan=lif
 <span class="kw">async</span> <span class="kw">def</span> <span class="fn">delete_thread</span>(thread_id: str):
     <span class="kw">await</span> get_thread(thread_id)
     <span class="kw">if</span> <span class="kw">await</span> fetchone(
-        <span class="s">"SELECT 1 FROM runs WHERE thread_id = %s AND status IN ('pending','running') LIMIT 1"</span>,
+        <span class="s">"SELECT 1 FROM runs WHERE thread_id = %s AND status IN ('pending','running') "</span>
+        <span class="s">"LIMIT 1"</span>,
         (thread_id,),
     ):
         <span class="kw">raise</span> HTTPException(<span class="n">409</span>, <span class="s">"thread has an active run; cancel it first"</span>)
@@ -2753,7 +2878,7 @@ app = FastAPI(title=<span class="s">"LangGraph on Postgres"</span>, lifespan=lif
 <span class="fn">@app</span>.post(<span class="s">"/threads/search"</span>)
 <span class="kw">async</span> <span class="kw">def</span> <span class="fn">search_threads</span>(body: ThreadSearch):
     rows = <span class="kw">await</span> fetchall(
-        <span class="c">"""SELECT * FROM threads WHERE metadata @&gt; %s AND (%s::text IS NULL OR status = %s)
+        <span class="s">"""SELECT * FROM threads WHERE metadata @&gt; %s AND (%s::text IS NULL OR status = %s)
            ORDER BY updated_at DESC LIMIT %s OFFSET %s"""</span>,
         (Jsonb(body.metadata <span class="kw">or</span> {}), body.status, body.status, body.limit, body.offset),
     )
@@ -2775,14 +2900,17 @@ app = FastAPI(title=<span class="s">"LangGraph on Postgres"</span>, lifespan=lif
         <span class="kw">raise</span> HTTPException(<span class="n">409</span>, <span class="s">"thread is busy"</span>)
     configurable = {<span class="s">"thread_id"</span>: thread_id}
     <span class="kw">if</span> checkpoint_id := body.checkpoint_id <span class="kw">or</span> (body.checkpoint <span class="kw">or</span> {}).get(<span class="s">"checkpoint_id"</span>):
-        configurable[<span class="s">"checkpoint_id"</span>] = checkpoint_id  <span class="c"># write from an older checkpoint = fork</span>
+        configurable[<span class="s">"checkpoint_id"</span>] = (
+            checkpoint_id  <span class="c"># write from an older checkpoint = fork</span>
+        )
     graph = thread_graph(thread)
     config = <span class="kw">await</span> graph.aupdate_state(
         {<span class="s">"configurable"</span>: configurable}, body.values, as_node=body.as_node
     )
     snap = <span class="kw">await</span> graph.aget_state({<span class="s">"configurable"</span>: {<span class="s">"thread_id"</span>: thread_id}})
     <span class="kw">await</span> fetchall(
-        <span class="s">"UPDATE threads SET status = %s, updated_at = now() WHERE thread_id = %s RETURNING 1"</span>,
+        <span class="s">"UPDATE threads SET status = %s, updated_at = now() WHERE thread_id = %s "</span>
+        <span class="s">"RETURNING 1"</span>,
         (<span class="s">"interrupted"</span> <span class="kw">if</span> snap.next <span class="kw">else</span> <span class="s">"idle"</span>, thread_id),
     )
     <span class="kw">return</span> {<span class="s">"checkpoint"</span>: checkpoint_ref(config)}
@@ -2802,11 +2930,13 @@ app = FastAPI(title=<span class="s">"LangGraph on Postgres"</span>, lifespan=lif
     <span class="kw">return</span> [state_json(snap) <span class="kw">async</span> <span class="kw">for</span> snap <span class="kw">in</span> history]
 
 
-<span class="c"># ------------------------------------------------------------------ runs ---------------------</span>
+<span class="c"># ---------- runs ----------</span>
 <span class="kw">class</span> <span class="fn">RunCreate</span>(BaseModel):
     assistant_id: str
     input: dict[str, Any] | <span class="kw">None</span> = <span class="kw">None</span>
-    command: dict[str, Any] | <span class="kw">None</span> = <span class="kw">None</span>  <span class="c"># {"resume": ...} | {"update": ...} | {"goto": ...}</span>
+    command: dict[str, Any] | <span class="kw">None</span> = (
+        <span class="kw">None</span>  <span class="c"># {"resume": ...} | {"update": ...} | {"goto": ...}</span>
+    )
     config: dict[str, Any] | <span class="kw">None</span> = <span class="kw">None</span>
     metadata: dict[str, Any] | <span class="kw">None</span> = <span class="kw">None</span>
     stream_mode: str | list[str] = <span class="s">"values"</span>
@@ -2817,7 +2947,15 @@ app = FastAPI(title=<span class="s">"LangGraph on Postgres"</span>, lifespan=lif
     on_disconnect: str | <span class="kw">None</span> = <span class="kw">None</span>  <span class="c"># cancel | continue</span>
 
 
-STREAM_MODES = {<span class="s">"values"</span>, <span class="s">"updates"</span>, <span class="s">"custom"</span>, <span class="s">"messages-tuple"</span>, <span class="s">"checkpoints"</span>, <span class="s">"tasks"</span>, <span class="s">"debug"</span>}
+STREAM_MODES = {
+    <span class="s">"values"</span>,
+    <span class="s">"updates"</span>,
+    <span class="s">"custom"</span>,
+    <span class="s">"messages-tuple"</span>,
+    <span class="s">"checkpoints"</span>,
+    <span class="s">"tasks"</span>,
+    <span class="s">"debug"</span>,
+}
 
 
 <span class="kw">def</span> <span class="fn">run_json</span>(run: dict) -&gt; dict:
@@ -2855,10 +2993,12 @@ STREAM_MODES = {<span class="s">"values"</span>, <span class="s">"updates"</span
     }
     to_cancel: list[str] = []
     <span class="kw">async</span> <span class="kw">with</span> pool.connection() <span class="kw">as</span> conn, conn.transaction():
-        <span class="c"># Lock the thread row: two concurrent creates on one thread are decided one after the other.</span>
+        <span class="c"># Lock the thread row: two concurrent creates on one thread are decided one after</span>
+        <span class="c"># the other.</span>
         thread = <span class="kw">await</span> (
             <span class="kw">await</span> conn.execute(
-                <span class="s">"SELECT thread_id FROM threads WHERE thread_id = %s FOR UPDATE"</span>, (thread_id,)
+                <span class="s">"SELECT thread_id FROM threads WHERE thread_id = %s FOR UPDATE"</span>,
+                (thread_id,),
             )
         ).fetchone()
         <span class="kw">if</span> thread <span class="kw">is</span> <span class="kw">None</span>:
@@ -2867,18 +3007,22 @@ STREAM_MODES = {<span class="s">"values"</span>, <span class="s">"updates"</span
             <span class="kw">await</span> conn.execute(<span class="s">"INSERT INTO threads (thread_id) VALUES (%s)"</span>, (thread_id,))
         active = <span class="kw">await</span> (
             <span class="kw">await</span> conn.execute(
-                <span class="s">"SELECT run_id FROM runs WHERE thread_id = %s AND status IN ('pending','running')"</span>,
+                <span class="s">"SELECT run_id FROM runs WHERE thread_id = %s AND status IN "</span>
+                <span class="s">"('pending','running')"</span>,
                 (thread_id,),
             )
         ).fetchall()
         <span class="kw">if</span> active <span class="kw">and</span> strategy == <span class="s">"reject"</span>:
-            <span class="kw">raise</span> HTTPException(<span class="n">409</span>, <span class="s">"thread already has an active run (multitask_strategy=reject)"</span>)
+            <span class="kw">raise</span> HTTPException(
+                <span class="n">409</span>, <span class="s">"thread already has an active run (multitask_strategy=reject)"</span>
+            )
         <span class="kw">if</span> strategy <span class="kw">in</span> (<span class="s">"interrupt"</span>, <span class="s">"rollback"</span>):
             to_cancel = [row[<span class="s">"run_id"</span>] <span class="kw">for</span> row <span class="kw">in</span> active]
         run = <span class="kw">await</span> (
             <span class="kw">await</span> conn.execute(
-                <span class="c">"""INSERT INTO runs (run_id, thread_id, assistant_id, kwargs, metadata, multitask_strategy)
-               VALUES (%s, %s, %s, %s, %s, %s) RETURNING *"""</span>,
+                <span class="s">"""INSERT INTO runs
+                     (run_id, thread_id, assistant_id, kwargs, metadata, multitask_strategy)
+                   VALUES (%s, %s, %s, %s, %s, %s) RETURNING *"""</span>,
                 (
                     str(uuid.uuid4()),
                     thread_id,
@@ -2890,7 +3034,8 @@ STREAM_MODES = {<span class="s">"values"</span>, <span class="s">"updates"</span
             )
         ).fetchone()
         <span class="kw">await</span> conn.execute(
-            <span class="s">"UPDATE threads SET status = 'busy', updated_at = now(), metadata = metadata || %s WHERE thread_id = %s"</span>,
+            <span class="s">"UPDATE threads SET status = 'busy', updated_at = now(), metadata = metadata "</span>
+            <span class="s">"|| %s WHERE thread_id = %s"</span>,
             (Jsonb({<span class="s">"graph_id"</span>: body.assistant_id}), thread_id),
         )
     <span class="kw">for</span> run_id <span class="kw">in</span> to_cancel:  <span class="c"># the new run starts when the old one has stopped</span>
@@ -2911,26 +3056,33 @@ STREAM_MODES = {<span class="s">"values"</span>, <span class="s">"updates"</span
 
 <span class="kw">async</span> <span class="kw">def</span> <span class="fn">request_cancel</span>(run_id: str, action: str = <span class="s">"interrupt"</span>) -&gt; dict | <span class="kw">None</span>:
     run = <span class="kw">await</span> fetchone(  <span class="c"># one atomic statement decides the race against a worker's claim</span>
-        <span class="c">"""UPDATE runs SET cancel_requested = %s, updated_at = now(),
+        <span class="s">"""UPDATE runs SET cancel_requested = %s, updated_at = now(),
                   status = CASE WHEN status = 'pending' THEN 'interrupted' ELSE status END
            WHERE run_id = %s AND status IN ('pending','running') RETURNING *"""</span>,
         (action, run_id),
     )
     <span class="kw">if</span> run <span class="kw">is</span> <span class="kw">None</span>:
         <span class="kw">return</span> <span class="kw">None</span>  <span class="c"># already finished</span>
-    <span class="kw">if</span> run[<span class="s">"status"</span>] == <span class="s">"interrupted"</span>:  <span class="c"># it never started: nobody else will close its stream</span>
+    <span class="kw">if</span> (
+        run[<span class="s">"status"</span>] == <span class="s">"interrupted"</span>
+    ):  <span class="c"># it never started: nobody else will close its stream</span>
         status = <span class="kw">await</span> thread_status(run[<span class="s">"thread_id"</span>], run[<span class="s">"assistant_id"</span>])
         <span class="kw">await</span> fetchall(
-            <span class="s">"UPDATE threads SET status = %s, updated_at = now() WHERE thread_id = %s RETURNING 1"</span>,
+            <span class="s">"UPDATE threads SET status = %s, updated_at = now() WHERE thread_id = %s "</span>
+            <span class="s">"RETURNING 1"</span>,
             (status, run[<span class="s">"thread_id"</span>]),
         )
         <span class="kw">await</span> close_unowned(run_id, <span class="s">"interrupted"</span>)
     <span class="kw">else</span>:
-        <span class="kw">await</span> notify(<span class="s">"run_cancel"</span>, <span class="s">f"{</span>action<span class="s">}:{</span>run_id<span class="s">}"</span>)  <span class="c"># every pod hears it; the owner acts</span>
+        <span class="kw">await</span> notify(
+            <span class="s">"run_cancel"</span>, <span class="s">f"{</span>action<span class="s">}:{</span>run_id<span class="s">}"</span>
+        )  <span class="c"># every pod hears it; the owner acts</span>
     <span class="kw">return</span> run
 
 
-<span class="kw">def</span> <span class="fn">stream_response</span>(run: dict, after: int, on_disconnect: str | <span class="kw">None</span> = <span class="kw">None</span>) -&gt; StreamingResponse:
+<span class="kw">def</span> <span class="fn">stream_response</span>(
+    run: dict, after: int, on_disconnect: str | <span class="kw">None</span> = <span class="kw">None</span>
+) -&gt; StreamingResponse:
     run_id, thread_id = run[<span class="s">"run_id"</span>], run[<span class="s">"thread_id"</span>]
 
     <span class="kw">async</span> <span class="kw">def</span> <span class="fn">body</span>():
@@ -2941,7 +3093,8 @@ STREAM_MODES = {<span class="s">"values"</span>, <span class="s">"updates"</span
                 finished = finished <span class="kw">or</span> (row <span class="kw">is</span> <span class="kw">not</span> <span class="kw">None</span> <span class="kw">and</span> row[<span class="s">"event"</span>] == <span class="s">"end"</span>)
         <span class="kw">finally</span>:
             <span class="c"># Reached on a normal end AND when the client goes away. The run is not ours to</span>
-            <span class="c"># stop: it lives in the worker, unless the caller asked for on_disconnect=cancel.</span>
+            <span class="c"># stop: it lives in the worker, unless the caller asked for</span>
+            <span class="c"># on_disconnect=cancel.</span>
             <span class="kw">if</span> <span class="kw">not</span> finished <span class="kw">and</span> on_disconnect == <span class="s">"cancel"</span> <span class="kw">and</span> <span class="kw">not</span> draining.is_set():
                 spawn(request_cancel(run_id))
 
@@ -2969,7 +3122,9 @@ STREAM_MODES = {<span class="s">"values"</span>, <span class="s">"updates"</span
             headers={<span class="s">"Location"</span>: <span class="s">f"/threads/{</span>run[<span class="s">'thread_id'</span>]<span class="s">}/runs/{</span>run[<span class="s">'run_id'</span>]<span class="s">}/join"</span>},
         )
     thread = <span class="kw">await</span> get_thread(run[<span class="s">"thread_id"</span>])
-    snap = <span class="kw">await</span> thread_graph(thread).aget_state({<span class="s">"configurable"</span>: {<span class="s">"thread_id"</span>: run[<span class="s">"thread_id"</span>]}})
+    snap = <span class="kw">await</span> thread_graph(thread).aget_state(
+        {<span class="s">"configurable"</span>: {<span class="s">"thread_id"</span>: run[<span class="s">"thread_id"</span>]}}
+    )
     <span class="kw">return</span> jsonable(snap.values)
 
 
@@ -2980,7 +3135,8 @@ STREAM_MODES = {<span class="s">"values"</span>, <span class="s">"updates"</span
 
 <span class="fn">@app</span>.post(<span class="s">"/threads/{thread_id}/runs/stream"</span>)
 <span class="kw">async</span> <span class="kw">def</span> <span class="fn">create_and_stream</span>(thread_id: str, body: RunCreate):
-    <span class="c"># "create + stream" is just "create", then "join from the beginning": the request never owns the run.</span>
+    <span class="c"># "create + stream" is just "create", then "join from the beginning": the request never</span>
+    <span class="c"># owns the run.</span>
     <span class="kw">return</span> stream_response(<span class="kw">await</span> create_run(thread_id, body), <span class="n">0</span>, body.on_disconnect)
 
 
@@ -2990,9 +3146,11 @@ STREAM_MODES = {<span class="s">"values"</span>, <span class="s">"updates"</span
 
 
 <span class="fn">@app</span>.get(<span class="s">"/threads/{thread_id}/runs"</span>)
-<span class="kw">async</span> <span class="kw">def</span> <span class="fn">list_runs</span>(thread_id: str, limit: int = <span class="n">10</span>, offset: int = <span class="n">0</span>, status: str | <span class="kw">None</span> = <span class="kw">None</span>):
+<span class="kw">async</span> <span class="kw">def</span> <span class="fn">list_runs</span>(
+    thread_id: str, limit: int = <span class="n">10</span>, offset: int = <span class="n">0</span>, status: str | <span class="kw">None</span> = <span class="kw">None</span>
+):
     rows = <span class="kw">await</span> fetchall(
-        <span class="c">"""SELECT * FROM runs WHERE thread_id = %s AND (%s::text IS NULL OR status = %s)
+        <span class="s">"""SELECT * FROM runs WHERE thread_id = %s AND (%s::text IS NULL OR status = %s)
            ORDER BY created_at DESC LIMIT %s OFFSET %s"""</span>,
         (thread_id, status, status, limit, offset),
     )
@@ -3024,7 +3182,9 @@ STREAM_MODES = {<span class="s">"values"</span>, <span class="s">"updates"</span
 
 
 <span class="fn">@app</span>.post(<span class="s">"/threads/{thread_id}/runs/{run_id}/cancel"</span>)
-<span class="kw">async</span> <span class="kw">def</span> <span class="fn">cancel_run</span>(thread_id: str, run_id: str, wait: bool = <span class="kw">False</span>, action: str = <span class="s">"interrupt"</span>):
+<span class="kw">async</span> <span class="kw">def</span> <span class="fn">cancel_run</span>(
+    thread_id: str, run_id: str, wait: bool = <span class="kw">False</span>, action: str = <span class="s">"interrupt"</span>
+):
     <span class="kw">await</span> get_run(thread_id, run_id)  <span class="c"># 404 for an unknown run</span>
     <span class="kw">if</span> action <span class="kw">not</span> <span class="kw">in</span> (<span class="s">"interrupt"</span>, <span class="s">"rollback"</span>):
         <span class="kw">raise</span> HTTPException(<span class="n">422</span>, <span class="s">"action must be interrupt or rollback"</span>)
@@ -3034,9 +3194,12 @@ STREAM_MODES = {<span class="s">"values"</span>, <span class="s">"updates"</span
             <span class="kw">pass</span>
     <span class="kw">return</span> Response(status_code=<span class="n">204</span>)</pre>
 </details>
-      <details class="src"><summary><code>graphs.py</code> <span class="dim">· 112 lines</span></summary>
+      <details class="src"><summary><code>graphs.py</code> <span class="dim">· 121 lines</span></summary>
 <div class="src-actions"><button class="btn copy-src" data-src="graphs_py">Copy file</button></div>
-<pre class="snippet src-body" id="graphs_py"><span class="c">"""graphs.py — demo graphs for the reference server. No API keys: a fake chat model streams tokens slowly."""</span>
+<pre class="snippet src-body" id="graphs_py"><span class="c">"""graphs.py — demo graphs for the reference server.
+
+No API keys needed: a fake chat model streams tokens slowly.
+"""</span>
 
 <span class="kw">import</span> asyncio
 <span class="kw">import</span> operator
@@ -3064,9 +3227,13 @@ STREAM_MODES = {<span class="s">"values"</span>, <span class="s">"updates"</span
         <span class="kw">return</span> <span class="s">"slow-fake"</span>
 
     <span class="kw">def</span> <span class="fn">_generate</span>(self, messages, stop=<span class="kw">None</span>, run_manager=<span class="kw">None</span>, **kwargs: Any) -&gt; ChatResult:
-        <span class="kw">return</span> ChatResult(generations=[ChatGeneration(message=AIMessage(content=self.text))])
+        <span class="kw">return</span> ChatResult(
+            generations=[ChatGeneration(message=AIMessage(content=self.text))]
+        )
 
-    <span class="kw">async</span> <span class="kw">def</span> <span class="fn">_agenerate</span>(self, messages, stop=<span class="kw">None</span>, run_manager=<span class="kw">None</span>, **kwargs: Any) -&gt; ChatResult:
+    <span class="kw">async</span> <span class="kw">def</span> <span class="fn">_agenerate</span>(
+        self, messages, stop=<span class="kw">None</span>, run_manager=<span class="kw">None</span>, **kwargs: Any
+    ) -&gt; ChatResult:
         text = <span class="s">""</span>  <span class="c"># just as slow when nobody is streaming tokens</span>
         <span class="kw">async</span> <span class="kw">for</span> chunk <span class="kw">in</span> self._astream(messages, stop, <span class="kw">None</span>, **kwargs):
             text += chunk.message.content
@@ -3081,7 +3248,7 @@ STREAM_MODES = {<span class="s">"values"</span>, <span class="s">"updates"</span
             <span class="kw">yield</span> chunk
 
 
-<span class="c"># ---- "agent": plan -&gt; (optional human approval) -&gt; answer -------------------------------------</span>
+<span class="c"># ---------- "agent": plan -&gt; (optional human approval) -&gt; answer ----------</span>
 <span class="kw">class</span> <span class="fn">AgentState</span>(MessagesState):
     plan: str
     needs_approval: bool
@@ -3106,7 +3273,9 @@ STREAM_MODES = {<span class="s">"values"</span>, <span class="s">"updates"</span
 
 <span class="kw">async</span> <span class="kw">def</span> <span class="fn">answer</span>(state: AgentState):
     n = state.get(<span class="s">"words"</span>) <span class="kw">or</span> <span class="n">12</span>
-    llm = SlowFakeChat(text=<span class="s">" "</span>.join(<span class="s">f"tok{</span>i<span class="s">}"</span> <span class="kw">for</span> i <span class="kw">in</span> range(n)), delay=state.get(<span class="s">"delay"</span>) <span class="kw">or</span> <span class="n">0.05</span>)
+    llm = SlowFakeChat(
+        text=<span class="s">" "</span>.join(<span class="s">f"tok{</span>i<span class="s">}"</span> <span class="kw">for</span> i <span class="kw">in</span> range(n)), delay=state.get(<span class="s">"delay"</span>) <span class="kw">or</span> <span class="n">0.05</span>
+    )
     <span class="kw">return</span> {<span class="s">"messages"</span>: [<span class="kw">await</span> llm.ainvoke(state[<span class="s">"messages"</span>])]}
 
 
@@ -3120,7 +3289,7 @@ _agent.add_edge(<span class="s">"gate"</span>, <span class="s">"answer"</span>)
 _agent.add_edge(<span class="s">"answer"</span>, END)
 
 
-<span class="c"># ---- "steps": a -&gt; b -&gt; c, each slow; announces every execution (to observe at-least-once) -----</span>
+<span class="c"># ---------- "steps": a -&gt; b -&gt; c, slow; announces every execution ----------</span>
 <span class="kw">class</span> <span class="fn">StepsState</span>(TypedDict):
     log: Annotated[list[str], operator.add]
     delay: float
@@ -3434,7 +3603,7 @@ const VZ=(function(){
        run(s){ s.run={status:'pending',worker:null,attempt:0,cancel:false,lease:0}; s.bell.queue=1; }},
       {cap:'Every pod\'s worker hears the bell and tries to claim. <code>FOR UPDATE SKIP LOCKED</code> lets exactly one win: <b>pod-b</b>. It now holds a lease on the run.',
        fx:[[{f:'pg',t:'a'},{f:'pg',t:'b',label:'claim'},{f:'pg',t:'c'}]],
-       run(s){ Object.assign(s.run,{status:'running',worker:'b',attempt:1,lease:1}); s.pod.b.work='runs r1'; }},
+       run(s){ Object.assign(s.run,{status:'running',worker:'b',attempt:1,lease:1}); s.pod.b.work='runs r1'; s.bell.queue=1; }},
       {cap:'pod-a turns its request into a <b>reader</b>. It subscribes to the run, reads <code>seq &gt; 0</code>, finds nothing yet, and waits for the bell.',
        fx:[{f:'a',t:'pg',label:'seq > 0 ?'}],
        run(s){ s.pod.a.api='SSE reader'; s.br.st='streaming'; }},
@@ -3483,7 +3652,7 @@ const VZ=(function(){
        run(s){ s.run.cancel=true; s.bell.cancel=1; }},
       {cap:'All three pods hear it. Only <b>pod-b</b> finds that run among its local tasks, and calls <code>task.cancel()</code>. The exception lands inside the running node and the LLM call is aborted.',
        fx:[[{f:'pg',t:'a'},{f:'pg',t:'b',label:'run_cancel'},{f:'pg',t:'c'}]],
-       run(s){ s.pod.b.work='cancelling'; s.pod.c.api=''; }},
+       run(s){ s.pod.b.work='cancelling'; s.pod.c.api=''; s.bell.cancel=1; }},
       {cap:'pod-b records the run as <code>interrupted</code> and appends <code>end</code>. The last finished super-step stays in <code>checkpoints</code>, so the thread can continue later.',
        fx:[{f:'b',t:'pg',label:'interrupted + end'}],
        run(s){ s.run.status='interrupted'; s.run.lease=0; s.ev=4; s.end=true; s.pod.b.work=''; s.bell.events=1; }},
@@ -3502,7 +3671,7 @@ const VZ=(function(){
        run(s){ s.run.status='pending'; s.run.worker=null; s.bell.queue=1; }},
       {cap:'<b>pod-c</b> claims it as attempt 2 and calls the graph with the stored input and the same <code>run_id</code>. LangGraph sees that the newest checkpoint belongs to this run, and resumes from it.',
        fx:[{f:'pg',t:'c',label:'claim'}],
-       run(s){ Object.assign(s.run,{status:'running',worker:'c',attempt:2,lease:1}); s.pod.c.work='runs r1'; }},
+       run(s){ Object.assign(s.run,{status:'running',worker:'c',attempt:2,lease:1}); s.pod.c.work='runs r1'; s.bell.queue=1; }},
       {cap:'The node that was cut off runs again: recovery is at-least-once. New events continue the same sequence, starting with <code>metadata {attempt: 2}</code>.',
        fx:[{f:'c',t:'pg',label:'INSERT 4–7'},{f:'pg',t:'a'},{f:'a',t:'br',label:'SSE'}],
        run(s){ s.ev=7; s.seen=7; s.ck=2; s.br.last=7; s.bell.events=1; }},
@@ -3519,7 +3688,7 @@ const VZ=(function(){
     const bw=Math.min(240,w-2*pad), br={x:(w-bw)/2,y:6,w:bw,h:44};
     const pw=(w-2*pad-2*g)/3, py=br.y+br.h+42, ph=62, pods={};
     ['a','b','c'].forEach((k,n)=>pods[k]={x:pad+n*(pw+g),y:py,w:pw,h:ph});
-    const pg={x:pad,y:py+ph+44,w:w-2*pad,h:128};
+    const pg={x:pad,y:py+ph+44,w:w-2*pad,h:138};
     return {narrow,br,pods,pg,H:pg.y+pg.h+6};
   }
   function anchor(L,name,toward){
@@ -3591,7 +3760,7 @@ const VZ=(function(){
       ctx.fillStyle=read?p.panel:(isEnd?p.ok:p.accent); ctx.font='600 '+(cw<18?8.5:9.5)+'px '+p.sans; ctx.textAlign='center';
       ctx.fillText(String(k),x+cw/2,cy+12.5); ctx.textAlign='left'; ctx.font=fm; }
     /* checkpoints */
-    y+=46; ctx.fillStyle=p.muted; ctx.fillText('checkpoints',ix,y);
+    y+=43; ctx.fillStyle=p.muted; ctx.fillText('checkpoints',ix,y);
     let dx=ix+ctx.measureText('checkpoints  ').width+6;
     for(let k=0;k<S.ck;k++){ ctx.save(); ctx.translate(dx+k*20,y-4); ctx.rotate(Math.PI/4);
       ctx.fillStyle=p.accent; ctx.fillRect(-5,-5,10,10); ctx.restore(); }
