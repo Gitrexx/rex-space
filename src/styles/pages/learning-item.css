@@ -1,116 +1,97 @@
+/* A learning topic is a full-window page: one slim toolbar, then the embed takes
+   everything below it and is the only scroller. The site header and footer are
+   hidden on this route — the toolbar's back link is the way out. */
+body.learning-item-body > .skip-link,
+body.learning-item-body > .site-header,
+body.learning-item-body > .site-footer {
+  display: none;
+}
+
+/* Resets the global `main` column (max-width + padding) to the full window. */
 .learning-item-main {
-  max-width: var(--max-width-wide);
-  margin: 0 auto;
-  padding: var(--space-16) var(--space-6) var(--space-24);
-}
-
-.learning-back {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-2);
-  color: var(--label-secondary);
-  font-size: var(--text-footnote);
-  font-weight: var(--weight-medium);
-  letter-spacing: var(--tracking-tight);
-  text-decoration: none;
-  transition: color var(--duration-fast) var(--ease-out);
-}
-
-.learning-back:hover {
-  color: var(--label-primary);
-}
-
-.learning-item-head {
   display: flex;
-  flex-wrap: wrap;
-  align-items: flex-end;
-  justify-content: space-between;
-  gap: var(--space-4) var(--space-6);
-  margin-top: var(--space-6);
-}
-
-.learning-item-info {
-  min-width: 0;
-}
-
-.learning-item-tag {
-  margin: 0 0 var(--space-2);
-}
-
-.learning-item-title {
+  flex-direction: column;
+  max-width: none;
   margin: 0;
-  color: var(--label-primary);
-  font-size: clamp(1.75rem, 4vw, 2.375rem);
-  font-weight: 650;
-  letter-spacing: -0.016em;
-  line-height: 1.06;
+  padding: 0;
+  height: 100vh;
+  height: 100dvh;
+  background: var(--bg-primary);
 }
 
-.learning-item-desc {
-  max-width: 46rem;
-  margin: var(--space-3) 0 0;
-  color: var(--label-secondary);
-  font-size: var(--text-callout);
-  font-weight: 450;
-  line-height: var(--leading-normal);
-}
-
-.learning-item-actions {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-2);
+.learning-bar {
+  display: flex;
   flex-shrink: 0;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-8);
+  border-bottom: 1px solid var(--separator);
 }
 
-.learning-action {
+.learning-bar-btn {
   display: inline-flex;
+  flex-shrink: 0;
   align-items: center;
   gap: var(--space-2);
-  padding: var(--space-2) var(--space-4);
+  min-height: 40px;
+  padding: 0 var(--space-4);
   font-family: var(--font-sans);
   font-size: var(--text-footnote);
   font-weight: var(--weight-medium);
-  color: var(--label-secondary);
+  color: var(--label-primary);
   letter-spacing: var(--tracking-tight);
-  background: var(--fill-tertiary);
-  border: none;
-  border-radius: var(--radius-full);
   text-decoration: none;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--radius-full);
   cursor: pointer;
   transition:
     color var(--duration-fast) var(--ease-out),
     background-color var(--duration-fast) var(--ease-out);
 }
 
-.learning-action:hover {
-  color: var(--label-primary);
-  background: var(--fill-secondary);
+.learning-bar-btn:hover {
+  background: var(--fill-tertiary);
 }
 
-.learning-action:focus-visible {
+.learning-bar-btn:focus-visible {
   outline: 2px solid var(--color-blue);
   outline-offset: 2px;
 }
 
-/* The Expand action is the primary way to read rich embeds — give it a tint. */
-.learning-action-accent {
-  color: var(--color-blue);
-  background: var(--fill-secondary);
+.learning-bar-back {
+  margin-left: calc(var(--space-3) * -1);
+  padding: 0 var(--space-3);
+  color: var(--label-secondary);
 }
 
-.learning-action-accent:hover {
-  color: var(--color-blue);
-  background: var(--fill-primary);
+.learning-bar-back:hover {
+  color: var(--label-primary);
+}
+
+.learning-bar-pill {
+  background: var(--bg-tertiary);
+  border-color: var(--separator);
+}
+
+.learning-bar-title {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  overflow: hidden;
+  color: var(--label-primary);
+  font-size: var(--text-footnote);
+  font-weight: 600;
+  letter-spacing: var(--tracking-tight);
+  line-height: var(--leading-normal);
+  white-space: nowrap;
+  text-overflow: ellipsis;
 }
 
 .learning-frame {
-  position: relative;
-  overflow: hidden;
-  height: min(78vh, 880px);
-  margin-top: var(--space-6);
+  flex: 1;
+  min-height: 0;
   background: var(--bg-secondary);
-  border: 1px solid var(--separator);
-  border-radius: var(--radius-md);
 }
 
 .learning-frame iframe {
@@ -120,192 +101,20 @@
   border: 0;
 }
 
-/* Expand: a bottom-sheet dialog holding a full-height embed. */
-.learning-expand {
-  width: 100vw;
-  max-width: 100vw;
-  height: 100dvh;
-  max-height: 100dvh;
-  margin: 0;
-  padding: 0;
-  background: transparent;
-  border: none;
-  overflow: hidden;
-}
-
-.learning-expand[open] {
-  display: flex;
-  align-items: flex-end;
-  justify-content: center;
-}
-
-.learning-expand::backdrop {
-  background: rgba(0, 0, 0, 0.6);
-  backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
-}
-
-.learning-expand[open]::backdrop {
-  animation: expand-fade var(--duration-normal) var(--ease-out) both;
-}
-
-.learning-expand-sheet {
-  display: flex;
-  flex-direction: column;
-  width: min(1400px, 100vw);
-  height: 94dvh;
-  background: var(--bg-primary);
-  border: 1px solid var(--separator);
-  border-bottom: none;
-  border-radius: var(--radius-2xl) var(--radius-2xl) 0 0;
-  box-shadow: var(--shadow-xl);
-  overflow: hidden;
-}
-
-.learning-expand[open] .learning-expand-sheet {
-  animation: expand-up 360ms cubic-bezier(0.22, 1, 0.36, 1) both;
-}
-
-.learning-expand-grip {
-  flex-shrink: 0;
-  width: 40px;
-  height: 4px;
-  margin: var(--space-3) auto var(--space-1);
-  background: var(--separator);
-  border-radius: var(--radius-full);
-}
-
-.learning-expand-bar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-4);
-  flex-shrink: 0;
-  padding: var(--space-2) var(--space-4) var(--space-3);
-  border-bottom: 1px solid var(--separator);
-}
-
-.learning-expand-title {
-  min-width: 0;
-  margin: 0;
-  overflow: hidden;
-  color: var(--label-primary);
-  font-size: var(--text-headline);
-  font-weight: 600;
-  letter-spacing: var(--tracking-tight);
-  white-space: nowrap;
-  text-overflow: ellipsis;
-}
-
-.learning-expand-actions {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-2);
-  flex-shrink: 0;
-}
-
-.learning-expand-close {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 32px;
-  height: 32px;
-  color: var(--label-secondary);
-  background: var(--fill-tertiary);
-  border: none;
-  border-radius: var(--radius-full);
-  cursor: pointer;
-  transition:
-    color var(--duration-fast) var(--ease-out),
-    background-color var(--duration-fast) var(--ease-out);
-}
-
-.learning-expand-close:hover {
-  color: var(--label-primary);
-  background: var(--fill-secondary);
-}
-
-.learning-expand-close:focus-visible {
-  outline: 2px solid var(--color-blue);
-  outline-offset: 2px;
-}
-
-.learning-expand-frame {
-  flex: 1;
-  min-height: 0;
-  background: var(--bg-secondary);
-}
-
-.learning-expand-frame iframe {
-  display: block;
-  width: 100%;
-  height: 100%;
-  border: 0;
-}
-
-@keyframes expand-fade {
-  from {
-    opacity: 0;
-  }
-
-  to {
-    opacity: 1;
-  }
-}
-
-@keyframes expand-up {
-  from {
-    transform: translateY(100%);
-  }
-
-  to {
-    transform: translateY(0);
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .learning-expand[open] .learning-expand-sheet,
-  .learning-expand[open]::backdrop {
-    animation: none;
-  }
-}
-
 @media (max-width: 48rem) {
-  .learning-item-main {
-    padding: var(--space-12) var(--space-6) var(--space-16);
-  }
-
-  .learning-frame {
-    height: min(72vh, 720px);
-  }
-
-  .learning-expand-sheet {
-    height: 96dvh;
-    border-radius: var(--radius-xl) var(--radius-xl) 0 0;
-  }
-}
-
-@media (max-width: 600px) {
-  .learning-item-main {
-    padding-right: var(--space-4);
-    padding-left: var(--space-4);
-  }
-
-  .learning-item-actions {
-    gap: var(--space-1);
-  }
-
-  .learning-frame {
-    height: 70vh;
-    border-radius: var(--radius-sm);
-  }
-
-  .learning-expand-bar {
+  .learning-bar {
     gap: var(--space-2);
-    padding: var(--space-2) var(--space-3) var(--space-3);
+    padding: var(--space-2) var(--space-4);
   }
 
-  .learning-expand-actions {
-    gap: var(--space-1);
+  /* Icon-only actions on small screens; each keeps its aria-label. */
+  .learning-bar-label {
+    display: none;
+  }
+
+  .learning-bar-pill {
+    justify-content: center;
+    width: 40px;
+    padding: 0;
   }
 }
